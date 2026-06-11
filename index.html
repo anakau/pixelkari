@@ -642,7 +642,6 @@ function initCanvas() {
   S.rows = Math.floor((S.cols * 105 / 148) / 9) * 9;  // derived from cols to honour A6 ratio, trimmed down
   if (S.rows * CELL > ch) S.rows -= 9;
   S.cols -= 1;  // odd total → true center column axis; helps border repeat alignment
-  S.rows -= 1;  // odd total → true center row axis; fixes right-side border misalignment
   const logW = S.cols * CELL;
   const logH = S.rows * CELL;
   canvas.width  = logW * dpr;
