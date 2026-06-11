@@ -629,19 +629,9 @@ const canvas = document.getElementById('mc');
 const ctx    = canvas.getContext('2d');
 
 function initCanvas() {
-  const area = document.getElementById('canvas-area');
   const dpr  = window.devicePixelRatio || 1;
-  const aw = area.clientWidth  - 48;
-  const ah = area.clientHeight - 48;
-  let cw, ch;
-  if (aw / RATIO <= ah) { cw = aw; ch = Math.floor(aw / RATIO); }
-  else                  { ch = ah; cw = Math.floor(ah * RATIO);  }
-
-  S.cols = Math.floor(Math.floor(cw / CELL) / 9) * 9;
-  if (S.cols * CELL > cw) S.cols -= 9;
-  S.rows = Math.floor((S.cols * 105 / 148) / 9) * 9;  // derived from cols to honour A6 ratio, trimmed down
-  if (S.rows * CELL > ch) S.rows -= 9;
-  S.cols -= 1;  // odd total → true center column axis; helps border repeat alignment
+  S.cols = 71;  // fixed: 72 - 1 for true center axis
+  S.rows = 45;  // fixed: clean multiple of 9, matches A6 aspect ratio
   const logW = S.cols * CELL;
   const logH = S.rows * CELL;
   canvas.width  = logW * dpr;
@@ -1496,7 +1486,6 @@ buildSym();
 buildMotifPal();
 initCanvas();
 initCursors();
-window.addEventListener('resize', initCanvas);
 </script>
 </body>
 </html>
