@@ -76,8 +76,6 @@
     /* tool block */
     .tool-block { display: flex; gap: 3px; flex-shrink: 0; }
     .tool-col   { display: flex; flex-direction: column; gap: 3px; }
-    .tool-row   { display: flex; gap: 3px; }
-    .tool-row > * { flex: 1; }
     #sym-group  { display: flex !important; gap: 3px; }
     #sym-group .sym-btn { flex: 1; width: auto; }
 
@@ -89,12 +87,7 @@
     .nav-block { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; flex-shrink: 0; }
     .zoom-row  { display: flex; align-items: center; gap: 3px; }
 
-    /* tool stack */
-    .tool-stack { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
-    .tool-row   { display: flex; align-items: center; gap: 6px; }
-
-    /* base colour row + randomise */
-    .base-and-rnd { display: flex; align-items: center; gap: 6px; }
+    .tool-row { display: flex; align-items: center; gap: 6px; }
 
     .bb-color-col { display: flex; flex-direction: column; align-items: stretch; gap: 5px; flex-shrink: 0; }
     #thread-pal { display: flex; align-items: flex-end; overflow: visible; }
@@ -191,6 +184,21 @@
     .motif-thumb.selected { border-color: var(--accent); }
     .motif-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 10px; }
     .motif-panel-label { font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+    /* Create Motif tooltip */
+    .motif-create-btn { position: relative; }
+    .motif-create-btn .mcb-tip {
+      position: absolute; bottom: calc(100% + 10px); left: 50%;
+      transform: translateX(-50%); width: 190px;
+      background: rgba(18,18,18,0.97); border: 1px solid #333;
+      color: #aaa; font-size: 11px; font-weight: 400;
+      padding: 9px 11px; line-height: 1.55;
+      pointer-events: none; opacity: 0;
+      transition: opacity 0.18s; white-space: normal;
+      text-align: left; z-index: 200;
+      letter-spacing: 0.01em; text-transform: none;
+    }
+    .motif-create-btn:hover .mcb-tip { opacity: 1; }
+
     .save-motif-btn {
       padding: 3px 7px; background: transparent; border: 1px dashed var(--border); border-radius: 0;
       color: var(--muted); cursor: pointer; font-size: 10px;
@@ -370,6 +378,7 @@
         <button class="tbtn motif-create-btn" id="motif-btn" onclick="saveAsMotif()">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(0 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(45 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(90 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(135 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(180 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(225 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(270 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(315 12 12)"/><circle cx="12" cy="12" r="2.5"/></svg>
           <span style="font-size:10px;line-height:1.3;text-align:center;">Create<br>Motif</span>
+          <div class="mcb-tip">Paint a design on the canvas, then click <strong style="color:#ddd;">Create Motif</strong> to save it. Pick it from the library to stamp it anywhere — click to place, drag to tile.</div>
         </button>
         <div id="motif-panel">
           <div class="motif-panel-head">
@@ -466,8 +475,55 @@ const SYMS = [
 // ═══════════════════════════════════════════════════
 // MOTIFS (persisted to localStorage)
 // ═══════════════════════════════════════════════════
+function _genPhul() {
+  const cells = {};
+  const pal = ['#FFD700','#FF6B1A','#E91E8C','#9B1B6E','#4A0A3A'];
+  for (let dc = -4; dc <= 4; dc++) {
+    for (let dr = -4; dr <= 4; dr++) {
+      const d = Math.abs(dc) + Math.abs(dr);
+      if (d > 4) continue;
+      const col = pal[Math.min(d, pal.length - 1)];
+      for (const t of ['t','r','b','l']) cells[`${dc},${dr},${t}`] = col;
+    }
+  }
+  return { name: 'Phul', cells };
+}
+function _genKiran() {
+  const cells = {};
+  const fill = (dc, dr, tris, col) => tris.forEach(t => { cells[`${dc},${dr},${t}`] = col; });
+  // centre
+  fill(0, 0, ['t','r','b','l'], '#FFFFFF');
+  // 4 cardinal arms
+  for (let i = 1; i <= 3; i++) {
+    const col = i < 3 ? '#FF1493' : '#E91E8C';
+    fill( i, 0, ['t','r','b','l'], col);
+    fill(-i, 0, ['t','r','b','l'], col);
+    fill(0,  i, ['t','r','b','l'], col);
+    fill(0, -i, ['t','r','b','l'], col);
+  }
+  // 4 diagonal arms
+  for (let i = 1; i <= 2; i++) {
+    const col = '#FFD700';
+    fill( i,  i, ['t','r','b','l'], col);
+    fill(-i,  i, ['t','r','b','l'], col);
+    fill( i, -i, ['t','r','b','l'], col);
+    fill(-i, -i, ['t','r','b','l'], col);
+  }
+  // tips
+  fill(0, -4, ['t'], '#FF6B1A'); fill(0, 4, ['b'], '#FF6B1A');
+  fill(-4, 0, ['l'], '#FF6B1A'); fill(4, 0, ['r'], '#FF6B1A');
+  return { name: 'Kiran', cells };
+}
+
 let MOTIFS = [];
 try { const d = localStorage.getItem('pkMotifs'); if (d) MOTIFS = JSON.parse(d); } catch(e) {}
+
+// inject presets on first ever load
+if (!localStorage.getItem('pkPresetsLoaded')) {
+  MOTIFS = [_genPhul(), _genKiran(), ...MOTIFS];
+  try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
+  try { localStorage.setItem('pkPresetsLoaded', '1'); } catch(e) {}
+}
 
 // ═══════════════════════════════════════════════════
 // STATE
@@ -541,7 +597,16 @@ function isInner(col, row) {
          row >= BORDER && row < S.rows - BORDER;
 }
 
+let _rafPending = false;
 function render() {
+  if (_rafPending) return;
+  _rafPending = true;
+  requestAnimationFrame(() => {
+    _rafPending = false;
+    _doRender();
+  });
+}
+function _doRender() {
   const W   = S.cols * CELL;   // logical pixels
   const H   = S.rows * CELL;
   const bpx = BORDER * CELL;
@@ -887,10 +952,10 @@ function downloadPostcard() {
   // render dupatta without grid
   const savedGrid = S.grid;
   S.grid = false;
-  render();
+  _doRender();
   ec.drawImage(canvas, PAD, PAD);
   S.grid = savedGrid;
-  render();
+  _doRender();
 
   // divider
   ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 0.75;
@@ -955,7 +1020,7 @@ document.addEventListener('keyup', e => {
 // ═══════════════════════════════════════════════════
 // BUILD UI
 // ═══════════════════════════════════════════════════
-let TOOL_CURSORS = { paint: 'crosshair', erase: 'crosshair' };
+let TOOL_CURSORS = {};
 
 async function initCursors() {
   try {
@@ -1211,21 +1276,6 @@ function drawGhost(col, row) {
 function clearGhost() {
   const gc = document.getElementById('ghost-canvas');
   if (gc) gc.getContext('2d').clearRect(0, 0, gc.width, gc.height);
-}
-
-function stampMotif(motif) {
-  snap();
-  const tc = BORDER + (S.cols - 2 * BORDER) / 2;
-  const tr = BORDER + (S.rows - 2 * BORDER) / 2;
-  for (const [key, color] of Object.entries(motif.cells)) {
-    const p = key.split(',');
-    const c = Math.round(tc + +p[0]);
-    const r = Math.round(tr + +p[1]);
-    if (!isInner(c, r)) continue;
-    S.cells[`${c},${r},${p[2]}`] = color;
-  }
-  render();
-  showHint(`Placed "${motif.name}"`);
 }
 
 function deleteMotif(idx) {
