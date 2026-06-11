@@ -992,7 +992,8 @@ function closeFinishModal() { document.getElementById('finish-modal').classList.
 
 function showMotifData() {
   const ta = document.getElementById('motif-data-ta');
-  ta.value = JSON.stringify(MOTIFS, null, 2);
+  const data = S.activeMotif ? [S.activeMotif] : MOTIFS;
+  ta.value = JSON.stringify(data, null, 2);
   document.getElementById('motif-data-modal').classList.add('on');
 }
 function closeMotifDataModal() { document.getElementById('motif-data-modal').classList.remove('on'); }
