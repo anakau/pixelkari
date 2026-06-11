@@ -224,41 +224,88 @@
     .motif-thumb:hover .m-del { opacity: 1; }
     .motif-thumb .m-lbl { font-size: 8px; color: var(--muted); text-align: center; padding: 2px 0; background: #1c1c1c; }
 
-    /* ── MODAL ── */
+    /* ── FINISH MODAL ── */
     .overlay {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.75); z-index: 200;
-      align-items: center; justify-content: center; backdrop-filter: blur(4px);
+      background: rgba(0,0,0,0.82); z-index: 200;
+      align-items: center; justify-content: center; backdrop-filter: blur(6px);
     }
     .overlay.on { display: flex; }
-    .modal {
-      background: #1a1a1a; border: 1px solid var(--border);
-      border-radius: 0; padding: 24px; width: 380px;
-      display: flex; flex-direction: column; gap: 14px;
+    .finish-box {
+      background: #141414; border: 1px solid #2a2a2a;
+      width: min(740px, 94vw); max-height: 92vh;
+      display: flex; flex-direction: column; overflow: hidden;
     }
-    .modal h3 { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); }
+    .finish-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid #222; flex-shrink: 0;
+    }
+    .finish-head-title {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .finish-close {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      font-size: 18px; line-height: 1; padding: 2px 6px;
+      transition: color 0.12s;
+    }
+    .finish-close:hover { color: var(--text); }
+    .finish-face-toggle {
+      display: flex; gap: 0; padding: 14px 20px 0; flex-shrink: 0;
+    }
+    .face-btn {
+      padding: 6px 18px; background: transparent; border: 1px solid #2a2a2a;
+      color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      font-family: 'Bricolage Grotesque', sans-serif; transition: all 0.12s;
+    }
+    .face-btn.on { background: #222; border-color: #444; color: var(--text); }
+    .face-btn:hover:not(.on) { border-color: #3a3a3a; color: #888; }
+    .finish-preview-wrap {
+      flex: 1; overflow-y: auto; padding: 16px 20px 0;
+      display: flex; flex-direction: column; gap: 14px; min-height: 0;
+    }
+    .finish-preview-wrap img {
+      width: 100%; border: 1px solid #222; display: block;
+    }
+    .finish-inputs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      padding: 0 20px; flex-shrink: 0;
+    }
     .mfield label { display: block; font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
     .mfield input, .mfield textarea {
-      width: 100%; background: #222; border: 1px solid var(--border);
-      border-radius: 0; color: var(--text); padding: 8px 10px;
-      font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; resize: none;
+      width: 100%; background: #1e1e1e; border: 1px solid #2a2a2a;
+      color: var(--text); padding: 7px 10px; box-sizing: border-box;
+      font-size: 12px; font-family: 'Bricolage Grotesque', sans-serif; resize: none;
       transition: border-color 0.12s;
     }
-    .mfield input:focus, .mfield textarea:focus { outline: none; border-color: var(--accent); }
-    .mfield textarea { height: 72px; }
-    .m-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .mfield input:focus, .mfield textarea:focus { outline: none; border-color: #555; }
+    .mfield textarea { height: 56px; }
+    .finish-actions {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px 18px; border-top: 1px solid #1e1e1e; flex-shrink: 0;
+    }
     .btn-sec {
-      padding: 8px 16px; background: transparent; border: 1px solid var(--border);
-      border-radius: 0; color: var(--muted); cursor: pointer;
-      font-size: 12px; font-family: 'Bricolage Grotesque', sans-serif; transition: border-color 0.12s;
+      padding: 8px 16px; background: transparent; border: 1px solid #2a2a2a;
+      color: var(--muted); cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
+      text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif;
+      transition: border-color 0.12s;
     }
-    .btn-sec:hover { border-color: var(--muted); }
+    .btn-sec:hover { border-color: #555; color: var(--text); }
     .btn-pri {
-      padding: 8px 18px; background: var(--accent); border: 1px solid var(--accent);
-      border-radius: 0; color: #111; cursor: pointer; font-size: 12px;
-      font-family: 'Bricolage Grotesque', sans-serif; font-weight: 600;
+      padding: 8px 20px; background: var(--accent); border: 1px solid var(--accent);
+      color: #111; cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
+      text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700; transition: opacity 0.12s;
     }
-    .btn-pri:hover { opacity: 0.9; }
+    .btn-pri:hover { opacity: 0.88; }
+    .btn-share {
+      padding: 8px 16px; background: transparent; border: 1px solid #444;
+      color: #888; cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
+      text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif;
+      transition: all 0.12s;
+    }
+    .btn-share:hover { border-color: #888; color: var(--text); }
     /* ── RESPONSIVE TOOLBAR ── */
     @media (max-width: 1400px) {
       :root { --bar-h: 120px; }
@@ -389,29 +436,41 @@
       </div>
     </div>
 
-    <!-- Save + Share (right column) -->
-    <div style="display:flex;flex-direction:column;gap:6px;align-self:center;flex-shrink:0;">
-      <button class="export-btn" onclick="openModal()">↓ Save</button>
-      <button class="export-btn" onclick="shareCanvas()" style="border-color:var(--muted);color:var(--muted);">↗ Share</button>
-    </div>
+    <!-- Finish button (right) -->
+    <button class="export-btn" onclick="openFinishModal()" style="align-self:center;flex-shrink:0;line-height:1;">Finish ✦</button>
   </div>
 </div>
 
-<!-- EXPORT MODAL -->
-<div class="overlay" id="modal">
-  <div class="modal">
-    <h3>Download Postcard</h3>
-    <div class="mfield">
-      <label>Your Name</label>
-      <input type="text" id="exp-name" placeholder="e.g. Anahat" maxlength="50" />
+<!-- FINISH MODAL -->
+<div class="overlay" id="finish-modal">
+  <div class="finish-box">
+    <div class="finish-head">
+      <span class="finish-head-title">Your Postcard</span>
+      <button class="finish-close" onclick="closeFinishModal()">✕</button>
     </div>
-    <div class="mfield">
-      <label>Message</label>
-      <textarea id="exp-msg" placeholder="A short note, occasion, or dedication..."></textarea>
+    <div class="finish-face-toggle">
+      <button class="face-btn on" id="face-front" onclick="setFinishFace('front')">◀ Front</button>
+      <button class="face-btn" id="face-back" onclick="setFinishFace('back')">Back ▶</button>
     </div>
-    <div class="m-actions">
-      <button class="btn-sec" onclick="closeModal()">Cancel</button>
-      <button class="btn-pri" onclick="downloadPostcard()">Download PNG</button>
+    <div class="finish-preview-wrap">
+      <img id="finish-preview" src="" alt="Postcard preview" />
+      <div class="finish-inputs">
+        <div class="mfield">
+          <label>Your Name</label>
+          <input type="text" id="exp-name" placeholder="e.g. Anahat" maxlength="50" oninput="refreshFinishPreview()" />
+        </div>
+        <div class="mfield">
+          <label>Message</label>
+          <textarea id="exp-msg" placeholder="A short note or dedication..." oninput="refreshFinishPreview()"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="finish-actions">
+      <button class="btn-sec" onclick="closeFinishModal()">Cancel</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-share" onclick="shareFinished()">↗ Share</button>
+        <button class="btn-pri" onclick="downloadFinished()">↓ Save</button>
+      </div>
     </div>
   </div>
 </div>
@@ -919,76 +978,137 @@ function toggleGrid() {
 }
 
 // ═══════════════════════════════════════════════════
-// EXPORT / POSTCARD
+// FINISH MODAL / POSTCARD
 // ═══════════════════════════════════════════════════
-function openModal()  { document.getElementById('modal').classList.add('on'); }
-function closeModal() { document.getElementById('modal').classList.remove('on'); }
+let _finishFace = 'front';
+let _finishCanvas = null;
 
-function downloadPostcard() {
+function openFinishModal() {
+  _finishFace = 'front';
+  document.getElementById('face-front').classList.add('on');
+  document.getElementById('face-back').classList.remove('on');
+  document.getElementById('finish-modal').classList.add('on');
+  refreshFinishPreview();
+}
+function closeFinishModal() { document.getElementById('finish-modal').classList.remove('on'); }
+
+function setFinishFace(face) {
+  _finishFace = face;
+  document.getElementById('face-front').classList.toggle('on', face === 'front');
+  document.getElementById('face-back').classList.toggle('on', face === 'back');
+  refreshFinishPreview();
+}
+
+function refreshFinishPreview() {
+  _finishCanvas = _finishFace === 'front' ? _buildFrontCanvas() : _buildBackCanvas();
+  document.getElementById('finish-preview').src = _finishCanvas.toDataURL('image/png');
+}
+
+function _buildFrontCanvas() {
   const name = document.getElementById('exp-name').value.trim();
   const msg  = document.getElementById('exp-msg').value.trim();
+  const PAD = 52, BOT = 110;
+  const DW = canvas.width, DH = canvas.height;
+  const pcW = DW + PAD * 2, pcH = DH + PAD + BOT;
+  const exp = document.createElement('canvas');
+  exp.width = pcW; exp.height = pcH;
+  const ec = exp.getContext('2d');
 
-  const PAD  = 52, BOT = 110;
-  const DW   = canvas.width, DH = canvas.height;
-  const pcW  = DW + PAD * 2;
-  const pcH  = DH + PAD + BOT;
-
-  const exp  = document.createElement('canvas');
-  exp.width  = pcW; exp.height = pcH;
-  const ec   = exp.getContext('2d');
-
-  // white card
-  ec.fillStyle = '#FFFFFF';
-  ec.fillRect(0, 0, pcW, pcH);
-
-  // outer border
+  ec.fillStyle = '#FFFFFF'; ec.fillRect(0, 0, pcW, pcH);
   ec.strokeStyle = '#E2D8C8'; ec.lineWidth = 1;
   ec.strokeRect(14, 14, pcW - 28, pcH - 28);
-
-  // inner frame around dupatta
-  ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 1;
+  ec.strokeStyle = '#D0C0A0';
   ec.strokeRect(PAD - 5, PAD - 5, DW + 10, DH + 10);
 
-  // render dupatta without grid
-  const savedGrid = S.grid;
-  S.grid = false;
-  _doRender();
+  const savedGrid = S.grid; S.grid = false; _doRender();
   ec.drawImage(canvas, PAD, PAD);
-  S.grid = savedGrid;
-  _doRender();
+  S.grid = savedGrid; _doRender();
 
-  // divider
   ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 0.75;
   ec.beginPath(); ec.moveTo(PAD, DH + PAD + 22); ec.lineTo(DW + PAD, DH + PAD + 22); ec.stroke();
 
-  // branding — bottom left
-  ec.fillStyle = '#6B3D1E';
-  ec.font = 'bold 13px Georgia, serif';
-  ec.textAlign = 'left';
+  ec.fillStyle = '#6B3D1E'; ec.font = 'bold 13px Georgia, serif'; ec.textAlign = 'left';
   ec.fillText('PIXELKARI', PAD, DH + PAD + 48);
-  ec.fillStyle = '#B8986A';
-  ec.font = '400 11px Georgia, serif';
+  ec.fillStyle = '#B8986A'; ec.font = '400 11px Georgia, serif';
   ec.fillText('ਪਿਕਸਲਕਾਰੀ', PAD, DH + PAD + 66);
 
-  // message + name — bottom right
-  if (msg) {
-    ec.fillStyle = '#444';
-    ec.font = '400 12px Georgia, serif';
-    ec.textAlign = 'right';
-    ec.fillText(msg, DW + PAD, DH + PAD + 48);
-  }
-  if (name) {
-    ec.fillStyle = '#999';
-    ec.font = '400 11px sans-serif';
-    ec.textAlign = 'right';
-    ec.fillText('— ' + name, DW + PAD, DH + PAD + 66);
+  if (msg) { ec.fillStyle = '#444'; ec.font = '400 12px Georgia, serif'; ec.textAlign = 'right'; ec.fillText(msg, DW + PAD, DH + PAD + 48); }
+  if (name) { ec.fillStyle = '#999'; ec.font = '400 11px sans-serif'; ec.textAlign = 'right'; ec.fillText('— ' + name, DW + PAD, DH + PAD + 66); }
+  return exp;
+}
+
+function _buildBackCanvas() {
+  const PAD = 52, BOT = 110;
+  const DW = canvas.width, DH = canvas.height;
+  const pcW = DW + PAD * 2, pcH = DH + PAD + BOT;
+  const exp = document.createElement('canvas');
+  exp.width = pcW; exp.height = pcH;
+  const ec = exp.getContext('2d');
+
+  ec.fillStyle = '#FFFFFF'; ec.fillRect(0, 0, pcW, pcH);
+  ec.strokeStyle = '#E2D8C8'; ec.lineWidth = 1;
+  ec.strokeRect(14, 14, pcW - 28, pcH - 28);
+
+  // POSTCARD header
+  ec.fillStyle = '#9B7A5A'; ec.font = '600 10px Georgia, serif';
+  ec.textAlign = 'center'; ec.letterSpacing = '0.2em';
+  ec.fillText('P O S T C A R D', pcW / 2, 38);
+
+  // centre divider
+  ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 0.75;
+  ec.beginPath(); ec.moveTo(pcW / 2, 50); ec.lineTo(pcW / 2, pcH - 36); ec.stroke();
+
+  // left — message lines
+  const lx = 30, lw = pcW / 2 - 50;
+  ec.strokeStyle = '#E5DDD4'; ec.lineWidth = 0.5;
+  for (let i = 0; i < 8; i++) {
+    const y = 72 + i * 32;
+    ec.beginPath(); ec.moveTo(lx, y); ec.lineTo(lx + lw, y); ec.stroke();
   }
 
+  // right — stamp box
+  const rx = pcW / 2 + 22, stampW = 70, stampH = 84;
+  ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 0.75;
+  ec.strokeRect(pcW - 30 - stampW, 55, stampW, stampH);
+  ec.fillStyle = '#F8F4EE'; ec.fillRect(pcW - 29 - stampW, 56, stampW - 2, stampH - 2);
+  ec.fillStyle = '#C8B89A'; ec.font = '8px Georgia, serif'; ec.textAlign = 'center';
+  ec.fillText('STAMP', pcW - 30 - stampW / 2, 55 + stampH / 2 + 3);
+
+  // right — address lines
+  ec.strokeStyle = '#E5DDD4'; ec.lineWidth = 0.5;
+  for (let i = 0; i < 4; i++) {
+    const y = 170 + i * 34;
+    ec.beginPath(); ec.moveTo(rx, y); ec.lineTo(pcW - 30, y); ec.stroke();
+  }
+
+  // branding bottom left
+  ec.fillStyle = '#6B3D1E'; ec.font = 'bold 11px Georgia, serif'; ec.textAlign = 'left';
+  ec.fillText('PIXELKARI', 30, pcH - 26);
+  ec.fillStyle = '#B8986A'; ec.font = '400 9px Georgia, serif';
+  ec.fillText('ਪਿਕਸਲਕਾਰੀ', 30, pcH - 12);
+  return exp;
+}
+
+function downloadFinished() {
+  if (!_finishCanvas) return;
   const a = document.createElement('a');
-  a.download = 'digi-phulkari.png';
-  a.href = exp.toDataURL('image/png');
+  a.download = `pixelkari-${_finishFace}.png`;
+  a.href = _finishCanvas.toDataURL('image/png');
   a.click();
-  closeModal();
+}
+
+function shareFinished() {
+  if (!_finishCanvas) return;
+  _finishCanvas.toBlob(blob => {
+    const file = new File([blob], 'pixelkari.png', { type: 'image/png' });
+    if (navigator.share) {
+      navigator.share({ title: 'Pixelkari', files: [file] }).catch(() => {});
+    } else {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'pixelkari-share.png'; a.click();
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -1002,7 +1122,10 @@ document.addEventListener('keydown', e => {
     return;
   }
   if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); return; }
-  if (e.key === 'Escape') { if (S.activeMotif) { S.activeMotif = null; clearGhost(); showHint('Motif cancelled'); } return; }
+  if (e.key === 'Escape') {
+    if (document.getElementById('finish-modal').classList.contains('on')) { closeFinishModal(); return; }
+    if (S.activeMotif) { S.activeMotif = null; clearGhost(); showHint('Motif cancelled'); } return;
+  }
   if (e.key === 'p') setTool('paint');
   if (e.key === 'e') setTool('erase');
   if (e.key === 'g') toggleGrid();
@@ -1063,22 +1186,6 @@ function setTool(id) {
   if (mc && !S.spaceDown) mc.style.cursor = toolCursor();
 }
 
-function shareCanvas() {
-  const canvas = document.getElementById('mc');
-  if (navigator.share) {
-    canvas.toBlob(blob => {
-      const file = new File([blob], 'pixelkari.png', {type:'image/png'});
-      navigator.share({title:'Pixelkari', files:[file]}).catch(()=>{});
-    });
-  } else {
-    canvas.toBlob(blob => {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'pixelkari-share.png';
-      a.click();
-    });
-  }
-}
 
 
 function buildTools() {
