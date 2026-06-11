@@ -455,16 +455,6 @@
     </div>
     <div class="finish-preview-wrap">
       <img id="finish-preview" src="" alt="Postcard preview" />
-      <div class="finish-inputs">
-        <div class="mfield">
-          <label>Your Name</label>
-          <input type="text" id="exp-name" placeholder="e.g. Anahat" maxlength="50" oninput="refreshFinishPreview()" />
-        </div>
-        <div class="mfield">
-          <label>Message</label>
-          <textarea id="exp-msg" placeholder="A short note or dedication..." oninput="refreshFinishPreview()"></textarea>
-        </div>
-      </div>
     </div>
     <div class="finish-actions">
       <button class="btn-sec" onclick="closeFinishModal()">Cancel</button>
@@ -647,9 +637,9 @@ function initCanvas() {
   if (aw / RATIO <= ah) { cw = aw; ch = Math.floor(aw / RATIO); }
   else                  { ch = ah; cw = Math.floor(ah * RATIO);  }
 
-  S.cols = Math.round(Math.floor(cw / CELL) / 9) * 9;
+  S.cols = Math.floor(Math.floor(cw / CELL) / 9) * 9;
   if (S.cols * CELL > cw) S.cols -= 9;
-  S.rows = Math.round(Math.floor(ch / CELL) / 9) * 9;
+  S.rows = Math.floor((S.cols * 105 / 148) / 9) * 9;  // derived from cols to honour A6 ratio, trimmed down
   if (S.rows * CELL > ch) S.rows -= 9;
   const logW = S.cols * CELL;
   const logH = S.rows * CELL;
@@ -1034,87 +1024,87 @@ function refreshFinishPreview() {
 }
 
 function _buildFrontCanvas() {
-  const name = document.getElementById('exp-name').value.trim();
-  const msg  = document.getElementById('exp-msg').value.trim();
-  const PAD = 52, BOT = 110;
-  const DW = canvas.width, DH = canvas.height;
-  const pcW = DW + PAD * 2, pcH = DH + PAD + BOT;
+  const EW = 1748, EH = 1240;   // A6 landscape @ 300 dpi
+  const M  = 90;                 // white border all sides
+  const LOGO_STRIP = 75;         // space below design for logo text
+
+  const logW = S.cols * CELL, logH = S.rows * CELL;
+  const availW = EW - 2 * M, availH = EH - 2 * M - LOGO_STRIP;
+  const scale  = Math.min(availW / logW, availH / logH);
+  const dw = Math.round(logW * scale), dh = Math.round(logH * scale);
+  const dx = Math.round((EW - dw) / 2), dy = M;
+
   const exp = document.createElement('canvas');
-  exp.width = pcW; exp.height = pcH;
+  exp.width = EW; exp.height = EH;
   const ec = exp.getContext('2d');
 
-  ec.fillStyle = '#FFFFFF'; ec.fillRect(0, 0, pcW, pcH);
-  ec.strokeStyle = '#E2D8C8'; ec.lineWidth = 1;
-  ec.strokeRect(14, 14, pcW - 28, pcH - 28);
-  ec.strokeStyle = '#D0C0A0';
-  ec.strokeRect(PAD - 5, PAD - 5, DW + 10, DH + 10);
+  ec.fillStyle = '#FFFFFF'; ec.fillRect(0, 0, EW, EH);
 
   const savedGrid = S.grid; S.grid = false; _doRender();
-  ec.drawImage(canvas, PAD, PAD);
+  ec.drawImage(canvas, dx, dy, dw, dh);
   S.grid = savedGrid; _doRender();
 
-  ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 0.75;
-  ec.beginPath(); ec.moveTo(PAD, DH + PAD + 22); ec.lineTo(DW + PAD, DH + PAD + 22); ec.stroke();
+  const logoY = dy + dh + Math.round((EH - dy - dh + 26) / 2);
+  ec.fillStyle = '#6B3D1E'; ec.font = 'bold 36px Georgia, serif'; ec.textAlign = 'left';
+  ec.fillText('PIXELKARI', dx, logoY);
+  ec.fillStyle = '#B8986A'; ec.font = '400 30px Georgia, serif'; ec.textAlign = 'right';
+  ec.fillText('ਪਿਕਸਲਕਾਰੀ', dx + dw, logoY);
 
-  ec.fillStyle = '#6B3D1E'; ec.font = 'bold 13px Georgia, serif'; ec.textAlign = 'left';
-  ec.fillText('PIXELKARI', PAD, DH + PAD + 48);
-  ec.fillStyle = '#B8986A'; ec.font = '400 11px Georgia, serif';
-  ec.fillText('ਪਿਕਸਲਕਾਰੀ', PAD, DH + PAD + 66);
-
-  if (msg) { ec.fillStyle = '#444'; ec.font = '400 12px Georgia, serif'; ec.textAlign = 'right'; ec.fillText(msg, DW + PAD, DH + PAD + 48); }
-  if (name) { ec.fillStyle = '#999'; ec.font = '400 11px sans-serif'; ec.textAlign = 'right'; ec.fillText('— ' + name, DW + PAD, DH + PAD + 66); }
   return exp;
 }
 
 function _buildBackCanvas() {
-  const PAD = 52, BOT = 110;
-  const DW = canvas.width, DH = canvas.height;
-  const pcW = DW + PAD * 2, pcH = DH + PAD + BOT;
+  const EW = 1748, EH = 1240;   // A6 landscape @ 300 dpi
   const exp = document.createElement('canvas');
-  exp.width = pcW; exp.height = pcH;
+  exp.width = EW; exp.height = EH;
   const ec = exp.getContext('2d');
 
-  ec.fillStyle = '#FFFFFF'; ec.fillRect(0, 0, pcW, pcH);
-  ec.strokeStyle = '#E2D8C8'; ec.lineWidth = 1;
-  ec.strokeRect(14, 14, pcW - 28, pcH - 28);
+  ec.fillStyle = '#FFFFFF'; ec.fillRect(0, 0, EW, EH);
+
+  // outer frame
+  ec.strokeStyle = '#E2D8C8'; ec.lineWidth = 2;
+  ec.strokeRect(22, 22, EW - 44, EH - 44);
 
   // POSTCARD header
-  ec.fillStyle = '#9B7A5A'; ec.font = '600 10px Georgia, serif';
-  ec.textAlign = 'center'; ec.letterSpacing = '0.2em';
-  ec.fillText('P O S T C A R D', pcW / 2, 38);
+  ec.fillStyle = '#9B7A5A'; ec.font = '600 22px Georgia, serif';
+  ec.textAlign = 'center'; ec.letterSpacing = '0.18em';
+  ec.fillText('P O S T C A R D', EW / 2, 64);
 
-  // centre divider
-  ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 0.75;
-  ec.beginPath(); ec.moveTo(pcW / 2, 50); ec.lineTo(pcW / 2, pcH - 36); ec.stroke();
+  // centre vertical divider
+  ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 1.5;
+  ec.beginPath(); ec.moveTo(EW / 2, 84); ec.lineTo(EW / 2, EH - 65); ec.stroke();
 
   // left — message lines
-  const lx = 30, lw = pcW / 2 - 50;
-  ec.strokeStyle = '#E5DDD4'; ec.lineWidth = 0.5;
-  for (let i = 0; i < 8; i++) {
-    const y = 72 + i * 32;
+  const lx = 55, lw = EW / 2 - 100;
+  ec.strokeStyle = '#E5DDD4'; ec.lineWidth = 1;
+  for (let i = 0; i < 9; i++) {
+    const y = 120 + i * 108;
     ec.beginPath(); ec.moveTo(lx, y); ec.lineTo(lx + lw, y); ec.stroke();
   }
 
-  // right — stamp box
-  const rx = pcW / 2 + 22, stampW = 70, stampH = 84;
-  ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 0.75;
-  ec.strokeRect(pcW - 30 - stampW, 55, stampW, stampH);
-  ec.fillStyle = '#F8F4EE'; ec.fillRect(pcW - 29 - stampW, 56, stampW - 2, stampH - 2);
-  ec.fillStyle = '#C8B89A'; ec.font = '8px Georgia, serif'; ec.textAlign = 'center';
-  ec.fillText('STAMP', pcW - 30 - stampW / 2, 55 + stampH / 2 + 3);
+  // right — stamp box (top right)
+  const stampW = 150, stampH = 185;
+  const stampX = EW - 60 - stampW, stampY = 68;
+  ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 1.5;
+  ec.strokeRect(stampX, stampY, stampW, stampH);
+  ec.fillStyle = '#F8F4EE'; ec.fillRect(stampX + 2, stampY + 2, stampW - 4, stampH - 4);
+  ec.fillStyle = '#C8B89A'; ec.font = '16px Georgia, serif'; ec.textAlign = 'center';
+  ec.fillText('STAMP', stampX + stampW / 2, stampY + stampH / 2 + 6);
 
   // right — address lines
-  ec.strokeStyle = '#E5DDD4'; ec.lineWidth = 0.5;
-  for (let i = 0; i < 4; i++) {
-    const y = 170 + i * 34;
-    ec.beginPath(); ec.moveTo(rx, y); ec.lineTo(pcW - 30, y); ec.stroke();
+  const ax = EW / 2 + 45, aw = EW / 2 - 105;
+  ec.strokeStyle = '#E5DDD4'; ec.lineWidth = 1;
+  for (let i = 0; i < 5; i++) {
+    const y = 320 + i * 90;
+    ec.beginPath(); ec.moveTo(ax, y); ec.lineTo(ax + aw, y); ec.stroke();
   }
 
-  // branding bottom left
-  ec.fillStyle = '#6B3D1E'; ec.font = 'bold 11px Georgia, serif'; ec.textAlign = 'left';
-  ec.fillText('PIXELKARI', 30, pcH - 26);
-  ec.fillStyle = '#B8986A'; ec.font = '400 9px Georgia, serif';
-  ec.fillText('ਪਿਕਸਲਕਾਰੀ', 30, pcH - 12);
+  // branding bottom
+  ec.fillStyle = '#6B3D1E'; ec.font = 'bold 32px Georgia, serif'; ec.textAlign = 'left';
+  ec.fillText('PIXELKARI', 55, EH - 42);
+  ec.fillStyle = '#B8986A'; ec.font = '400 26px Georgia, serif'; ec.textAlign = 'right';
+  ec.fillText('ਪਿਕਸਲਕਾਰੀ', EW - 55, EH - 42);
+
   return exp;
 }
 
