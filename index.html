@@ -27,6 +27,22 @@
     #canvas-wrap { position: relative; transform-origin: center center; transition: transform 0.15s; }
     #canvas-wrap canvas { display: block; cursor: crosshair; }
     #ghost-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+    .edge-ctrl {
+      position: absolute; display: flex; align-items: center; justify-content: center;
+      gap: 2px; opacity: 0; pointer-events: none; transition: opacity 0.12s; z-index: 20;
+    }
+    #canvas-wrap:hover .edge-ctrl { opacity: 1; pointer-events: auto; }
+    .edge-top    { top: 0;    left: 50%; transform: translateX(-50%); flex-direction: row; }
+    .edge-bottom { bottom: 0; left: 50%; transform: translateX(-50%); flex-direction: row; }
+    .edge-left   { left: 0;   top: 50%;  transform: translateY(-50%); flex-direction: column; }
+    .edge-right  { right: 0;  top: 50%;  transform: translateY(-50%); flex-direction: column; }
+    .edge-btn {
+      width: 20px; height: 20px; background: rgba(18,18,18,0.88);
+      border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.65);
+      font-size: 15px; font-weight: 300; line-height: 1; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0;
+    }
+    .edge-btn:hover { background: rgba(255,255,255,0.14); color: #fff; border-color: rgba(255,255,255,0.45); }
 
     #hint {
       position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
@@ -374,6 +390,22 @@
     <div id="canvas-wrap">
       <canvas id="mc"></canvas>
       <canvas id="ghost-canvas"></canvas>
+      <div class="edge-ctrl edge-top">
+        <button class="edge-btn" title="Add row at top"      onclick="resizeCanvas('row','add','top')">+</button>
+        <button class="edge-btn" title="Remove top row"      onclick="resizeCanvas('row','del','top')">−</button>
+      </div>
+      <div class="edge-ctrl edge-bottom">
+        <button class="edge-btn" title="Add row at bottom"   onclick="resizeCanvas('row','add','bottom')">+</button>
+        <button class="edge-btn" title="Remove bottom row"   onclick="resizeCanvas('row','del','bottom')">−</button>
+      </div>
+      <div class="edge-ctrl edge-left">
+        <button class="edge-btn" title="Add column at left"  onclick="resizeCanvas('col','add','left')">+</button>
+        <button class="edge-btn" title="Remove left column"  onclick="resizeCanvas('col','del','left')">−</button>
+      </div>
+      <div class="edge-ctrl edge-right">
+        <button class="edge-btn" title="Add column at right" onclick="resizeCanvas('col','add','right')">+</button>
+        <button class="edge-btn" title="Remove right column" onclick="resizeCanvas('col','del','right')">−</button>
+      </div>
     </div>
     <div id="hint"></div>
   </div>
@@ -630,8 +662,8 @@ const ctx    = canvas.getContext('2d');
 
 function initCanvas() {
   const dpr  = window.devicePixelRatio || 1;
-  S.cols = 72;  // fixed: multiple of 9 → 8 exact border repeat units (9-cell motif tiles perfectly)
-  S.rows = 45;  // fixed: multiple of 9 → 5 exact border repeat units
+  if (!S.cols) S.cols = 72;
+  if (!S.rows) S.rows = 45;
   const logW = S.cols * CELL;
   const logH = S.rows * CELL;
   canvas.width  = logW * dpr;
@@ -644,6 +676,64 @@ function initCanvas() {
   gc.style.width = logW + 'px'; gc.style.height = logH + 'px';
   gc.getContext('2d').scale(dpr, dpr);
   render();
+}
+
+function resizeCanvas(axis, action, side) {
+  const MIN = 3;
+  if (axis === 'row') {
+    if (action === 'del' && S.rows <= MIN) return;
+    snap();
+    if (action === 'add') {
+      if (side === 'top') {
+        const nc = {};
+        for (const [k, v] of Object.entries(S.cells)) {
+          const [c, r, t] = k.split(',');
+          nc[`${c},${+r + 1},${t}`] = v;
+        }
+        S.cells = nc;
+      }
+      S.rows++;
+    } else {
+      const edge = side === 'top' ? 0 : S.rows - 1;
+      for (const k of Object.keys(S.cells)) { if (+k.split(',')[1] === edge) delete S.cells[k]; }
+      if (side === 'top') {
+        const nc = {};
+        for (const [k, v] of Object.entries(S.cells)) {
+          const [c, r, t] = k.split(',');
+          nc[`${c},${+r - 1},${t}`] = v;
+        }
+        S.cells = nc;
+      }
+      S.rows--;
+    }
+  } else {
+    if (action === 'del' && S.cols <= MIN) return;
+    snap();
+    if (action === 'add') {
+      if (side === 'left') {
+        const nc = {};
+        for (const [k, v] of Object.entries(S.cells)) {
+          const [c, r, t] = k.split(',');
+          nc[`${+c + 1},${r},${t}`] = v;
+        }
+        S.cells = nc;
+      }
+      S.cols++;
+    } else {
+      const edge = side === 'left' ? 0 : S.cols - 1;
+      for (const k of Object.keys(S.cells)) { if (+k.split(',')[0] === edge) delete S.cells[k]; }
+      if (side === 'left') {
+        const nc = {};
+        for (const [k, v] of Object.entries(S.cells)) {
+          const [c, r, t] = k.split(',');
+          nc[`${+c - 1},${r},${t}`] = v;
+        }
+        S.cells = nc;
+      }
+      S.cols--;
+    }
+  }
+  initCanvas();
 }
 
 // ═══════════════════════════════════════════════════
