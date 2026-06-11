@@ -9,155 +9,15 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #111;
-      --sidebar: #181818;
-      --border: #2c2c2c;
-      --text: #e8ddd0;
-      --muted: #6b6258;
-      --accent: #c8a86b;
-      --accent-dim: rgba(200,168,107,0.12);
+      --bg: #111; --bar: #181818; --border: #2c2c2c;
+      --text: #e8e8e8; --muted: #555;
+      --accent: #ffffff; --accent-dim: rgba(255,255,255,0.08);
+      --bar-h: 144px;
     }
     html, body { width: 100%; height: 100%; background: var(--bg); overflow: hidden; }
-    body { font-family: 'Bricolage Grotesque', sans-serif; color: var(--text); font-size: 13px; }
+    body { font-family: 'Bricolage Grotesque', sans-serif; color: var(--text); font-size: 14px; }
 
-    #app { display: flex; height: 100vh; width: 100vw; }
-
-    /* ── SIDEBAR ── */
-    #sidebar {
-      width: 256px; min-width: 256px;
-      background: var(--sidebar);
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      overflow-y: auto; overflow-x: hidden;
-    }
-    #sidebar::-webkit-scrollbar { width: 3px; }
-    #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    .s-head {
-      padding: 18px 16px 14px;
-      border-bottom: 1px solid var(--border);
-    }
-    .s-title { font-size: 14px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
-    .s-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.06em; }
-
-    .section { padding: 12px 16px; border-bottom: 1px solid var(--border); }
-    .sec-label {
-      font-size: 9px; font-weight: 600; letter-spacing: 0.18em;
-      text-transform: uppercase; color: var(--muted); margin-bottom: 9px;
-    }
-
-    .btn-group { display: flex; gap: 4px; }
-    .tbtn {
-      flex: 1; padding: 7px 4px;
-      background: #222; border: 1px solid var(--border); border-radius: 5px;
-      color: var(--text); cursor: pointer; font-size: 11px; font-family: 'Bricolage Grotesque', sans-serif;
-      font-weight: 500; letter-spacing: 0.04em; text-align: center; transition: all 0.12s;
-    }
-    .tbtn:hover { background: #2a2a2a; }
-    .tbtn.on { background: var(--accent); color: #111; border-color: var(--accent); }
-
-    /* color swatches */
-    .color-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
-    .swatch {
-      aspect-ratio: 1; border-radius: 3px; cursor: pointer;
-      border: 2px solid transparent; transition: transform 0.1s, border-color 0.1s;
-    }
-    .swatch:hover { transform: scale(1.15); z-index: 1; position: relative; }
-    .swatch.on { border-color: #fff; }
-
-    /* base colors */
-    .base-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-    .base-sw {
-      height: 26px; border-radius: 4px; cursor: pointer;
-      border: 2px solid transparent; transition: border-color 0.12s;
-    }
-    .base-sw:hover { opacity: 0.8; }
-    .base-sw.on { border-color: var(--accent); }
-
-    /* symmetry */
-    .sym-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-
-    /* toggles */
-    .tog-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .tog-row:last-child { margin-bottom: 0; }
-    .tog-label { font-size: 11px; color: var(--text); opacity: 0.7; }
-    .toggle {
-      width: 30px; height: 17px; background: #333;
-      border-radius: 9px; position: relative; cursor: pointer;
-      border: none; transition: background 0.2s; flex-shrink: 0;
-    }
-    .toggle.on { background: var(--accent); }
-    .toggle::after {
-      content: ''; position: absolute; width: 11px; height: 11px;
-      background: #fff; border-radius: 50%; top: 3px; left: 3px;
-      transition: transform 0.2s;
-    }
-    .toggle.on::after { transform: translateX(13px); }
-
-    /* zoom + undo row */
-    .view-row { display: flex; align-items: center; gap: 5px; }
-    .icon-btn {
-      width: 26px; height: 26px; background: #222;
-      border: 1px solid var(--border); border-radius: 4px;
-      color: var(--text); cursor: pointer; display: flex;
-      align-items: center; justify-content: center; font-size: 14px;
-      font-family: 'Inter', sans-serif; transition: background 0.1s; flex-shrink: 0;
-    }
-    .icon-btn:hover { background: #2a2a2a; }
-    .zoom-lbl { font-size: 11px; color: var(--muted); min-width: 34px; text-align: center; }
-    .fit-btn  { width: auto; padding: 0 8px; font-size: 10px; font-weight: 500; }
-    .undo-btn {
-      padding: 5px 10px; background: #222;
-      border: 1px solid var(--border); border-radius: 4px;
-      color: var(--text); cursor: pointer; font-size: 10px;
-      font-family: 'Bricolage Grotesque', sans-serif; font-weight: 500; letter-spacing: 0.04em;
-      transition: background 0.1s; white-space: nowrap;
-    }
-    .undo-btn:hover { background: #2a2a2a; }
-    .undo-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
-
-    /* motif palette */
-    .motif-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
-    .motif-thumb {
-      position: relative; cursor: pointer; border-radius: 5px; overflow: hidden;
-      border: 2px solid var(--border); transition: border-color 0.12s;
-    }
-    .motif-thumb:hover { border-color: var(--accent); }
-    .motif-thumb canvas { display: block; width: 100%; aspect-ratio: 1; }
-    .motif-thumb .m-del {
-      position: absolute; top: 2px; right: 2px; width: 14px; height: 14px;
-      background: rgba(0,0,0,0.7); border: none; color: #aaa; cursor: pointer;
-      border-radius: 2px; font-size: 10px; line-height: 1; padding: 0;
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0; transition: opacity 0.1s;
-    }
-    .motif-thumb:hover .m-del { opacity: 1; }
-    .motif-thumb .m-lbl {
-      font-size: 9px; color: var(--muted); text-align: center;
-      padding: 2px 0 3px; background: var(--sidebar);
-    }
-    .save-motif-btn {
-      width: 100%; padding: 6px; background: transparent;
-      border: 1px dashed var(--border); border-radius: 5px;
-      color: var(--muted); cursor: pointer; font-size: 10px;
-      font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: 0.06em;
-      transition: border-color 0.12s, color 0.12s;
-    }
-    .save-motif-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-    /* footer */
-    .s-foot {
-      padding: 14px 16px; margin-top: auto;
-      border-top: 1px solid var(--border);
-    }
-    .export-btn {
-      width: 100%; padding: 9px;
-      background: transparent; border: 1px solid var(--accent);
-      border-radius: 5px; color: var(--accent); cursor: pointer;
-      font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600;
-      letter-spacing: 0.12em; text-transform: uppercase; transition: background 0.15s;
-    }
-    .export-btn:hover { background: var(--accent-dim); }
+    #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
 
     /* ── CANVAS AREA ── */
     #canvas-area {
@@ -166,15 +26,195 @@
     }
     #canvas-wrap { position: relative; transform-origin: center center; transition: transform 0.15s; }
     #canvas-wrap canvas { display: block; cursor: crosshair; }
+    #ghost-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
 
-    /* hint bar */
     #hint {
       position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
       background: rgba(0,0,0,0.72); border: 1px solid var(--border);
-      border-radius: 20px; padding: 5px 14px; font-size: 11px; color: var(--muted);
+      border-radius: 0; padding: 5px 14px; font-size: 11px; color: var(--muted);
       pointer-events: none; opacity: 0; transition: opacity 0.25s; white-space: nowrap;
     }
     #hint.on { opacity: 1; }
+
+    /* ── BOTTOM BAR ── */
+    #bottombar {
+      height: var(--bar-h); background: var(--bar);
+      border-top: 1px solid var(--border);
+      display: flex; flex-direction: row; align-items: center;
+      padding: 0 20px 22px; flex-shrink: 0; overflow: visible;
+    }
+    #bar-logo { flex-shrink: 0; }
+    #bb-tools {
+      flex: 1; min-width: 0;
+      display: flex; align-items: center; justify-content: center; gap: 0;
+      overflow: visible;
+    }
+    .bb-divider { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; margin: 0 14px; }
+    .bb-group   { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .bb-label   { font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-right: 6px; white-space: nowrap; }
+
+    /* tool / sym buttons */
+    .tbtn {
+      height: 38px; padding: 0 13px; background: #222; border: none; border-radius: 0;
+      color: var(--text); cursor: pointer; font-size: 13px; box-sizing: border-box;
+      font-family: 'Bricolage Grotesque', sans-serif; font-weight: 500;
+      letter-spacing: 0.04em; transition: all 0.12s; white-space: nowrap; flex-shrink: 0;
+    }
+    .tbtn:hover { background: #2a2a2a; }
+    .tbtn.on { background: var(--accent); color: #111; }
+    .tool-emoji { font-size: 15px; margin-right: 5px; vertical-align: middle; line-height: 1; }
+
+    /* symmetry icon buttons */
+    .sym-btn {
+      height: 38px; background: #222; border: none; border-radius: 0;
+      color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.12s;
+    }
+    .sym-btn:hover { background: #2a2a2a; color: var(--text); }
+    .sym-btn.on { background: var(--accent); color: #111; }
+    .sym-btn svg { display: block; pointer-events: none; }
+    /* tool block */
+    .tool-block { display: flex; gap: 3px; flex-shrink: 0; }
+    .tool-col   { display: flex; flex-direction: column; gap: 3px; }
+    .tool-row   { display: flex; gap: 3px; }
+    .tool-row > * { flex: 1; }
+    #sym-group  { display: flex !important; gap: 3px; }
+    #sym-group .sym-btn { flex: 1; width: auto; }
+
+    /* eye toggle button */
+    .eye-btn { height: 38px; padding: 0 10px; background: #222; border: none; border-radius: 0; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 500; transition: all 0.12s; flex-shrink: 0; box-sizing: border-box; }
+    .eye-btn:hover { background: #2a2a2a; color: var(--text); }
+    .eye-btn.on { color: var(--text); }
+    .eye-btn .tool-emoji { font-size: 15px; margin-right: 4px; vertical-align: middle; }
+    .nav-block { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; flex-shrink: 0; }
+    .zoom-row  { display: flex; align-items: center; gap: 3px; }
+
+    /* tool stack */
+    .tool-stack { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
+    .tool-row   { display: flex; align-items: center; gap: 6px; }
+
+    /* base colour row + randomise */
+    .base-and-rnd { display: flex; align-items: center; gap: 6px; }
+
+    .bb-color-col { display: flex; flex-direction: column; align-items: stretch; gap: 5px; flex-shrink: 0; }
+    #thread-pal { display: flex; align-items: flex-end; overflow: visible; }
+    #base-pal   { display: flex; align-items: stretch; gap: 3px; }
+
+    /* thread spools */
+    .thread-spool {
+      background: var(--bar); border: none; padding: 0; line-height: 0;
+      cursor: pointer; flex-shrink: 0;
+      opacity: 1;
+      margin-left: -9px;
+      transform: translateY(-14px);
+      transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), filter 0.15s, z-index 0s;
+      position: relative; z-index: 1;
+      clip-path: polygon(27% 0%, 73% 0%, 89% 10%, 100% 88%, 88% 92%, 88% 94%, 73% 97%, 43% 99%, 11% 95%, 12% 92%, 8% 91%, 0% 88%, 11% 10%);
+    }
+    .thread-spool:first-child { margin-left: 0; }
+    .thread-spool:hover { transform: translateY(-26px); z-index: 2; }
+    .thread-spool.on {
+      transform: translateY(-38px);
+      opacity: 1;
+      z-index: 3;
+      filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7));
+    }
+
+    /* base colour swatches — plain rect with diagonal split */
+    .base-flag {
+      flex: 1; height: 14px; min-width: 0; cursor: pointer;
+      border: 1px solid #333; border-radius: 0;
+      transition: border-color 0.12s, transform 0.12s; opacity: 0.7;
+    }
+    .base-flag:hover { opacity: 1; border-color: #888; }
+    .base-flag.on { opacity: 1; border-color: #fff; transform: scale(1.08); }
+
+
+    /* icon buttons */
+    .icon-btn {
+      width: 30px; height: 30px; background: #222; border: 1px solid var(--border); border-radius: 0;
+      color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 16px; transition: background 0.1s; flex-shrink: 0;
+    }
+    .icon-btn:hover { background: #2a2a2a; }
+    .zoom-lbl { font-size: 12px; color: var(--muted); min-width: 34px; text-align: center; flex-shrink: 0; }
+
+    /* toggle */
+    .toggle {
+      width: 34px; height: 20px; background: #333; border-radius: 10px;
+      position: relative; cursor: pointer; border: none; transition: background 0.2s; flex-shrink: 0;
+    }
+    .toggle.on { background: var(--accent); }
+    .toggle::after {
+      content: ''; position: absolute; width: 14px; height: 14px;
+      background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(14px); }
+
+    /* action buttons */
+    .act-btn {
+      height: 38px; padding: 0 11px; background: #222; border: none; border-radius: 0;
+      color: var(--text); cursor: pointer; font-size: 13px; box-sizing: border-box;
+      font-family: 'Bricolage Grotesque', sans-serif; font-weight: 500;
+      transition: background 0.1s; white-space: nowrap; flex-shrink: 0;
+    }
+    .act-btn:hover { background: #2a2a2a; }
+    .act-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+    .act-btn.danger { color: #c46060; }
+
+    /* export button */
+    .export-btn {
+      padding: 8px 16px; background: transparent; border: 1px solid var(--accent);
+      border-radius: 0; color: var(--accent); cursor: pointer; font-size: 12px;
+      font-family: 'Bricolage Grotesque', sans-serif; font-weight: 600;
+      letter-spacing: 0.10em; text-transform: uppercase; transition: background 0.15s;
+      white-space: nowrap; justify-self: end; line-height: 1;
+    }
+    .export-btn:hover { background: var(--accent-dim); }
+
+    /* logo */
+    #bar-logo { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; overflow: hidden; }
+    .logo-title { font-size: 28px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); line-height: 1; }
+    .logo-sub   { font-size: 22px; color: var(--muted); letter-spacing: 0.06em; line-height: 1; margin-top: 6px; }
+
+    /* ── MOTIF PANEL (inline, right of flower button) ── */
+    #motif-panel {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 8px 12px;
+      overflow: hidden; min-width: 120px;
+    }
+    .motif-create-btn {
+      width: 79px !important; height: 79px !important; padding: 0 !important;
+      flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 5px; text-transform: uppercase;
+    }
+    .motif-thumb.selected { border-color: var(--accent); }
+    .motif-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 10px; }
+    .motif-panel-label { font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+    .save-motif-btn {
+      padding: 3px 7px; background: transparent; border: 1px dashed var(--border); border-radius: 0;
+      color: var(--muted); cursor: pointer; font-size: 10px;
+      font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: 0.06em;
+      transition: border-color 0.12s, color 0.12s;
+    }
+    .save-motif-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .motif-grid { display: flex; flex-direction: row; gap: 6px; overflow-x: auto; align-items: flex-start; flex: 1; }
+    .motif-thumb { flex-shrink: 0; width: 60px; }
+    .motif-thumb {
+      position: relative; cursor: pointer; border-radius: 0; overflow: hidden;
+      border: 1px solid var(--border); transition: border-color 0.12s;
+    }
+    .motif-thumb:hover { border-color: var(--accent); }
+    .motif-thumb canvas { display: block; width: 100%; aspect-ratio: 1; }
+    .motif-thumb .m-del {
+      position: absolute; top: 2px; right: 2px; width: 12px; height: 12px;
+      background: rgba(0,0,0,0.7); border: none; color: #aaa; cursor: pointer;
+      border-radius: 2px; font-size: 9px; line-height: 1; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.1s;
+    }
+    .motif-thumb:hover .m-del { opacity: 1; }
+    .motif-thumb .m-lbl { font-size: 8px; color: var(--muted); text-align: center; padding: 2px 0; background: #1c1c1c; }
 
     /* ── MODAL ── */
     .overlay {
@@ -185,14 +225,14 @@
     .overlay.on { display: flex; }
     .modal {
       background: #1a1a1a; border: 1px solid var(--border);
-      border-radius: 10px; padding: 24px; width: 380px;
+      border-radius: 0; padding: 24px; width: 380px;
       display: flex; flex-direction: column; gap: 14px;
     }
     .modal h3 { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); }
     .mfield label { display: block; font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
     .mfield input, .mfield textarea {
       width: 100%; background: #222; border: 1px solid var(--border);
-      border-radius: 5px; color: var(--text); padding: 8px 10px;
+      border-radius: 0; color: var(--text); padding: 8px 10px;
       font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; resize: none;
       transition: border-color 0.12s;
     }
@@ -201,91 +241,150 @@
     .m-actions { display: flex; gap: 8px; justify-content: flex-end; }
     .btn-sec {
       padding: 8px 16px; background: transparent; border: 1px solid var(--border);
-      border-radius: 5px; color: var(--muted); cursor: pointer;
+      border-radius: 0; color: var(--muted); cursor: pointer;
       font-size: 12px; font-family: 'Bricolage Grotesque', sans-serif; transition: border-color 0.12s;
     }
     .btn-sec:hover { border-color: var(--muted); }
     .btn-pri {
       padding: 8px 18px; background: var(--accent); border: 1px solid var(--accent);
-      border-radius: 5px; color: #111; cursor: pointer; font-size: 12px;
+      border-radius: 0; color: #111; cursor: pointer; font-size: 12px;
       font-family: 'Bricolage Grotesque', sans-serif; font-weight: 600;
     }
     .btn-pri:hover { opacity: 0.9; }
+    /* ── RESPONSIVE TOOLBAR ── */
+    @media (max-width: 1400px) {
+      :root { --bar-h: 120px; }
+      #bottombar { padding: 0 14px 18px; }
+      .tbtn    { height: 32px; padding: 0 10px; font-size: 12px; }
+      .act-btn { height: 32px; padding: 0 9px; font-size: 12px; }
+      .sym-btn { height: 32px; }
+      .eye-btn { height: 32px; padding: 0 8px; font-size: 12px; }
+      .icon-btn { width: 26px; height: 26px; }
+      .base-flag { height: 13px; }
+      .bb-divider { margin: 0 10px; }
+      .logo-title { font-size: 24px; letter-spacing: 0.10em; }
+      .logo-sub   { font-size: 18px; }
+      .export-btn { padding: 6px 11px; font-size: 11px; letter-spacing: 0.07em; }
+      .motif-create-btn { width: 67px !important; height: 67px !important; }
+      .thread-spool { margin-left: -8px; transform: translateY(-12px); }
+      .thread-spool:hover { transform: translateY(-22px); }
+      .thread-spool.on { transform: translateY(-34px); }
+      .thread-spool svg { width: 26px !important; }
+    }
+    @media (max-width: 1200px) {
+      :root { --bar-h: 110px; }
+      .tbtn    { height: 30px; padding: 0 9px; font-size: 12px; }
+      .act-btn { height: 30px; padding: 0 8px; }
+      .sym-btn { height: 30px; }
+      .eye-btn { height: 30px; padding: 0 7px; }
+      .base-flag { height: 12px; }
+      .bb-divider { margin: 0 8px; }
+      .logo-title { font-size: 20px; letter-spacing: 0.08em; }
+      .logo-sub   { font-size: 15px; margin-top: 4px; }
+      .export-btn { padding: 5px 10px; font-size: 10px; letter-spacing: 0.06em; }
+      .motif-create-btn { width: 63px !important; height: 63px !important; }
+      .thread-spool { margin-left: -7px; transform: translateY(-11px); }
+      .thread-spool:hover { transform: translateY(-20px); }
+      .thread-spool.on { transform: translateY(-30px); }
+      .thread-spool svg { width: 24px !important; }
+    }
+    @media (max-width: 1024px) {
+      :root { --bar-h: 96px; }
+      #bottombar { padding: 0 10px 14px; }
+      .tbtn    { height: 27px; padding: 0 7px; font-size: 11px; }
+      .act-btn { height: 27px; padding: 0 7px; font-size: 11px; }
+      .sym-btn { height: 27px; }
+      .eye-btn { height: 27px; padding: 0 6px; font-size: 11px; }
+      .icon-btn { width: 22px; height: 22px; font-size: 13px; }
+      .zoom-lbl { font-size: 10px; min-width: 26px; }
+      .base-flag { height: 10px; }
+      .bb-divider { margin: 0 7px; height: 20px; }
+      .logo-title { font-size: 16px; letter-spacing: 0.06em; }
+      .logo-sub   { font-size: 12px; margin-top: 3px; }
+      .export-btn { padding: 4px 8px; font-size: 9px; letter-spacing: 0.05em; }
+      .motif-create-btn { width: 57px !important; height: 57px !important; }
+      .motif-panel-head { margin-bottom: 3px; }
+      .thread-spool { margin-left: -6px; transform: translateY(-9px); }
+      .thread-spool:hover { transform: translateY(-17px); }
+      .thread-spool.on { transform: translateY(-26px); }
+      .thread-spool svg { width: 21px !important; }
+    }
   </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- SIDEBAR -->
-  <div id="sidebar">
-    <div class="s-head">
-      <div class="s-title">Pixelkari</div>
-      <div class="s-sub">ਪਿਕਸਲਕਾਰੀ</div>
-    </div>
-
-    <div class="section">
-      <div class="sec-label">View</div>
-      <div class="view-row" style="margin-bottom:6px;">
-        <button class="icon-btn" onclick="doZoom(-0.25)">−</button>
-        <span class="zoom-lbl" id="zoom-lbl">100%</span>
-        <button class="icon-btn" onclick="doZoom(0.25)">+</button>
-        <button class="icon-btn fit-btn" onclick="fitZoom()">Fit</button>
-      </div>
-      <div class="view-row">
-        <button class="undo-btn" id="undo-btn" onclick="undo()" disabled style="flex:1;">↩ Undo</button>
-        <button class="undo-btn" onclick="randomise()" style="flex:1;">⟳ Randomise</button>
-        <button class="undo-btn" onclick="clearCanvas()" style="flex:1; color:#c46060;">✕ Clear</button>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="sec-label">Draw your pattern</div>
-      <div class="btn-group" id="tool-group">
-        <button class="tbtn on" data-tool="paint">Draw</button>
-        <button class="tbtn"    data-tool="erase">Erase</button>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="sec-label">Mirror Pattern</div>
-      <div class="sym-grid" id="sym-group"></div>
-    </div>
-
-    <div class="section">
-      <div class="sec-label">Grid</div>
-      <div class="tog-row">
-        <span class="tog-label">Show Grid</span>
-        <button class="toggle on" id="tog-grid" onclick="toggleGrid()"></button>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="sec-label">Base Colour</div>
-      <div class="base-grid" id="base-pal"></div>
-    </div>
-
-    <div class="section">
-      <div class="sec-label">Thread Colour</div>
-      <div class="color-grid" id="thread-pal"></div>
-    </div>
-
-    <div class="section">
-      <div class="sec-label">Pre-made Motifs</div>
-      <button class="save-motif-btn" onclick="saveAsMotif()">+ Save current drawing as motif</button>
-      <div class="motif-grid" id="motif-pal"></div>
-    </div>
-
-    <div class="s-foot">
-      <button class="export-btn" onclick="openModal()">↓ Download Postcard</button>
-    </div>
-  </div>
-
   <!-- CANVAS -->
   <div id="canvas-area">
     <div id="canvas-wrap">
       <canvas id="mc"></canvas>
+      <canvas id="ghost-canvas"></canvas>
     </div>
     <div id="hint"></div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div id="bottombar">
+    <!-- Logo (grid col 1) -->
+    <div id="bar-logo">
+      <div class="logo-title">Pixelkari</div>
+      <div class="logo-sub">ਪਿਕਸਲਕਾਰੀ</div>
+    </div>
+
+    <!-- Tools (grid col 2, centered) -->
+    <div id="bb-tools">
+      <!-- Nav block: 2×2 grid -->
+      <div class="nav-block">
+        <button class="eye-btn on" id="tog-grid" onclick="toggleGrid()" title="Toggle grid (G)"><span class="tool-emoji">👁️</span>Grid</button>
+        <button class="tbtn" onclick="fitZoom()" title="Fit (0)">Fit</button>
+        <div class="zoom-row">
+          <button class="icon-btn" onclick="doZoom(-0.25)" title="Zoom out (-)">−</button>
+          <span class="zoom-lbl" id="zoom-lbl">100%</span>
+          <button class="icon-btn" onclick="doZoom(0.25)" title="Zoom in (+)">+</button>
+        </div>
+        <button class="tbtn" id="pan-btn" onclick="togglePan()" title="Drag canvas"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-1px"><path d="M9 3.5C9 2.67 9.67 2 10.5 2S12 2.67 12 3.5V11h1V5.5C13 4.67 13.67 4 14.5 4S16 4.67 16 5.5V11h1V7.5C17 6.67 17.67 6 18.5 6S20 6.67 20 7.5V15c0 3.31-2.69 6-6 6h-2c-2.1 0-3.96-1.09-5.03-2.75L3.5 13c-.56-.97-.23-2.22.75-2.78.97-.56 2.22-.23 2.78.75L9 13V3.5Z"/></svg>Drag</button>
+      </div>
+      <div class="bb-divider"></div>
+      <!-- Tool block: left col = Draw/Erase, right col = mirrors / undo+clear -->
+      <div class="tool-block" id="tool-group">
+        <div class="tool-col">
+          <button class="tbtn on" data-tool="paint"><span class="tool-emoji">🪡</span>Weave</button>
+          <button class="tbtn" data-tool="erase"><span class="tool-emoji">✂️</span>Cut</button>
+        </div>
+        <div class="tool-col" style="flex:1">
+          <div id="sym-group"></div>
+          <div class="tool-row">
+            <button class="act-btn" id="undo-btn" onclick="undo()" disabled title="Undo (⌘Z)" style="flex:1">↩ Undo</button>
+            <button class="act-btn danger" onclick="clearCanvas()" title="Clear" style="flex:1">✕ Clear</button>
+          </div>
+        </div>
+      </div>
+      <div class="bb-divider"></div>
+      <div class="bb-color-col">
+        <div id="thread-pal"></div>
+        <div id="base-pal"></div>
+      </div>
+      <div class="bb-divider"></div>
+      <!-- Motifs: flower button + inline library -->
+      <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
+        <button class="tbtn motif-create-btn" id="motif-btn" onclick="saveAsMotif()">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(0 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(45 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(90 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(135 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(180 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(225 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(270 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(315 12 12)"/><circle cx="12" cy="12" r="2.5"/></svg>
+          <span style="font-size:10px;line-height:1.3;text-align:center;">Create<br>Motif</span>
+        </button>
+        <div id="motif-panel">
+          <div class="motif-panel-head">
+            <span class="motif-panel-label">Motif Library</span>
+          </div>
+          <div class="motif-grid" id="motif-pal"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save + Share (right column) -->
+    <div style="display:flex;flex-direction:column;gap:6px;align-self:center;flex-shrink:0;">
+      <button class="export-btn" onclick="openModal()">↓ Save</button>
+      <button class="export-btn" onclick="shareCanvas()" style="border-color:var(--muted);color:var(--muted);">↗ Share</button>
+    </div>
   </div>
 </div>
 
@@ -313,32 +412,55 @@
 // CONFIG
 // ═══════════════════════════════════════════════════
 const CELL   = 12;
-const RATIO  = 2;    // 2:1 canvas ratio
+const RATIO  = 148 / 105;  // A6 landscape ratio
 const BORDER = 9;    // fixed 9-cell border zone width
 const MAX_H  = 60;
+
+const THREAD_PATH = `M1.6,45.5v1.1c1.3-.5,2.7-.9,4-1.4,1.4-.5,2.7-1,4.1-1.6-.9-.6-1.8-1.3-2.8-1.9-.9.4-1.8.7-2.7,1-.8.3-1.7.6-2.5.9v1.9ZM25.3,52.3c.9.4,1.8.8,2.7,1.2-3.1,2.1-6.2,3.9-9.3,5.5-3.2,1.7-6.4,3.2-9.5,4.5-.9-.6-1.8-1.3-2.8-2,3-1.1,6.1-2.4,9.1-3.9,3.2-1.6,6.5-3.3,9.8-5.4h0ZM29.1,65.6c2.7-1.8,5.5-3.9,8.3-6.1l.2,3.3c-2.2,1.8-4.4,3.5-6.7,5.1-2.2,1.6-4.4,3-6.6,4.4-1.1-.5-2.2-1.1-3.4-1.7,2.7-1.5,5.4-3.2,8.1-5h0ZM36,56.6c.4,0,.7.2,1.1.4v1.5c-2.8,2.4-5.7,4.5-8.5,6.4-2.9,1.9-5.7,3.7-8.6,5.2-.9-.5-1.9-1-2.8-1.5,3-1.5,6-3.2,9.1-5.1,3.2-2,6.5-4.3,9.7-6.9h0ZM21.7,50.5c.9.5,1.8.9,2.8,1.4-3.1,1.9-6.2,3.6-9.2,5-3.2,1.6-6.4,2.9-9.5,4.1-.9-.7-1.8-1.4-2.7-2.1,3-1,6-2.2,9-3.5,3.2-1.4,6.4-3,9.7-4.9h0ZM29.9,11.3c1.8-.5,3.1-1.2,4-1.9v.6c-2.7,2.1-5.3,3.9-8,5.6-2.7,1.7-5.3,3.2-8,4.6-.9-.5-1.9-1.1-2.8-1.6,1.9-.9,3.7-1.8,5.6-2.9,2-1.1,4-2.3,6.1-3.6,1.2-.2,2.3-.4,3.2-.7h0ZM32.2,24c.9-.6,1.7-1.2,2.6-1.9l.2,2.8c-.4.3-.9.7-1.3,1-.5.4-.9.7-1.4,1-.9-.3-1.8-.7-2.6-1.1.9-.6,1.7-1.2,2.6-1.8h0ZM26.3,16.2c2.5-1.6,5.1-3.4,7.7-5.3l.2,2.8c-2.1,1.6-4.2,3.1-6.3,4.5s-4.2,2.7-6.3,3.9c-.5-.2-1-.5-1.4-.8-.4-.2-.9-.5-1.3-.7,2.5-1.3,5-2.8,7.6-4.4h-.2ZM28.3,18.8c2-1.3,4-2.7,6-4.2l.2,2.8c-1.6,1.2-3.1,2.3-4.6,3.4-1.6,1.1-3.1,2.1-4.7,3.1-.9-.4-1.8-.9-2.8-1.3,2-1.1,3.9-2.3,5.9-3.7h0ZM30.3,21.4c1.4-1,2.8-2,4.2-3.1l.2,2.8c-1,.8-2,1.5-3,2.2s-2,1.4-3,2.1c-.9-.4-1.8-.8-2.7-1.2,1.4-.9,2.8-1.8,4.2-2.8h0ZM15.5,74.2c-4.4-2.7-10.4-6.4-15.1-10.2l.2-2.5c3.1,2.5,6.3,4.8,9.5,6.9,3.4,2.3,6.9,4.3,10.1,6h-4.7v-.2ZM31.4,68.5c2.1-1.5,4.2-3,6.2-4.8l.2,2.7c-1.7,1.4-3.3,2.6-4.9,3.9-1.6,1.2-3.3,2.4-4.9,3.5h0c-.9-.4-1.8-.8-2.7-1.2,2.1-1.3,4.1-2.6,6.2-4.1h0ZM21.8,74.4c-3.6-1.9-7.4-4.1-11.3-6.6-3.3-2.2-6.6-4.6-9.9-7.2l.2-2.4c.4.3.7.6,1.1.9h0c1.2.9,2.3,1.8,3.5,2.7h0c1.2.9,2.4,1.7,3.5,2.5h0c1.2.8,2.4,1.6,3.6,2.4h0c.5.3,1,.6,1.5.9.7.4,1.4.9,2.1,1.3h0c3.4,2,6.7,3.7,10,5.1-1.4.2-2.9.3-4.5.4h.2ZM1.3,51.6c2.1-.7,4.3-1.5,6.5-2.3,2.2-.9,4.4-1.8,6.7-2.9.9.6,1.9,1.1,2.8,1.6-2.7,1.4-5.4,2.6-8.1,3.7-2.7,1.1-5.4,2.1-8,3l.2-3.1h-.1ZM.4,65c4.3,3.4,9.5,6.7,13.6,9.3-1.7,0-3.3-.3-4.8-.6h0c-1.3-.9-3.1-2.2-5-3.7-1.4-1.1-2.8-2.1-3.9-3v-2q.1,0,.1,0ZM29,53.9c.9.4,1.8.7,2.7,1.1-3.1,2.2-6.2,4.2-9.3,6-3.2,1.9-6.4,3.5-9.5,4.9-.9-.6-1.9-1.2-2.8-1.8,3-1.3,6.1-2.7,9.1-4.3,3.2-1.7,6.5-3.7,9.8-5.9h0ZM13.6,66.4c3-1.4,6.1-3,9.1-4.7,3.2-1.9,6.5-4,9.8-6.4.9.3,1.7.6,2.6.9-3.1,2.4-6.2,4.6-9.2,6.5-3.2,2-6.3,3.8-9.5,5.3-.6-.4-1.3-.8-1.9-1.2-.3-.2-.6-.3-.8-.5h0ZM1,55.6c2.8-.9,5.6-1.9,8.4-3.1,2.9-1.2,5.7-2.5,8.6-4,.6.3,1.1.6,1.7.9.4.2.7.4,1.1.6-3.1,1.7-6.1,3.2-9.1,4.6-3.2,1.4-6.3,2.6-9.4,3.7-.5-.4-.9-.7-1.4-1.1v-1.5h.1,0ZM13.5,45.9c-2,.9-4.1,1.8-6.1,2.6s-4.1,1.5-6.1,2.2l.2-3.3c1.5-.5,2.9-1,4.4-1.6s3.1-1.2,4.6-1.8c1,.7,2,1.3,2.9,1.9h.1ZM34.1,26.5c.3-.2.6-.4.9-.7v2.1c-.5-.2-1.2-.5-1.8-.7.3-.2.7-.5,1-.7h-.1ZM20.1,48.8c-5.9-3.1-11.8-7-17.9-11.8l.2-2.7c5.8,4.6,11.6,8.3,17.3,11.4,5.8,3.1,11.5,5.4,17.1,7.3l.2,3.1c-5.6-1.9-11.2-4.2-17-7.3h.1ZM20.1,44.8c-5.8-3.1-11.6-6.9-17.6-11.6l.2-2.7c5.8,4.5,11.4,8.2,17,11.1,5.7,3,11.3,5.4,16.9,7.3l.2,3.1c-5.5-1.9-11.1-4.2-16.7-7.2h0ZM20.1,40.9c-5.7-3-11.4-6.8-17.3-11.4l.2-2.7c5.7,4.4,11.2,8,16.7,10.9,5.6,3,11.1,5.3,16.6,7.2l.2,3.1c-5.4-1.9-10.9-4.1-16.4-7.1h0ZM2.5,38.4h-.3c0,0,0-.5,0-.5.2,0,.4.3.5.4h-.3,0ZM20.1,37c-5.6-3-11.3-6.6-17-11.2l.2-2.7c5.6,4.3,11,7.8,16.5,10.7s11,5.2,16.4,7.1l.2,3.1c-5.3-1.8-10.7-4.1-16.2-7h0ZM4.1,41.8c-.7.3-1.5.5-2.2.8l.2-3.1c.2,0,.5-.2.6-.2.2,0,.5-.2.8-.3.9.7,1.8,1.4,2.7,2.1-.7.3-1.4.5-2.2.8h.1ZM38.1,69.4c-.2,1.1-1.6,2.1-4,2.9h-.2c0,0-.2,0-.3.2-.3,0-.6.2-.9.3-.8.2-1.8.5-2.8.7,1.1-.8,2.3-1.6,3.5-2.5,1.5-1.1,3-2.3,4.5-3.5v1.7c0,0,0,0,.2.2h0ZM33.7,74.1v.8c0,1-1.6,1.9-4.1,2.7-2.7.8-6.5,1.3-10.6,1.3s-7.9-.5-10.6-1.3c-2.5-.7-4.1-1.7-4.1-2.7v-1.5c.3,0,.5.2.8.2,2.8.8,6.3,1.4,10.3,1.6h6.4c2,0,4-.3,5.7-.5h.5c1.7-.3,3.3-.6,4.7-1,.2,0,.5,0,.7-.2,0,.3,0,.5,0,.7h.2ZM4.4,72.5s-.2,0-.3-.2h-.2c-2.3-.8-3.7-1.9-3.9-2.9v-1.4c1.1.8,2.4,1.8,3.6,2.7,1.2.9,2.5,1.8,3.6,2.6-.7,0-1.3-.3-1.9-.5-.3,0-.7-.2-1-.3h0ZM11.4,1.9c0-.4.8-.9,2-1.2,1.4-.4,3.4-.7,5.6-.7s4.2.3,5.6.7c1.3.4,2,.8,2,1.2s-.8.9-2,1.2c-1.4.4-3.4.7-5.6.7s-4.2-.3-5.6-.7c-1.3-.4-2-.8-2-1.2ZM14.3,18c-.9-.6-1.9-1.2-2.8-1.8,1.2-.5,2.3-1,3.5-1.6,1.3-.6,2.6-1.3,4-2h0c2,0,4-.1,5.7-.3-1.5.9-3,1.8-4.5,2.6-2,1.1-4,2.1-6,3.1h0ZM10.7,15.7c-.8-.5-1.5-1-2.3-1.6.6-.3,1.2-.5,1.8-.8.7-.3,1.5-.7,2.2-1.1,1.5.2,3.1.4,4.8.4-.9.4-1.7.9-2.6,1.3-1.3.6-2.6,1.2-4,1.8h0ZM11.4,6.7v-3.4c.5.3,1,.5,1.8.8,1.5.4,3.6.7,5.9.7s4.4-.3,5.9-.7c.7-.2,1.3-.5,1.8-.8v3.4c0,.4-.8.9-2,1.2-1.4.4-3.4.7-5.6.7s-4.2-.3-5.6-.7c-1.3-.4-2-.8-2-1.2h-.2ZM20.1,33c-5.5-2.9-11.1-6.5-16.8-11l.2-2.7c5.5,4.2,10.9,7.7,16.2,10.5,5.4,2.9,10.8,5.2,16.1,7l.2,3.1c-5.3-1.8-10.6-4.1-15.9-6.9h0ZM11,11.9l-1.2.6c-.7.3-1.5.7-2.2,1-.7-.5-1.4-1-2.1-1.5.2-.1.5-.2.8-.4.4-.2.7-.4,1.1-.6.2,0,.4.1.6.2.9.3,1.9.5,2.9.7h.1ZM4.3,7.6c0-.6.6-1.2,1.6-1.7,1.1-.6,2.6-1.1,4.5-1.5v2.2c0,.9,1.1,1.6,2.7,2.1,1.5.4,3.6.7,5.9.7s4.4-.3,5.9-.7c1.7-.5,2.7-1.2,2.7-2.1v-2.2c1.9.4,3.4.9,4.5,1.5,1,.6,1.6,1.1,1.6,1.7,0,1-1.6,1.9-4.1,2.7-2.7.8-6.5,1.3-10.6,1.3s-7.9-.5-10.6-1.3c-2.5-.7-4.1-1.7-4.1-2.7h0ZM20,25.2c-5.3-2.8-10.7-6.3-16.2-10.6l.2-2.8c.2.1.3.3.5.4h0c.9.7,1.9,1.4,2.8,2.1h0c3.5,2.5,6.9,4.7,10.3,6.6h0c.7.4,1.3.7,2,1.1.5.3,1.1.6,1.6.9h0l3.6,1.8h0c1.2.6,2.4,1.1,3.6,1.6h0c2.2.9,4.4,1.8,6.6,2.5l.2,3.1c-5.1-1.8-10.2-4-15.4-6.8h.2ZM20,29.1c-5.4-2.9-10.9-6.4-16.5-10.8l.2-2.8c5.4,4.1,10.7,7.5,15.9,10.3,5.3,2.8,10.6,5.1,15.9,6.9l.2,3.1c-5.2-1.8-10.4-4-15.7-6.8h0ZM4.8,11.5c-.2-.2-.5-.4-.7-.6v-1.6c.6.5,1.4.9,2.4,1.4-.1,0-.3.1-.5.2l-1.2.6h0Z`;
 
 const THREAD = [
   '#F5C518','#F0920A','#E8521A','#D93030',
   '#D93068','#E040A0','#E080C0','#F0B0D0',
   '#FFFFFF','#C8DC40','#40C070','#28B8B8',
-  '#48A8F0','#4848E0','#8840D0','#F0D890',
+  '#48A8F0','#4848E0','#8840D0',
 ];
 
 const BASES = [
-  { hex:'#8B0E1A', label:'Red'    },
-  { hex:'#5C0A15', label:'Maroon' },
-  { hex:'#141414', label:'Black'  },
-  { hex:'#08183A', label:'Navy'   },
-  { hex:'#0A2818', label:'Forest' },
-  { hex:'#180830', label:'Plum'   },
+  { hex:'#C2185B', label:'Pink'   },
+  { hex:'#C62828', label:'Red'    },
+  { hex:'#E64A19', label:'Orange' },
+  { hex:'#F9A825', label:'Yellow' },
+  { hex:'#2E7D32', label:'Green'  },
+  { hex:'#1565C0', label:'Blue'   },
+  { hex:'#6A1B9A', label:'Purple' },
 ];
 
 const SYMS = [
-  { id:'none', label:'None' },
-  { id:'h',    label:'H'    },
-  { id:'v',    label:'V'    },
-  { id:'4',    label:'4×'   },
-  { id:'8',    label:'8×'   },
+  { id:'h', title:'Mirror left ↔ right',
+    svg:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2.5"/>
+      <circle cx="7" cy="9"  r="2" fill="currentColor" stroke="none" opacity="0.35"/>
+      <circle cx="7" cy="15" r="2" fill="currentColor" stroke="none" opacity="0.35"/>
+      <circle cx="17" cy="9"  r="2" fill="currentColor" stroke="none"/>
+      <circle cx="17" cy="15" r="2" fill="currentColor" stroke="none"/>
+    </svg>` },
+  { id:'v', title:'Mirror top ↕ bottom',
+    svg:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2 2.5"/>
+      <circle cx="9"  cy="7" r="2" fill="currentColor" stroke="none"/>
+      <circle cx="15" cy="7" r="2" fill="currentColor" stroke="none"/>
+      <circle cx="9"  cy="17" r="2" fill="currentColor" stroke="none" opacity="0.35"/>
+      <circle cx="15" cy="17" r="2" fill="currentColor" stroke="none" opacity="0.35"/>
+    </svg>` },
+  { id:'4', title:'4-fold mirror (+ axes)',
+    svg:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2.5"/>
+      <line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2 2.5"/>
+      <circle cx="17" cy="7"  r="1.8" fill="currentColor" stroke="none"/>
+      <circle cx="7"  cy="7"  r="1.8" fill="currentColor" stroke="none" opacity="0.35"/>
+      <circle cx="17" cy="17" r="1.8" fill="currentColor" stroke="none" opacity="0.35"/>
+      <circle cx="7"  cy="17" r="1.8" fill="currentColor" stroke="none" opacity="0.35"/>
+    </svg>` },
 ];
 
 // ═══════════════════════════════════════════════════
@@ -354,7 +476,7 @@ const S = {
   tool:      'paint',
   color:     THREAD[0],
   base:      BASES[0].hex,
-  sym:       'none',
+  sym:       null,
   grid:      true,
   zoom:      1,
   panX:      0,
@@ -363,11 +485,19 @@ const S = {
   rows:      0,
   cells:     {},
   history:   [],
-  drawing:   false,
-  panning:   false,
-  spaceDown: false,
-  panStart:  null,
-  lastCell:  null,
+  drawing:    false,
+  panning:    false,
+  spaceDown:  false,
+  panStart:   null,
+  lastCell:   null,
+  activeMotif: null,
+  ghostCol:   null,
+  ghostRow:   null,
+  motifDrawing:    false,
+  stampOriginCol:  0,
+  stampOriginRow:  0,
+  stampedPositions: null,
+  motifBounds:     null,
 };
 
 // ═══════════════════════════════════════════════════
@@ -385,8 +515,10 @@ function initCanvas() {
   if (aw / RATIO <= ah) { cw = aw; ch = Math.floor(aw / RATIO); }
   else                  { ch = ah; cw = Math.floor(ah * RATIO);  }
 
-  S.cols = Math.floor(cw / CELL);
-  S.rows = Math.floor(ch / CELL);
+  S.cols = Math.round(Math.floor(cw / CELL) / 9) * 9;
+  if (S.cols * CELL > cw) S.cols -= 9;
+  S.rows = Math.round(Math.floor(ch / CELL) / 9) * 9;
+  if (S.rows * CELL > ch) S.rows -= 9;
   const logW = S.cols * CELL;
   const logH = S.rows * CELL;
   canvas.width  = logW * dpr;
@@ -394,6 +526,10 @@ function initCanvas() {
   canvas.style.width  = logW + 'px';
   canvas.style.height = logH + 'px';
   ctx.scale(dpr, dpr);
+  const gc = document.getElementById('ghost-canvas');
+  gc.width  = logW * dpr; gc.height = logH * dpr;
+  gc.style.width = logW + 'px'; gc.style.height = logH + 'px';
+  gc.getContext('2d').scale(dpr, dpr);
   render();
 }
 
@@ -410,16 +546,16 @@ function render() {
   const H   = S.rows * CELL;
   const bpx = BORDER * CELL;
 
-  // Outer border zone — base colour brightened
+  // Outer border zone — darkened
   ctx.fillStyle = S.base;
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = 'rgba(255,255,255,0.14)';
+  ctx.fillStyle = 'rgba(0,0,0,0.42)';
   ctx.fillRect(0, 0, W, H);
 
-  // Inner painting zone — base colour darkened
+  // Inner painting zone — slightly lightened
   ctx.fillStyle = S.base;
   ctx.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
-  ctx.fillStyle = 'rgba(0,0,0,0.30)';
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
   ctx.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
 
   // painted triangles
@@ -453,6 +589,16 @@ function drawGrid() {
       ctx.moveTo(x+CELL, y);      ctx.lineTo(x,      y+CELL);
     }
   }
+  ctx.stroke();
+
+  // centre guide lines
+  const cx = (S.cols / 2) * CELL;
+  const cy = (S.rows / 2) * CELL;
+  ctx.strokeStyle = 'rgba(255,200,80,0.55)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx, 0); ctx.lineTo(cx, H);
+  ctx.moveTo(0, cy); ctx.lineTo(W, cy);
   ctx.stroke();
 
   ctx.restore();
@@ -581,7 +727,22 @@ function paint(col, row, tri) {
 // CANVAS EVENTS
 // ═══════════════════════════════════════════════════
 canvas.addEventListener('mousedown', e => {
-  if (S.spaceDown || e.button === 1) {
+  if (S.activeMotif) {
+    e.preventDefault();
+    let {col, row} = triAt(e);
+    ({ col, row } = clampMotifPos(col, row));
+    snap();
+    S.motifDrawing    = true;
+    S.stampOriginCol  = col;
+    S.stampOriginRow  = row;
+    S.motifBounds     = getMotifBounds();
+    S.stampedPositions = new Set([`${col},${row}`]);
+    placeMotif(col, row);
+    render();
+    drawGhost(col, row);
+    return;
+  }
+  if (S.spaceDown || e.button === 1 || S.tool === 'pan') {
     e.preventDefault();
     S.panning  = true;
     S.panStart = { x: e.clientX - S.panX, y: e.clientY - S.panY };
@@ -597,6 +758,32 @@ canvas.addEventListener('mousedown', e => {
 });
 
 canvas.addEventListener('mousemove', e => {
+  if (S.activeMotif) {
+    let {col, row} = triAt(e);
+    ({ col, row } = clampMotifPos(col, row));
+
+    if (S.motifDrawing && S.motifBounds) {
+      const { w, h } = S.motifBounds;
+      const i = Math.round((col - S.stampOriginCol) / w);
+      const j = Math.round((row - S.stampOriginRow) / h);
+      const tc = S.stampOriginCol + i * w;
+      const tr = S.stampOriginRow + j * h;
+      const posKey = `${tc},${tr}`;
+      if (!S.stampedPositions.has(posKey)) {
+        S.stampedPositions.add(posKey);
+        placeMotif(tc, tr);
+        render();
+      }
+      drawGhost(tc, tr);
+      return;
+    }
+
+    if (col !== S.ghostCol || row !== S.ghostRow) {
+      S.ghostCol = col; S.ghostRow = row;
+      drawGhost(col, row);
+    }
+    return;
+  }
   if (!S.drawing) return;
   const {col, row, tri} = triAt(e);
   if (S.lastCell?.col === col && S.lastCell?.row === row && S.lastCell?.tri === tri) return;
@@ -605,8 +792,18 @@ canvas.addEventListener('mousemove', e => {
   render();
 });
 
-canvas.addEventListener('mouseup',    () => { S.drawing = false; });
-canvas.addEventListener('mouseleave', () => { S.drawing = false; });
+canvas.addEventListener('mouseup', () => {
+  S.drawing = false;
+  if (S.motifDrawing) {
+    S.motifDrawing = false;
+    showHint(`Placed — click or drag to stamp more, Esc to finish`);
+  }
+});
+canvas.addEventListener('mouseleave', () => {
+  S.drawing = false;
+  S.motifDrawing = false;
+  if (S.activeMotif) clearGhost();
+});
 
 // Pan continues even when mouse leaves canvas — handled at document level
 document.addEventListener('mousemove', e => {
@@ -618,7 +815,7 @@ document.addEventListener('mousemove', e => {
 document.addEventListener('mouseup', () => {
   if (!S.panning) return;
   S.panning = false;
-  canvas.style.cursor = S.spaceDown ? 'grab' : 'crosshair';
+  canvas.style.cursor = S.spaceDown ? 'grab' : toolCursor();
 });
 
 // ═══════════════════════════════════════════════════
@@ -643,9 +840,16 @@ function fitZoom() {
 // ═══════════════════════════════════════════════════
 // GRID TOGGLES
 // ═══════════════════════════════════════════════════
+const EYE_OPEN_SVG   = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_CLOSED_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function updateGridBtn() {
+  const btn = document.getElementById('tog-grid');
+  btn.classList.toggle('on', S.grid);
+  btn.innerHTML = S.grid ? EYE_OPEN_SVG : EYE_CLOSED_SVG;
+}
 function toggleGrid() {
   S.grid = !S.grid;
-  document.getElementById('tog-grid').classList.toggle('on', S.grid);
+  updateGridBtn();
   render();
 }
 
@@ -733,6 +937,7 @@ document.addEventListener('keydown', e => {
     return;
   }
   if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); return; }
+  if (e.key === 'Escape') { if (S.activeMotif) { S.activeMotif = null; clearGhost(); showHint('Motif cancelled'); } return; }
   if (e.key === 'p') setTool('paint');
   if (e.key === 'e') setTool('erase');
   if (e.key === 'g') toggleGrid();
@@ -743,50 +948,133 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keyup', e => {
   if (e.key === ' ') {
     S.spaceDown = false;
-    if (!S.panning) canvas.style.cursor = 'crosshair';
+    if (!S.panning) canvas.style.cursor = toolCursor();
   }
 });
 
 // ═══════════════════════════════════════════════════
 // BUILD UI
 // ═══════════════════════════════════════════════════
+let TOOL_CURSORS = { paint: 'crosshair', erase: 'crosshair' };
+
+async function initCursors() {
+  try {
+    const [wText, cText] = await Promise.all([
+      fetch('public/weave.svg').then(r => r.text()),
+      fetch('public/cut.svg').then(r => r.text()),
+    ]);
+    const make = (raw, w, h, hx, hy) => {
+      const svg = raw
+        .replace(/width="[^"]*"/, '').replace(/height="[^"]*"/, '')
+        .replace('<svg', `<svg width="${w}" height="${h}"`)
+        .replace(/<path /g, '<path style="fill:white;fill-rule:evenodd" ');
+      return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${hx} ${hy}, crosshair`;
+    };
+    TOOL_CURSORS.paint = make(wText, 25, 30, 0, 0);
+    TOOL_CURSORS.erase = make(cText, 32, 26, 3, 0);
+    const mc = document.getElementById('mc');
+    if (mc && !S.spaceDown) mc.style.cursor = TOOL_CURSORS[S.tool] || 'crosshair';
+  } catch(e) {}
+}
+
+function toolCursor() {
+  if (S.tool === 'pan') return 'grab';
+  return TOOL_CURSORS[S.tool] || 'crosshair';
+}
+
+function togglePan() {
+  if (S.activeMotif) { S.activeMotif = null; clearGhost(); }
+  const isPan = S.tool === 'pan';
+  setTool(isPan ? 'paint' : 'pan');
+  document.getElementById('pan-btn').classList.toggle('on', !isPan);
+  document.querySelectorAll('#tool-group .tbtn').forEach(b => b.classList.toggle('on', b.dataset.tool === S.tool));
+}
+
 function setTool(id) {
+  if (S.activeMotif) { S.activeMotif = null; clearGhost(); }
   S.tool = id;
   document.querySelectorAll('#tool-group .tbtn').forEach(b => b.classList.toggle('on', b.dataset.tool === id));
+  const mc = document.getElementById('mc');
+  if (mc && !S.spaceDown) mc.style.cursor = toolCursor();
 }
+
+function shareCanvas() {
+  const canvas = document.getElementById('mc');
+  if (navigator.share) {
+    canvas.toBlob(blob => {
+      const file = new File([blob], 'pixelkari.png', {type:'image/png'});
+      navigator.share({title:'Pixelkari', files:[file]}).catch(()=>{});
+    });
+  } else {
+    canvas.toBlob(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'pixelkari-share.png';
+      a.click();
+    });
+  }
+}
+
 
 function buildTools() {
   document.querySelectorAll('#tool-group .tbtn').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
 }
 
-function buildThreadPal() {
+async function buildThreadPal() {
   const el = document.getElementById('thread-pal');
+  let svgTemplate = null;
+  try {
+    const raw = await fetch('public/thread.svg').then(r => r.text());
+    // Remove the <style> block so .st0 doesn't leak globally,
+    // then inline the grey fill directly on the polygon element.
+    svgTemplate = raw
+      .replace(/id="[^"]*"/g, '')
+      .replace(/<style>[\s\S]*?<\/style>/g, '')
+      .replace('<polygon ', '<rect width="38.1" height="78.9" fill="#181818"/><polygon style="fill:#565656" ');
+  } catch(e) {}
+
   THREAD.forEach(hex => {
-    const sw = document.createElement('div');
-    sw.className = 'swatch' + (hex === S.color ? ' on' : '');
-    sw.style.background = hex; sw.title = hex;
-    sw.addEventListener('click', () => {
+    const btn = document.createElement('button');
+    btn.className = 'thread-spool' + (hex === S.color ? ' on' : '');
+    btn.title = hex;
+    if (svgTemplate) {
+      // Set fill on <svg> so the <path> (thread detail) inherits the thread colour.
+      // The polygon's inline style="fill:#565656" overrides the inherited colour.
+      btn.innerHTML = svgTemplate.replace('<svg', `<svg fill="${hex}" width="30"`);
+    } else {
+      btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38.1 78.9" width="30" fill="${hex}"><path d="${THREAD_PATH}"/></svg>`;
+    }
+    btn.addEventListener('click', () => {
       S.color = hex;
-      document.querySelectorAll('#thread-pal .swatch').forEach(s => s.classList.remove('on'));
-      sw.classList.add('on');
+      document.querySelectorAll('#thread-pal .thread-spool').forEach(s => s.classList.remove('on'));
+      btn.classList.add('on');
+      setTool('paint');
     });
-    el.appendChild(sw);
+    el.appendChild(btn);
   });
+}
+
+function hexBlend(hex, r2, g2, b2, a) {
+  const r1 = parseInt(hex.slice(1,3),16), g1 = parseInt(hex.slice(3,5),16), b1 = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.round(r1*(1-a)+r2*a)},${Math.round(g1*(1-a)+g2*a)},${Math.round(b1*(1-a)+b2*a)})`;
 }
 
 function buildBasePal() {
   const el = document.getElementById('base-pal');
   BASES.forEach(b => {
-    const sw = document.createElement('div');
-    sw.className = 'base-sw' + (b.hex === S.base ? ' on' : '');
-    sw.style.background = b.hex; sw.title = b.label;
-    sw.addEventListener('click', () => {
+    const btn = document.createElement('button');
+    btn.className = 'base-flag' + (b.hex === S.base ? ' on' : '');
+    btn.title = b.label;
+    const dark  = hexBlend(b.hex, 0,   0,   0,   0.38);
+    const light = hexBlend(b.hex, 128, 128, 128, 0.30);
+    btn.style.background = `linear-gradient(135deg, ${dark} 50%, ${light} 50%)`;
+    btn.addEventListener('click', () => {
       S.base = b.hex;
-      document.querySelectorAll('#base-pal .base-sw').forEach(s => s.classList.remove('on'));
-      sw.classList.add('on');
+      document.querySelectorAll('#base-pal .base-flag').forEach(s => s.classList.remove('on'));
+      btn.classList.add('on');
       render();
     });
-    el.appendChild(sw);
+    el.appendChild(btn);
   });
 }
 
@@ -794,12 +1082,14 @@ function buildSym() {
   const el = document.getElementById('sym-group');
   SYMS.forEach(s => {
     const btn = document.createElement('button');
-    btn.className = 'tbtn' + (s.id === S.sym ? ' on' : '');
-    btn.textContent = s.label;
+    btn.className = 'sym-btn' + (s.id === S.sym ? ' on' : '');
+    btn.title = s.title;
+    btn.innerHTML = s.svg;
     btn.addEventListener('click', () => {
-      S.sym = s.id;
-      document.querySelectorAll('#sym-group .tbtn').forEach(b => b.classList.remove('on'));
-      btn.classList.add('on');
+      const wasOn = S.sym === s.id;
+      S.sym = wasOn ? null : s.id;
+      document.querySelectorAll('#sym-group .sym-btn').forEach(b => b.classList.remove('on'));
+      if (!wasOn) btn.classList.add('on');
     });
     el.appendChild(btn);
   });
@@ -841,6 +1131,88 @@ function saveAsMotif() {
   showHint(`Saved as "${name}"`);
 }
 
+function clampMotifPos(col, row) {
+  if (!S.activeMotif) return { col, row };
+  const keys = Object.keys(S.activeMotif.cells);
+  const dcs  = keys.map(k => +k.split(',')[0]);
+  const drs  = keys.map(k => +k.split(',')[1]);
+  col = Math.max(-Math.min(...dcs), Math.min(col, S.cols - 1 - Math.max(...dcs)));
+  row = Math.max(-Math.min(...drs), Math.min(row, S.rows - 1 - Math.max(...drs)));
+  return { col, row };
+}
+
+function selectMotif(motif) {
+  S.activeMotif = motif;
+  document.querySelectorAll('.motif-thumb').forEach(t => t.classList.remove('selected'));
+  if (motif) {
+    showHint(`"${motif.name}" selected — click canvas to place, Esc to cancel`);
+    const mc = document.getElementById('mc');
+    if (mc) mc.style.cursor = 'crosshair';
+  }
+}
+
+function getMotifBounds() {
+  if (!S.activeMotif) return { w: 1, h: 1 };
+  const keys = Object.keys(S.activeMotif.cells);
+  const dcs = keys.map(k => +k.split(',')[0]);
+  const drs = keys.map(k => +k.split(',')[1]);
+  return {
+    w: Math.max(...dcs) - Math.min(...dcs) + 1,
+    h: Math.max(...drs) - Math.min(...drs) + 1,
+  };
+}
+
+function placeMotif(col, row) {
+  ({ col, row } = clampMotifPos(col, row));
+  for (const [key, color] of Object.entries(S.activeMotif.cells)) {
+    const p = key.split(',');
+    const c = Math.round(col + +p[0]);
+    const r = Math.round(row + +p[1]);
+    if (c < 0 || c >= S.cols || r < 0 || r >= S.rows) continue;
+    S.cells[`${c},${r},${p[2]}`] = color;
+  }
+}
+
+function stampMotifAt(col, row) {
+  if (!S.activeMotif) return;
+  ({ col, row } = clampMotifPos(col, row));
+  snap();
+  placeMotif(col, row);
+  render();
+  drawGhost(col, row);
+  showHint(`Placed — click or drag to stamp more, Esc to finish`);
+}
+
+function drawGhost(col, row) {
+  ({ col, row } = clampMotifPos(col, row));
+  const gc = document.getElementById('ghost-canvas');
+  if (!gc || !S.activeMotif) return;
+  const ctx = gc.getContext('2d');
+  ctx.clearRect(0, 0, gc.width, gc.height);
+  ctx.globalAlpha = 0.45;
+  for (const [key, color] of Object.entries(S.activeMotif.cells)) {
+    const p = key.split(',');
+    const c = Math.round(col + +p[0]);
+    const r = Math.round(row + +p[1]);
+    const x = c * CELL, y = r * CELL;
+    const mx = x + CELL / 2, my = y + CELL / 2;
+    const tri = p[2];
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    if      (tri==='t') { ctx.moveTo(x,y);           ctx.lineTo(x+CELL,y);        ctx.lineTo(mx,my); }
+    else if (tri==='r') { ctx.moveTo(x+CELL,y);      ctx.lineTo(x+CELL,y+CELL);   ctx.lineTo(mx,my); }
+    else if (tri==='b') { ctx.moveTo(x+CELL,y+CELL); ctx.lineTo(x,y+CELL);        ctx.lineTo(mx,my); }
+    else                { ctx.moveTo(x,y+CELL);      ctx.lineTo(x,y);             ctx.lineTo(mx,my); }
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function clearGhost() {
+  const gc = document.getElementById('ghost-canvas');
+  if (gc) gc.getContext('2d').clearRect(0, 0, gc.width, gc.height);
+}
+
 function stampMotif(motif) {
   snap();
   const tc = BORDER + (S.cols - 2 * BORDER) / 2;
@@ -860,6 +1232,13 @@ function deleteMotif(idx) {
   MOTIFS.splice(idx, 1);
   try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
   buildMotifPal();
+}
+
+function copyMotifData() {
+  if (!MOTIFS.length) { showHint('No motifs saved yet'); return; }
+  navigator.clipboard.writeText(JSON.stringify(MOTIFS, null, 2))
+    .then(() => showHint('Motif data copied to clipboard'))
+    .catch(() => showHint('Copy failed — open console and type: JSON.stringify(MOTIFS)'));
 }
 
 function buildMotifPal() {
@@ -906,8 +1285,8 @@ function buildMotifPal() {
       }
     }
 
-    tc.addEventListener('click', () => stampMotif(motif));
-    tc.title = `Click to stamp "${motif.name}"`;
+    tc.addEventListener('click', () => { selectMotif(motif); wrap.classList.add('selected'); });
+    tc.title = `Select "${motif.name}" to place on canvas`;
 
     const del = document.createElement('button');
     del.className = 'm-del'; del.textContent = '×';
@@ -930,6 +1309,7 @@ buildBasePal();
 buildSym();
 buildMotifPal();
 initCanvas();
+initCursors();
 window.addEventListener('resize', initCanvas);
 </script>
 </body>
