@@ -430,6 +430,7 @@
         <div id="motif-panel">
           <div class="motif-panel-head">
             <span class="motif-panel-label">Motif Library</span>
+            <button class="save-motif-btn" onclick="showMotifData()" title="Export motif data">⬆ Export</button>
           </div>
           <div class="motif-grid" id="motif-pal"></div>
         </div>
@@ -471,6 +472,22 @@
         <button class="btn-share" onclick="shareFinished()">↗ Share</button>
         <button class="btn-pri" onclick="downloadFinished()">↓ Save</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOTIF DATA MODAL -->
+<div class="overlay" id="motif-data-modal">
+  <div class="finish-box" style="max-width:480px;">
+    <div class="finish-head">
+      <span class="finish-head-title">Motif Data</span>
+      <button class="finish-close" onclick="closeMotifDataModal()">✕</button>
+    </div>
+    <p style="color:var(--muted);font-size:11px;margin:0 0 10px;line-height:1.5;">Select all and copy — send this to the developer to add your patterns as presets.</p>
+    <textarea id="motif-data-ta" readonly style="width:100%;box-sizing:border-box;height:220px;background:#111;border:1px solid var(--border);color:#ccc;font-size:10px;font-family:monospace;padding:8px;resize:vertical;outline:none;"></textarea>
+    <div class="finish-actions" style="margin-top:12px;">
+      <button class="btn-sec" onclick="closeMotifDataModal()">Close</button>
+      <button class="btn-pri" onclick="selectMotifData()">Select All</button>
     </div>
   </div>
 </div>
@@ -992,6 +1009,18 @@ function openFinishModal() {
 }
 function closeFinishModal() { document.getElementById('finish-modal').classList.remove('on'); }
 
+function showMotifData() {
+  const ta = document.getElementById('motif-data-ta');
+  ta.value = JSON.stringify(MOTIFS, null, 2);
+  document.getElementById('motif-data-modal').classList.add('on');
+}
+function closeMotifDataModal() { document.getElementById('motif-data-modal').classList.remove('on'); }
+function selectMotifData() {
+  const ta = document.getElementById('motif-data-ta');
+  ta.focus();
+  ta.select();
+}
+
 function setFinishFace(face) {
   _finishFace = face;
   document.getElementById('face-front').classList.toggle('on', face === 'front');
@@ -1124,6 +1153,7 @@ document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); return; }
   if (e.key === 'Escape') {
     if (document.getElementById('finish-modal').classList.contains('on')) { closeFinishModal(); return; }
+    if (document.getElementById('motif-data-modal').classList.contains('on')) { closeMotifDataModal(); return; }
     if (S.activeMotif) { S.activeMotif = null; clearGhost(); showHint('Motif cancelled'); } return;
   }
   if (e.key === 'p') setTool('paint');
