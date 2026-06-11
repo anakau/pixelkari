@@ -630,8 +630,8 @@ const ctx    = canvas.getContext('2d');
 
 function initCanvas() {
   const dpr  = window.devicePixelRatio || 1;
-  S.cols = 71;  // fixed: 72 - 1 for true center axis
-  S.rows = 45;  // fixed: clean multiple of 9, matches A6 aspect ratio
+  S.cols = 72;  // fixed: multiple of 9 → 8 exact border repeat units (9-cell motif tiles perfectly)
+  S.rows = 45;  // fixed: multiple of 9 → 5 exact border repeat units
   const logW = S.cols * CELL;
   const logH = S.rows * CELL;
   canvas.width  = logW * dpr;
