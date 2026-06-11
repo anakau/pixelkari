@@ -641,6 +641,8 @@ function initCanvas() {
   if (S.cols * CELL > cw) S.cols -= 9;
   S.rows = Math.floor((S.cols * 105 / 148) / 9) * 9;  // derived from cols to honour A6 ratio, trimmed down
   if (S.rows * CELL > ch) S.rows -= 9;
+  S.cols -= 1;  // odd total → true center column axis; helps border repeat alignment
+  S.rows -= 1;  // odd total → true center row axis; fixes right-side border misalignment
   const logW = S.cols * CELL;
   const logH = S.rows * CELL;
   canvas.width  = logW * dpr;
@@ -1025,8 +1027,8 @@ function refreshFinishPreview() {
 
 function _buildFrontCanvas() {
   const EW = 1748, EH = 1240;   // A6 landscape @ 300 dpi
-  const M  = 90;                 // white border all sides
-  const LOGO_STRIP = 75;         // space below design for logo text
+  const M  = 24;                 // ~2 mm border all sides
+  const LOGO_STRIP = 80;         // space below design for logo text
 
   const logW = S.cols * CELL, logH = S.rows * CELL;
   const availW = EW - 2 * M, availH = EH - 2 * M - LOGO_STRIP;
@@ -1038,17 +1040,22 @@ function _buildFrontCanvas() {
   exp.width = EW; exp.height = EH;
   const ec = exp.getContext('2d');
 
-  ec.fillStyle = '#FFFFFF'; ec.fillRect(0, 0, EW, EH);
+  ec.fillStyle = '#000000'; ec.fillRect(0, 0, EW, EH);
 
   const savedGrid = S.grid; S.grid = false; _doRender();
   ec.drawImage(canvas, dx, dy, dw, dh);
   S.grid = savedGrid; _doRender();
 
-  const logoY = dy + dh + Math.round((EH - dy - dh + 26) / 2);
-  ec.fillStyle = '#6B3D1E'; ec.font = 'bold 36px Georgia, serif'; ec.textAlign = 'left';
+  const logoY = dy + dh + Math.round((EH - dy - dh) * 0.62);
+  ec.fillStyle = '#ffffff';
+  if ('letterSpacing' in ec) ec.letterSpacing = Math.round(44 * 0.14) + 'px';
+  ec.font = '600 44px "Bricolage Grotesque", sans-serif'; ec.textAlign = 'left';
   ec.fillText('PIXELKARI', dx, logoY);
-  ec.fillStyle = '#B8986A'; ec.font = '400 30px Georgia, serif'; ec.textAlign = 'right';
+  ec.fillStyle = '#999999';
+  if ('letterSpacing' in ec) ec.letterSpacing = Math.round(36 * 0.06) + 'px';
+  ec.font = '400 36px "Bricolage Grotesque", sans-serif'; ec.textAlign = 'right';
   ec.fillText('ਪਿਕਸਲਕਾਰੀ', dx + dw, logoY);
+  if ('letterSpacing' in ec) ec.letterSpacing = '0px';
 
   return exp;
 }
@@ -1059,24 +1066,22 @@ function _buildBackCanvas() {
   exp.width = EW; exp.height = EH;
   const ec = exp.getContext('2d');
 
-  ec.fillStyle = '#FFFFFF'; ec.fillRect(0, 0, EW, EH);
-
-  // outer frame
-  ec.strokeStyle = '#E2D8C8'; ec.lineWidth = 2;
-  ec.strokeRect(22, 22, EW - 44, EH - 44);
+  ec.fillStyle = '#000000'; ec.fillRect(0, 0, EW, EH);
 
   // POSTCARD header
-  ec.fillStyle = '#9B7A5A'; ec.font = '600 22px Georgia, serif';
-  ec.textAlign = 'center'; ec.letterSpacing = '0.18em';
+  ec.fillStyle = '#555555'; ec.font = '600 22px "Bricolage Grotesque", sans-serif';
+  ec.textAlign = 'center';
+  if ('letterSpacing' in ec) ec.letterSpacing = '4px';
   ec.fillText('P O S T C A R D', EW / 2, 64);
+  if ('letterSpacing' in ec) ec.letterSpacing = '0px';
 
   // centre vertical divider
-  ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 1.5;
+  ec.strokeStyle = '#333333'; ec.lineWidth = 1.5;
   ec.beginPath(); ec.moveTo(EW / 2, 84); ec.lineTo(EW / 2, EH - 65); ec.stroke();
 
   // left — message lines
   const lx = 55, lw = EW / 2 - 100;
-  ec.strokeStyle = '#E5DDD4'; ec.lineWidth = 1;
+  ec.strokeStyle = '#2a2a2a'; ec.lineWidth = 1;
   for (let i = 0; i < 9; i++) {
     const y = 120 + i * 108;
     ec.beginPath(); ec.moveTo(lx, y); ec.lineTo(lx + lw, y); ec.stroke();
@@ -1085,25 +1090,30 @@ function _buildBackCanvas() {
   // right — stamp box (top right)
   const stampW = 150, stampH = 185;
   const stampX = EW - 60 - stampW, stampY = 68;
-  ec.strokeStyle = '#D0C0A0'; ec.lineWidth = 1.5;
+  ec.strokeStyle = '#333333'; ec.lineWidth = 1.5;
   ec.strokeRect(stampX, stampY, stampW, stampH);
-  ec.fillStyle = '#F8F4EE'; ec.fillRect(stampX + 2, stampY + 2, stampW - 4, stampH - 4);
-  ec.fillStyle = '#C8B89A'; ec.font = '16px Georgia, serif'; ec.textAlign = 'center';
+  ec.fillStyle = '#111111'; ec.fillRect(stampX + 2, stampY + 2, stampW - 4, stampH - 4);
+  ec.fillStyle = '#444444'; ec.font = '16px "Bricolage Grotesque", sans-serif'; ec.textAlign = 'center';
   ec.fillText('STAMP', stampX + stampW / 2, stampY + stampH / 2 + 6);
 
   // right — address lines
   const ax = EW / 2 + 45, aw = EW / 2 - 105;
-  ec.strokeStyle = '#E5DDD4'; ec.lineWidth = 1;
+  ec.strokeStyle = '#2a2a2a'; ec.lineWidth = 1;
   for (let i = 0; i < 5; i++) {
     const y = 320 + i * 90;
     ec.beginPath(); ec.moveTo(ax, y); ec.lineTo(ax + aw, y); ec.stroke();
   }
 
   // branding bottom
-  ec.fillStyle = '#6B3D1E'; ec.font = 'bold 32px Georgia, serif'; ec.textAlign = 'left';
+  ec.fillStyle = '#ffffff';
+  if ('letterSpacing' in ec) ec.letterSpacing = Math.round(44 * 0.14) + 'px';
+  ec.font = '600 44px "Bricolage Grotesque", sans-serif'; ec.textAlign = 'left';
   ec.fillText('PIXELKARI', 55, EH - 42);
-  ec.fillStyle = '#B8986A'; ec.font = '400 26px Georgia, serif'; ec.textAlign = 'right';
+  ec.fillStyle = '#999999';
+  if ('letterSpacing' in ec) ec.letterSpacing = Math.round(36 * 0.06) + 'px';
+  ec.font = '400 36px "Bricolage Grotesque", sans-serif'; ec.textAlign = 'right';
   ec.fillText('ਪਿਕਸਲਕਾਰੀ', EW - 55, EH - 42);
+  if ('letterSpacing' in ec) ec.letterSpacing = '0px';
 
   return exp;
 }
