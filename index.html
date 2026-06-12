@@ -22,20 +22,22 @@
     /* ── CANVAS AREA ── */
     #canvas-area {
       flex: 1; display: flex; align-items: center; justify-content: center;
-      overflow: hidden; background: #0d0d0d; position: relative;
+      overflow: visible; background: #0d0d0d; position: relative;
     }
     #canvas-wrap { position: relative; transform-origin: center center; transition: transform 0.15s; }
     #canvas-wrap canvas { display: block; cursor: crosshair; }
     #ghost-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
     .edge-ctrl {
       position: absolute; display: flex; align-items: center; justify-content: center;
-      gap: 2px; opacity: 0; pointer-events: none; transition: opacity 0.12s; z-index: 20;
+      gap: 2px; opacity: 0; pointer-events: auto;
+      transition: opacity 0.1s 0.12s; z-index: 20;
     }
-    #canvas-wrap:hover .edge-ctrl { opacity: 1; pointer-events: auto; }
-    .edge-top    { top: 0;    left: 50%; transform: translateX(-50%); flex-direction: row; }
-    .edge-bottom { bottom: 0; left: 50%; transform: translateX(-50%); flex-direction: row; }
-    .edge-left   { left: 0;   top: 50%;  transform: translateY(-50%); flex-direction: column; }
-    .edge-right  { right: 0;  top: 50%;  transform: translateY(-50%); flex-direction: column; }
+    #canvas-wrap:hover .edge-ctrl,
+    .edge-ctrl:hover { opacity: 1; transition: opacity 0.08s; }
+    .edge-top    { bottom: 100%; margin-bottom: 5px; left: 50%; transform: translateX(-50%); flex-direction: row; }
+    .edge-bottom { top: 100%;    margin-top: 5px;    left: 50%; transform: translateX(-50%); flex-direction: row; }
+    .edge-left   { right: 100%;  margin-right: 5px;  top: 50%;  transform: translateY(-50%); flex-direction: column; }
+    .edge-right  { left: 100%;   margin-left: 5px;   top: 50%;  transform: translateY(-50%); flex-direction: column; }
     .edge-btn {
       width: 20px; height: 20px; background: rgba(18,18,18,0.88);
       border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.65);
