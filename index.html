@@ -575,45 +575,6 @@ const SYMS = [
 // ═══════════════════════════════════════════════════
 // MOTIFS (persisted to localStorage)
 // ═══════════════════════════════════════════════════
-function _genPhul() {
-  const cells = {};
-  const pal = ['#FFD700','#FF6B1A','#E91E8C','#9B1B6E','#4A0A3A'];
-  for (let dc = -4; dc <= 4; dc++) {
-    for (let dr = -4; dr <= 4; dr++) {
-      const d = Math.abs(dc) + Math.abs(dr);
-      if (d > 4) continue;
-      const col = pal[Math.min(d, pal.length - 1)];
-      for (const t of ['t','r','b','l']) cells[`${dc},${dr},${t}`] = col;
-    }
-  }
-  return { name: 'Phul', cells };
-}
-function _genKiran() {
-  const cells = {};
-  const fill = (dc, dr, tris, col) => tris.forEach(t => { cells[`${dc},${dr},${t}`] = col; });
-  // centre
-  fill(0, 0, ['t','r','b','l'], '#FFFFFF');
-  // 4 cardinal arms
-  for (let i = 1; i <= 3; i++) {
-    const col = i < 3 ? '#FF1493' : '#E91E8C';
-    fill( i, 0, ['t','r','b','l'], col);
-    fill(-i, 0, ['t','r','b','l'], col);
-    fill(0,  i, ['t','r','b','l'], col);
-    fill(0, -i, ['t','r','b','l'], col);
-  }
-  // 4 diagonal arms
-  for (let i = 1; i <= 2; i++) {
-    const col = '#FFD700';
-    fill( i,  i, ['t','r','b','l'], col);
-    fill(-i,  i, ['t','r','b','l'], col);
-    fill( i, -i, ['t','r','b','l'], col);
-    fill(-i, -i, ['t','r','b','l'], col);
-  }
-  // tips
-  fill(0, -4, ['t'], '#FF6B1A'); fill(0, 4, ['b'], '#FF6B1A');
-  fill(-4, 0, ['l'], '#FF6B1A'); fill(4, 0, ['r'], '#FF6B1A');
-  return { name: 'Kiran', cells };
-}
 function _genTara() {
   return { name: 'Tara', cells: {
     "0,-1,l":"#F5C518","0,-1,b":"#F5C518","0,0,t":"#F5C518","0,-1,r":"#F5C518",
@@ -646,11 +607,12 @@ function _genButi() {
 let MOTIFS = [];
 try { const d = localStorage.getItem('pkMotifs'); if (d) MOTIFS = JSON.parse(d); } catch(e) {}
 
-// inject presets on first ever load
-if (!localStorage.getItem('pkPresetsLoaded')) {
-  MOTIFS = [_genPhul(), _genKiran(), _genTara(), _genButi(), ...MOTIFS];
+if (localStorage.getItem('pkPresetsLoaded') !== '2') {
+  const OLD = new Set(['Phul', 'Kiran']);
+  MOTIFS = MOTIFS.filter(m => !OLD.has(m.name));
+  MOTIFS = [_genTara(), _genButi(), ...MOTIFS];
   try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
-  try { localStorage.setItem('pkPresetsLoaded', '1'); } catch(e) {}
+  try { localStorage.setItem('pkPresetsLoaded', '2'); } catch(e) {}
 }
 
 // ═══════════════════════════════════════════════════
