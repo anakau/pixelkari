@@ -1987,13 +1987,15 @@ initCanvas();
 initCursors();
 if (localStorage.getItem('pkPage') === 'story') setTimeout(showStoryPage, 0);
 
-// Geo map lightbox
+// Geo map lightbox — wrapped in setTimeout so #geo-lightbox is in DOM
 document.getElementById('geo-map-thumb').addEventListener('click', function() {
   document.getElementById('geo-lightbox').classList.add('on');
 });
-document.getElementById('geo-lightbox').addEventListener('click', function(e) {
-  if (e.target === this || e.target.id === 'geo-lightbox-close') this.classList.remove('on');
-});
+setTimeout(function() {
+  document.getElementById('geo-lightbox').addEventListener('click', function(e) {
+    if (e.target === this || e.target.id === 'geo-lightbox-close') this.classList.remove('on');
+  });
+}, 0);
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') document.getElementById('geo-lightbox').classList.remove('on');
 });
