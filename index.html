@@ -579,35 +579,19 @@
       <button class="finish-close" onclick="closeFinishModal()">✕</button>
     </div>
     <div id="wallpaper-grid">
-      <div class="wp-card" onclick="downloadWallpaper('iphone')">
-        <div class="wp-frame wp-frame-portrait"><img class="wp-art" alt="" /></div>
-        <div class="wp-info">
-          <div class="wp-name">iPhone</div>
-          <div class="wp-dims">1290 × 2796</div>
-        </div>
-        <span class="wp-dl">↓</span>
-      </div>
       <div class="wp-card" onclick="downloadWallpaper('phone')">
-        <div class="wp-frame wp-frame-portrait"><img class="wp-art" alt="" /></div>
+        <div class="wp-frame wp-frame-portrait"><img class="wp-art" data-format="phone" alt="" /></div>
         <div class="wp-info">
           <div class="wp-name">Phone</div>
-          <div class="wp-dims">1080 × 1920</div>
-        </div>
-        <span class="wp-dl">↓</span>
-      </div>
-      <div class="wp-card" onclick="downloadWallpaper('macbook')">
-        <div class="wp-frame wp-frame-landscape"><img class="wp-art" alt="" /></div>
-        <div class="wp-info">
-          <div class="wp-name">MacBook</div>
-          <div class="wp-dims">2560 × 1600</div>
+          <div class="wp-dims">1290 × 2796 · portrait · retina</div>
         </div>
         <span class="wp-dl">↓</span>
       </div>
       <div class="wp-card" onclick="downloadWallpaper('desktop')">
-        <div class="wp-frame wp-frame-landscape"><img class="wp-art" alt="" /></div>
+        <div class="wp-frame wp-frame-landscape"><img class="wp-art" data-format="desktop" alt="" /></div>
         <div class="wp-info">
           <div class="wp-name">Desktop</div>
-          <div class="wp-dims">1920 × 1080</div>
+          <div class="wp-dims">3840 × 2160 · landscape · 4K</div>
         </div>
         <span class="wp-dl">↓</span>
       </div>
@@ -1269,10 +1253,8 @@ function toggleGrid() {
 // FINISH MODAL / POSTCARD
 // ═══════════════════════════════════════════════════
 const WALLPAPER_PRESETS = {
-  iphone:  { w: 1290, h: 2796 },
-  phone:   { w: 1080, h: 1920 },
-  macbook: { w: 2560, h: 1600 },
-  desktop: { w: 1920, h: 1080 },
+  phone:   { w: 1290, h: 2796, rotate: true  },
+  desktop: { w: 3840, h: 2160, rotate: false },
 };
 
 function openFinishModal() {
@@ -1283,18 +1265,40 @@ function closeFinishModal() { document.getElementById('finish-modal').classList.
 
 function _renderWallpaperPreviews() {
   const savedGrid = S.grid; S.grid = false; _doRender();
+  const logW = S.cols * CELL, logH = S.rows * CELL;
+
+  // Desktop preview — natural orientation
   const src = canvas.toDataURL('image/png');
-  document.querySelectorAll('.wp-art').forEach(img => { img.src = src; });
+  document.querySelectorAll('.wp-art[data-format="desktop"]').forEach(img => { img.src = src; });
+
+  // Phone preview — rotate 90° to portrait
+  const PH = 108, PW = Math.round(PH * logH / logW);
+  const pc = document.createElement('canvas');
+  pc.width = PW; pc.height = PH;
+  const pctx = pc.getContext('2d');
+  pctx.fillStyle = '#000'; pctx.fillRect(0, 0, PW, PH);
+  const ps = Math.min(PW / logH, PH / logW);
+  const pdw = Math.round(logW * ps), pdh = Math.round(logH * ps);
+  pctx.save();
+  pctx.translate(PW / 2, PH / 2);
+  pctx.rotate(Math.PI / 2);
+  pctx.drawImage(canvas, -pdw / 2, -pdh / 2, pdw, pdh);
+  pctx.restore();
+  document.querySelectorAll('.wp-art[data-format="phone"]').forEach(img => { img.src = pc.toDataURL(); });
+
   S.grid = savedGrid; _doRender();
 }
 
 function _buildWallpaperCanvas(presetId) {
-  const { w: EW, h: EH } = WALLPAPER_PRESETS[presetId];
+  const { w: EW, h: EH, rotate } = WALLPAPER_PRESETS[presetId];
   const M = Math.round(Math.min(EW, EH) * 0.05);
   const logW = S.cols * CELL, logH = S.rows * CELL;
-  const scale = Math.min((EW - 2 * M) / logW, (EH - 2 * M) / logH);
+
+  // For phone: rotate art 90° so landscape canvas fills portrait screen
+  const scale = rotate
+    ? Math.min((EW - 2 * M) / logH, (EH - 2 * M) / logW)
+    : Math.min((EW - 2 * M) / logW, (EH - 2 * M) / logH);
   const dw = Math.round(logW * scale), dh = Math.round(logH * scale);
-  const dx = Math.round((EW - dw) / 2), dy = Math.round((EH - dh) / 2);
 
   const exp = document.createElement('canvas');
   exp.width = EW; exp.height = EH;
@@ -1302,7 +1306,16 @@ function _buildWallpaperCanvas(presetId) {
   ec.fillStyle = '#000000'; ec.fillRect(0, 0, EW, EH);
 
   const savedGrid = S.grid; S.grid = false; _doRender();
-  ec.drawImage(canvas, dx, dy, dw, dh);
+  if (rotate) {
+    ec.save();
+    ec.translate(EW / 2, EH / 2);
+    ec.rotate(Math.PI / 2);
+    ec.drawImage(canvas, -dw / 2, -dh / 2, dw, dh);
+    ec.restore();
+  } else {
+    const dx = Math.round((EW - dw) / 2), dy = Math.round((EH - dh) / 2);
+    ec.drawImage(canvas, dx, dy, dw, dh);
+  }
   S.grid = savedGrid; _doRender();
 
   const fs = Math.max(16, Math.round(Math.min(EW, EH) * 0.013));
