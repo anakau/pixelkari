@@ -20,6 +20,16 @@
 
     #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
 
+    /* ── PAGE HEADER (shared, transparent) ── */
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 64px; flex-shrink: 0;
+    }
+    #story-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 64px; position: sticky; top: 0; z-index: 10;
+    }
+
     /* ── CANVAS AREA ── */
     #canvas-area {
       flex: 1; display: flex; align-items: center; justify-content: center;
@@ -191,8 +201,7 @@
     /* logo */
     #bar-logo { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; overflow: hidden; }
     .logo-title { font-size: 28px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #ffffff; line-height: 1; }
-    .logo-sub   { font-size: 28px; font-weight: 600; color: #ffffff; letter-spacing: 0.06em; line-height: 1; margin-top: 4px; opacity: 0; transition: opacity 0.15s; }
-    #bar-logo:hover .logo-sub { opacity: 1; }
+    .logo-sub   { font-size: 28px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; line-height: 1; margin-top: 3px; }
 
     /* ── MOTIF PANEL (inline, right of flower button) ── */
     #motif-panel {
@@ -564,6 +573,15 @@
 <body>
 <div id="app">
 
+  <!-- TOOL PAGE HEADER -->
+  <div class="page-header">
+    <div id="bar-logo" onclick="showStoryPage()" title="About Pixelkari" style="cursor:pointer;">
+      <div class="logo-title">Pixelkari</div>
+      <div class="logo-sub">ਪਿਕਸਲਕਾਰੀ</div>
+    </div>
+    <button class="export-btn" onclick="openFinishModal()" style="line-height:1;">Finish ✦</button>
+  </div>
+
   <!-- CANVAS -->
   <div id="canvas-area">
     <div id="canvas-wrap">
@@ -591,11 +609,6 @@
 
   <!-- BOTTOM BAR -->
   <div id="bottombar">
-    <!-- Logo -->
-    <div id="bar-logo" onclick="showStoryPage()" title="About Pixelkari" style="cursor:pointer;flex-shrink:0;margin-right:16px;">
-      <div class="logo-title">Pixelkari</div>
-      <div class="logo-sub">ਪਿਕਸਲਕਾਰੀ</div>
-    </div>
     <!-- Tools -->
     <div id="bb-tools">
       <!-- Nav block -->
@@ -654,8 +667,6 @@
         </div>
       </div>
     </div>
-    <!-- Finish button -->
-    <button class="export-btn" onclick="openFinishModal()" style="align-self:center;flex-shrink:0;margin-left:16px;line-height:1;">Finish ✦</button>
   </div>
 </div>
 
@@ -712,6 +723,13 @@
 
 <!-- STORY PAGE -->
 <div id="story-page">
+  <div id="story-header">
+    <div style="cursor:pointer;" onclick="closeStoryPage()">
+      <div class="logo-title">Pixelkari</div>
+      <div class="logo-sub">ਪਿਕਸਲਕਾਰੀ</div>
+    </div>
+    <button class="snav-cta" onclick="closeStoryPage()">Use Tool →</button>
+  </div>
   <div id="story-body">
 
     <!-- Hero -->
