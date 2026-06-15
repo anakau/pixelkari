@@ -392,7 +392,7 @@
     }
     .s-h1 {
       font-size: clamp(40px, 6vw, 68px); font-weight: 600; line-height: 1.04;
-      color: #C2185B; letter-spacing: -0.025em; margin: 0 0 28px;
+      color: #F72585; letter-spacing: -0.025em; margin: 0 0 28px;
     }
     .s-lead {
       font-size: 17px; color: #ffffff; line-height: 1.7; max-width: 500px; margin: 0;
@@ -400,7 +400,7 @@
     .s-section { padding: 64px 0; border-bottom: 1px solid #181818; }
     .s-section .s-eyebrow { margin-bottom: 16px; }
     .s-section h2 {
-      font-size: 26px; font-weight: 600; color: #C2185B;
+      font-size: 26px; font-weight: 600; color: #F72585;
       margin: 0 0 18px; line-height: 1.25;
     }
     .s-section p {
@@ -417,8 +417,16 @@
     .s-img-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 28px 0; }
     .s-img-pair .s-img { margin: 0; aspect-ratio: 4/3; }
     .s-cta { padding: 80px 0; text-align: center; }
-    .s-cta h2 { font-size: 34px; font-weight: 600; color: #C2185B; margin: 0 0 10px; }
+    .s-cta h2 { font-size: 34px; font-weight: 600; color: #F72585; margin: 0 0 10px; }
     .s-cta p  { font-size: 13px; color: #ffffff; margin: 0 0 36px; }
+    body.story-open { cursor: none; }
+    #story-cursor-el {
+      position: fixed; pointer-events: none; z-index: 410;
+      width: 26px; height: 31px; display: none;
+      transform: translate(-6px, -29px);
+      filter: invert(1);
+    }
+    #story-trail { display: none; position: fixed; inset: 0; pointer-events: none; z-index: 409; }
 
     /* ── RESPONSIVE TOOLBAR ── */
     @media (max-width: 1400px) {
@@ -705,7 +713,7 @@ const THREAD = [
 ];
 
 const BASES = [
-  { hex:'#C2185B', label:'Pink'   },
+  { hex:'#F72585', label:'Pink'   },
   { hex:'#C62828', label:'Red'    },
   { hex:'#E64A19', label:'Orange' },
   { hex:'#F9A825', label:'Yellow' },
@@ -1336,8 +1344,79 @@ function downloadWallpaper(presetId) {
   a.href = exp.toDataURL('image/png');
   a.click();
 }
-function showStoryPage()  { document.getElementById('story-page').classList.add('on'); }
-function closeStoryPage() { document.getElementById('story-page').classList.remove('on'); }
+let _storyTrail = [];
+let _storyTrailRaf = null;
+let _storyMoveHandler = null;
+let _storyResizeHandler = null;
+
+function showStoryPage() {
+  document.getElementById('story-page').classList.add('on');
+  document.body.classList.add('story-open');
+  _initStoryTrail();
+}
+
+function closeStoryPage() {
+  document.getElementById('story-page').classList.remove('on');
+  document.body.classList.remove('story-open');
+  _stopStoryTrail();
+}
+
+function _initStoryTrail() {
+  const tc = document.getElementById('story-trail');
+  const cur = document.getElementById('story-cursor-el');
+  tc.style.display = 'block';
+  cur.style.display = 'block';
+  tc.width = window.innerWidth;
+  tc.height = window.innerHeight;
+  _storyTrail = [];
+
+  _storyMoveHandler = function(e) {
+    const x = e.clientX, y = e.clientY;
+    cur.style.left = x + 'px';
+    cur.style.top  = y + 'px';
+    _storyTrail.push({ x, y, age: 0 });
+    if (_storyTrail.length > 80) _storyTrail.shift();
+  };
+  _storyResizeHandler = function() {
+    tc.width = window.innerWidth;
+    tc.height = window.innerHeight;
+  };
+  window.addEventListener('mousemove', _storyMoveHandler);
+  window.addEventListener('resize',    _storyResizeHandler);
+
+  const ctx = tc.getContext('2d');
+  function draw() {
+    if (!document.body.classList.contains('story-open')) return;
+    ctx.clearRect(0, 0, tc.width, tc.height);
+    if (_storyTrail.length > 1) {
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (let i = 1; i < _storyTrail.length; i++) {
+        const t = i / _storyTrail.length;
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(247,37,133,${(t * 0.7).toFixed(2)})`;
+        ctx.lineWidth = 0.8 + t * 1.4;
+        ctx.moveTo(_storyTrail[i-1].x, _storyTrail[i-1].y);
+        ctx.lineTo(_storyTrail[i].x,   _storyTrail[i].y);
+        ctx.stroke();
+      }
+    }
+    _storyTrail.forEach(p => p.age++);
+    _storyTrail = _storyTrail.filter(p => p.age < 50);
+    _storyTrailRaf = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function _stopStoryTrail() {
+  const tc = document.getElementById('story-trail');
+  const cur = document.getElementById('story-cursor-el');
+  tc.style.display = 'none';
+  cur.style.display = 'none';
+  _storyTrail = [];
+  if (_storyTrailRaf) { cancelAnimationFrame(_storyTrailRaf); _storyTrailRaf = null; }
+  if (_storyMoveHandler)   { window.removeEventListener('mousemove', _storyMoveHandler);   _storyMoveHandler = null; }
+  if (_storyResizeHandler) { window.removeEventListener('resize',    _storyResizeHandler); _storyResizeHandler = null; }
+}
 
 
 
@@ -1775,5 +1854,8 @@ buildMotifPal();
 initCanvas();
 initCursors();
 </script>
+<!-- STORY PAGE CURSOR + TRAIL -->
+<img id="story-cursor-el" src="./weave.svg" alt="" />
+<canvas id="story-trail"></canvas>
 </body>
 </html>
