@@ -411,12 +411,13 @@
     .s-collage { width: 100vw; position: relative; left: 50%; margin-left: -50vw; padding: 48px 40px 0; margin-top: 36px; }
     .s-collage-inner { max-width: 1100px; margin: 0 auto; position: relative; padding-bottom: 72px; }
     .s-collage figure { margin: 0; }
-    .s-collage img { display: block; width: 100%; box-shadow: 0 8px 36px rgba(0,0,0,0.55); border: 1px solid #2a2a2a; }
-    .sc-1 { width: 100%; transform: rotate(-0.6deg); transform-origin: center bottom; position: relative; z-index: 1; }
-    .sc-pair { display: flex; gap: 10px; margin-top: 10px; position: relative; z-index: 2; }
-    .sc-2 { flex: 1; transform: rotate(1.2deg); transform-origin: top left; }
-    .sc-3 { flex: 2; transform: rotate(-0.7deg); transform-origin: top center; }
-    .sc-3 img { border: none; }
+    .s-collage img { display: block; width: 100%; }
+    .sc-1 { width: 100%; }
+    .sc-1 img { height: 480px; object-fit: cover; }
+    .sc-pair { display: flex; gap: 3px; margin-top: 3px; height: 340px; }
+    .sc-2 { flex: 1; overflow: hidden; }
+    .sc-3 { flex: 2; overflow: hidden; }
+    .sc-pair img { height: 100%; object-fit: cover; }
     .s-collage-credits { margin-top: 24px; text-align: center; }
     .s-section .s-collage-credits, .s-section .s-collage-credits a { font-size: 9px; color: #888; letter-spacing: 0.05em; font-family: 'Bricolage Grotesque', sans-serif; line-height: 1.6; text-decoration: none; }
     .s-section .s-collage-credits a { text-decoration: underline; text-underline-offset: 2px; }
