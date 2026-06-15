@@ -408,12 +408,11 @@
     .s-photo-credit a { color: #888; text-decoration: underline; text-underline-offset: 2px; }
     .s-photo-credit a:hover { color: #bbb; }
     /* ── COLLAGE ── */
-    .s-collage { position: relative; margin: 36px 0 24px; padding-bottom: 80px; }
+    .s-collage { width: 100vw; position: relative; left: 50%; margin-left: -50vw; padding: 56px 6% 96px; margin-top: 36px; overflow: hidden; }
     .s-collage figure { margin: 0; }
     .s-collage img { display: block; width: 100%; box-shadow: 0 8px 36px rgba(0,0,0,0.55); border: 1px solid #2a2a2a; }
-    .sc-1 { width: 80%; transform: rotate(-1.4deg); transform-origin: top left; position: relative; z-index: 1; }
-    .sc-2 { width: 42%; margin: -80px 0 0 auto; transform: rotate(2.8deg); transform-origin: top right; position: relative; z-index: 3; }
-    .sc-3 { width: 56%; margin: -44px 0 0 8%; transform: rotate(-0.7deg); position: relative; z-index: 2; }
+    .sc-1 { width: 70%; transform: rotate(-1.4deg); transform-origin: top left; position: relative; z-index: 1; }
+    .sc-2 { width: 36%; margin: -80px 0 0 auto; transform: rotate(2.8deg); transform-origin: top right; position: relative; z-index: 3; }
     .s-collage-credits { font-size: 9px; color: #555; letter-spacing: 0.05em; padding: 12px 0 0; font-family: 'Bricolage Grotesque', sans-serif; line-height: 1.6; }
     .s-collage-credits a { color: #555; text-decoration: underline; text-underline-offset: 2px; }
     .s-collage-credits a:hover { color: #888; }
@@ -784,6 +783,7 @@
       <p>It is believed that the word phulkari bears close linguistic affinity with the Persian word gulkari — a popular form of embroidery in Iran. Phul and gul, both mean flower and kari means craft.</p>
       <p>Phulkari (ਫੁਲਕਾਰੀ) is one of Punjab's oldest folk embroidery traditions — worked in vibrant silk thread on handspun cotton, built from geometric patterns of extraordinary precision and colour.</p>
       <p>Passed down through generations, each piece was a personal document — a record of the maker's skill, her community, her season. A bride's dowry would include phulkaris her mother and grandmother had stitched for years in anticipation.</p>
+      <p>The patterns are built on a grid. Diagonal stitches counted across warp and weft. The geometry is strict; the colour is free. Motifs repeat across a field, borders frame the edges, and the whole becomes something larger than its parts.</p>
       <div class="s-collage">
         <figure class="sc-1">
           <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Women_embroidering_Phulkari_in_Rajpura%2C_Punjab_%28India%29%2C_2015.jpg" alt="Women embroidering Phulkari in Rajpura, Punjab, India, 2015" />
@@ -791,17 +791,17 @@
         <figure class="sc-2">
           <img src="https://upload.wikimedia.org/wikipedia/commons/6/62/Close-up_of_contemporary_Phulkari_embroidery_technique_.jpg" alt="Close-up of contemporary Phulkari embroidery technique" />
         </figure>
-        <figure class="sc-3">
-          <div class="s-photo-expandable" id="geo-map-thumb">
-            <img src="./public/geography.jpeg" alt="Phulkari geography and origins" />
-            <span class="s-photo-expand-hint">Expand</span>
-          </div>
-        </figure>
       </div>
       <p class="s-collage-credits">
-        Photos: <a href="https://commons.wikimedia.org/wiki/File:Women_embroidering_Phulkari_in_Rajpura,_Punjab_(India),_2015.jpg" target="_blank" rel="noopener">Sheebamadanloewinger</a> / <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> / Wikimedia Commons &nbsp;·&nbsp; Map: H Gupta, Anu &amp; Mehta, Shalina. (2020). <em>Phulkari from Punjab: Embroidery in Transition</em>.
+        Photos: <a href="https://commons.wikimedia.org/wiki/File:Women_embroidering_Phulkari_in_Rajpura,_Punjab_(India),_2015.jpg" target="_blank" rel="noopener">Sheebamadanloewinger</a> / <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> / Wikimedia Commons
       </p>
-      <p>The patterns are built on a grid. Diagonal stitches counted across warp and weft. The geometry is strict; the colour is free. Motifs repeat across a field, borders frame the edges, and the whole becomes something larger than its parts.</p>
+      <figure class="s-photo">
+        <div class="s-photo-expandable" id="geo-map-thumb">
+          <img src="./public/geography.jpeg" alt="Phulkari geography and origins" />
+          <span class="s-photo-expand-hint">Expand</span>
+        </div>
+        <figcaption class="s-photo-credit">H Gupta, Anu &amp; Mehta, Shalina. (2020). <em>Phulkari from Punjab: Embroidery in Transition</em>.</figcaption>
+      </figure>
     </section>
 
     <!-- The Tool -->
