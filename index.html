@@ -389,7 +389,7 @@
       flex-shrink: 0;
     }
     .snav-cta:hover { background: #ddd; }
-    #story-body { max-width: 780px; margin: -64px auto 0; padding: 0 40px 100px; }
+    #story-body { max-width: 780px; margin: -64px auto 0; padding: 0 40px 148px; }
     .s-hero {
       width: 100vw; position: relative; left: 50%; margin-left: -50vw;
       padding: 160px 0 72px;
@@ -460,12 +460,13 @@
     .s-cta h2 { font-size: 34px; font-weight: 600; color: #F72585; margin: 0 0 10px; }
     .s-cta p  { font-size: 13px; color: #ffffff; margin: 0 0 36px; }
     .s-footer-note {
-      position: sticky; bottom: 0; left: 0; right: 0;
+      position: fixed; bottom: 0; left: 0; right: 0;
       text-align: center; padding: 14px 40px;
       font-size: 11px; color: #ffffff;
       letter-spacing: 0.06em; font-family: 'Bricolage Grotesque', sans-serif;
-      background: #0d0d0d; z-index: 5;
+      background: #0d0d0d; z-index: 405; display: none;
     }
+    #story-page.on .s-footer-note { display: block; }
     body.story-open, body.story-open * { cursor: none !important; }
     #s-wallpaper {
       position: relative; width: 100%; min-height: 78vh;
@@ -1589,7 +1590,7 @@ function _initStoryTrail() {
       for (let i = 1; i < _storyTrail.length; i++) {
         const t = i / _storyTrail.length;
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(247,37,133,${(t * 0.7).toFixed(2)})`;
+        ctx.strokeStyle = `rgba(212,168,39,${(t * 0.7).toFixed(2)})`;
         ctx.lineWidth = 0.8 + t * 1.4;
         ctx.moveTo(_storyTrail[i-1].x, _storyTrail[i-1].y);
         ctx.lineTo(_storyTrail[i].x,   _storyTrail[i].y);
