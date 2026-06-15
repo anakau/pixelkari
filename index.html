@@ -160,10 +160,10 @@
     .icon-btn {
       width: 30px; height: 30px; background: #222; border: 1px solid var(--border); border-radius: 0;
       color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 13px; transition: background 0.1s; flex-shrink: 0;
+      font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; transition: background 0.1s; flex-shrink: 0;
     }
     .icon-btn:hover { background: #2a2a2a; }
-    .zoom-lbl { font-size: 13px; color: var(--muted); min-width: 34px; text-align: center; flex-shrink: 0; }
+    .zoom-lbl { font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; color: var(--muted); min-width: 34px; text-align: center; flex-shrink: 0; }
 
     /* toggle */
     .toggle {
@@ -518,7 +518,8 @@
       .act-btn { height: 32px; padding: 0 9px; font-size: 12px; }
       .sym-btn { height: 32px; }
       .eye-btn { height: 32px; padding: 0 8px; font-size: 12px; }
-      .icon-btn { width: 26px; height: 26px; }
+      .icon-btn { width: 26px; height: 26px; font-size: 12px; }
+      .zoom-lbl { font-size: 12px; }
       .base-flag { height: 13px; }
       .bb-divider { margin: 0 10px; }
       .logo-title { font-size: 24px; letter-spacing: 0.05em; }
@@ -554,8 +555,8 @@
       .act-btn { height: 27px; padding: 0 7px; font-size: 11px; }
       .sym-btn { height: 27px; }
       .eye-btn { height: 27px; padding: 0 6px; font-size: 11px; }
-      .icon-btn { width: 22px; height: 22px; font-size: 13px; }
-      .zoom-lbl { font-size: 10px; min-width: 26px; }
+      .icon-btn { width: 22px; height: 22px; font-size: 11px; }
+      .zoom-lbl { font-size: 11px; min-width: 26px; }
       .base-flag { height: 10px; }
       .bb-divider { margin: 0 7px; height: 20px; }
       .logo-title { font-size: 16px; letter-spacing: 0.03em; }
@@ -656,7 +657,7 @@
       <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
         <button class="tbtn motif-create-btn" id="motif-btn" onclick="saveAsMotif()">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(0 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(45 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(90 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(135 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(180 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(225 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(270 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(315 12 12)"/><circle cx="12" cy="12" r="2.5"/></svg>
-          <span style="font-size:13px;line-height:1.3;text-align:center;">Create<br>Motif</span>
+          <span style="line-height:1.3;text-align:center;">Create<br>Motif</span>
           <div class="mcb-tip">Paint a design on the canvas, then click <strong style="color:#ddd;">Create Motif</strong> to save it. Pick it from the library to stamp it anywhere — click to place, drag to tile.</div>
         </button>
         <div id="motif-panel">
