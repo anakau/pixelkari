@@ -392,7 +392,7 @@
     #story-body { max-width: 780px; margin: -64px auto 0; padding: 0 40px 100px; }
     .s-hero {
       width: 100vw; position: relative; left: 50%; margin-left: -50vw;
-      padding: 160px 0 72px; border-bottom: 1px solid #181818;
+      padding: 160px 0 72px;
       overflow: hidden;
     }
     .s-hero-inner {
@@ -419,6 +419,7 @@
       font-size: 17px; color: #ffffff; line-height: 1.7; max-width: 500px; margin: 0;
     }
     .s-section { padding: 64px 0; border-bottom: 1px solid #181818; }
+    #story-body > section:last-of-type { border-bottom: none; }
     .s-section .s-eyebrow { margin-bottom: 16px; }
     .s-section h2 {
       font-size: 26px; font-weight: 600; color: #F72585;
@@ -439,13 +440,13 @@
     .s-img-pair .s-img { margin: 0; aspect-ratio: 4/3; }
     .s-cta {
       width: 100vw; position: relative; left: 50%; margin-left: -50vw;
-      padding: 80px 40px; text-align: center;
+      padding: 80px 40px 80px; text-align: center;
       overflow: hidden;
     }
     .s-cta h2 { font-size: 34px; font-weight: 600; color: #F72585; margin: 0 0 10px; }
     .s-cta p  { font-size: 13px; color: #ffffff; margin: 0 0 36px; }
     .s-footer-note {
-      text-align: center; padding: 24px 40px;
+      text-align: center; margin-top: 72px; padding: 0;
       font-size: 11px; color: rgba(255,255,255,0.28);
       letter-spacing: 0.06em; font-family: 'Bricolage Grotesque', sans-serif;
     }
@@ -800,11 +801,10 @@
       <h2>Start designing.</h2>
       <p>Runs entirely in your browser. No account, no installation.</p>
       <button class="snav-cta" onclick="closeStoryPage()">Open the Tool →</button>
+      <div class="s-footer-note">Made with 🩷 for all phulkari lovers. © pixelkari 2026.</div>
     </div>
 
   </div>
-
-  <div class="s-footer-note">Made with 🩷 for all phulkari lovers. © pixelkari 2026.</div>
 </div>
 
 <script>
