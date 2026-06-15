@@ -12,13 +12,22 @@
       --bg: #111; --bar: #181818; --border: #2c2c2c;
       --text: #e8e8e8; --muted: #555;
       --accent: #D4A827; --accent-dim: rgba(212,168,39,0.10);
-      --bar-h: 144px;
+      --bar-h: 96px;
     }
     html, body { width: 100%; height: 100%; background: var(--bg); overflow: hidden; }
     body { font-family: 'Bricolage Grotesque', sans-serif; color: var(--text); font-size: 14px; }
     ::selection { background: #D4A827; color: #0d0d0d; }
 
     #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
+
+    /* ── TOP BAR ── */
+    #topbar {
+      height: 52px; background: var(--bar); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; flex-shrink: 0; position: relative; z-index: 200;
+    }
+    #topbar .logo-title { font-size: 18px; }
+    #topbar .logo-sub   { font-size: 12px; margin-top: 2px; }
 
     /* ── CANVAS AREA ── */
     #canvas-area {
@@ -104,7 +113,10 @@
     .eye-btn:hover { background: #2a2a2a; color: var(--text); }
     .eye-btn.on { color: var(--text); }
     .eye-btn .tool-emoji { font-size: 15px; margin-right: 4px; vertical-align: middle; }
-    .nav-block { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; flex-shrink: 0; }
+    .nav-block { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
+    .nav-row   { display: flex; gap: 3px; }
+    .preset-btn { font-size: 11px !important; padding: 0 9px !important; height: 32px !important; background: #1a1a1a !important; border: 1px solid #2a2a2a !important; letter-spacing: 0.06em; }
+    .preset-btn:hover { background: #252525 !important; border-color: #444 !important; }
     .zoom-row  { display: flex; align-items: center; gap: 3px; }
 
     .tool-row { display: flex; align-items: center; gap: 6px; }
@@ -333,6 +345,7 @@
     }
     .wp-frame-portrait  { width: 30px; height: 54px; }
     .wp-frame-landscape { width: 76px; height: 48px; }
+    .wp-frame-social    { width: 34px; height: 42px; }
     .wp-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .wp-info { flex: 1; }
     .wp-name {
@@ -507,7 +520,7 @@
 
     /* ── RESPONSIVE TOOLBAR ── */
     @media (max-width: 1400px) {
-      :root { --bar-h: 120px; }
+      :root { --bar-h: 82px; }
       #bottombar { padding: 0 14px 18px; }
       .tbtn    { height: 32px; padding: 0 10px; font-size: 12px; }
       .act-btn { height: 32px; padding: 0 9px; font-size: 12px; }
@@ -526,7 +539,7 @@
       .thread-spool svg { width: 26px !important; }
     }
     @media (max-width: 1200px) {
-      :root { --bar-h: 110px; }
+      :root { --bar-h: 76px; }
       .tbtn    { height: 30px; padding: 0 9px; font-size: 12px; }
       .act-btn { height: 30px; padding: 0 8px; }
       .sym-btn { height: 30px; }
@@ -543,7 +556,7 @@
       .thread-spool svg { width: 24px !important; }
     }
     @media (max-width: 1024px) {
-      :root { --bar-h: 96px; }
+      :root { --bar-h: 70px; }
       #bottombar { padding: 0 10px 14px; }
       .tbtn    { height: 27px; padding: 0 7px; font-size: 11px; }
       .act-btn { height: 27px; padding: 0 7px; font-size: 11px; }
@@ -567,6 +580,15 @@
 </head>
 <body>
 <div id="app">
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div id="bar-logo" onclick="showStoryPage()" title="About Pixelkari" style="cursor:pointer;">
+      <div class="logo-title">Pixelkari</div>
+      <div class="logo-sub">ਪਿਕਸਲਕਾਰੀ</div>
+    </div>
+    <button class="export-btn" onclick="openFinishModal()" style="line-height:1;">Finish ✦</button>
+  </div>
 
   <!-- CANVAS -->
   <div id="canvas-area">
@@ -595,24 +617,27 @@
 
   <!-- BOTTOM BAR -->
   <div id="bottombar">
-    <!-- Logo (grid col 1) -->
-    <div id="bar-logo" onclick="showStoryPage()" title="About Pixelkari" style="cursor:pointer;">
-      <div class="logo-title">Pixelkari</div>
-      <div class="logo-sub">ਪਿਕਸਲਕਾਰੀ</div>
-    </div>
-
-    <!-- Tools (grid col 2, centered) -->
+    <!-- Tools -->
     <div id="bb-tools">
-      <!-- Nav block: 2×2 grid -->
+      <!-- Nav block -->
       <div class="nav-block">
-        <button class="eye-btn on" id="tog-grid" onclick="toggleGrid()" title="Toggle grid (G)"><span class="tool-emoji">👁️</span>Grid</button>
-        <button class="tbtn" onclick="fitZoom()" title="Fit (0)">Fit</button>
-        <div class="zoom-row">
-          <button class="icon-btn" onclick="doZoom(-0.25)" title="Zoom out (-)">−</button>
-          <span class="zoom-lbl" id="zoom-lbl">100%</span>
-          <button class="icon-btn" onclick="doZoom(0.25)" title="Zoom in (+)">+</button>
+        <!-- Top row: canvas presets -->
+        <div class="nav-row">
+          <button class="tbtn preset-btn" onclick="newGridPreset('phone')" title="Phone wallpaper canvas">📱 Phone</button>
+          <button class="tbtn preset-btn" onclick="newGridPreset('desktop')" title="Desktop wallpaper canvas">🖥 Desktop</button>
+          <button class="tbtn preset-btn" onclick="newGridPreset('social')" title="Instagram post canvas">📸 Social</button>
         </div>
-        <button class="tbtn" id="pan-btn" onclick="togglePan()" title="Drag canvas"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-1px"><path d="M9 3.5C9 2.67 9.67 2 10.5 2S12 2.67 12 3.5V11h1V5.5C13 4.67 13.67 4 14.5 4S16 4.67 16 5.5V11h1V7.5C17 6.67 17.67 6 18.5 6S20 6.67 20 7.5V15c0 3.31-2.69 6-6 6h-2c-2.1 0-3.96-1.09-5.03-2.75L3.5 13c-.56-.97-.23-2.22.75-2.78.97-.56 2.22-.23 2.78.75L9 13V3.5Z"/></svg>Drag</button>
+        <!-- Bottom row: view controls -->
+        <div class="nav-row">
+          <button class="eye-btn on" id="tog-grid" onclick="toggleGrid()" title="Toggle grid (G)"><span class="tool-emoji">👁️</span>Grid</button>
+          <button class="tbtn" onclick="fitZoom()" title="Fit (0)">Fit</button>
+          <div class="zoom-row">
+            <button class="icon-btn" onclick="doZoom(-0.25)" title="Zoom out (-)">−</button>
+            <span class="zoom-lbl" id="zoom-lbl">100%</span>
+            <button class="icon-btn" onclick="doZoom(0.25)" title="Zoom in (+)">+</button>
+          </div>
+          <button class="tbtn" id="pan-btn" onclick="togglePan()" title="Drag canvas"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-1px"><path d="M9 3.5C9 2.67 9.67 2 10.5 2S12 2.67 12 3.5V11h1V5.5C13 4.67 13.67 4 14.5 4S16 4.67 16 5.5V11h1V7.5C17 6.67 17.67 6 18.5 6S20 6.67 20 7.5V15c0 3.31-2.69 6-6 6h-2c-2.1 0-3.96-1.09-5.03-2.75L3.5 13c-.56-.97-.23-2.22.75-2.78.97-.56 2.22-.23 2.78.75L9 13V3.5Z"/></svg>Drag</button>
+        </div>
       </div>
       <div class="bb-divider"></div>
       <!-- Tool block: left col = Draw/Erase, right col = mirrors / undo+clear -->
@@ -651,8 +676,6 @@
       </div>
     </div>
 
-    <!-- Finish button (right) -->
-    <button class="export-btn" onclick="openFinishModal()" style="align-self:center;flex-shrink:0;line-height:1;">Finish ✦</button>
   </div>
 </div>
 
@@ -677,6 +700,14 @@
         <div class="wp-info">
           <div class="wp-name">Desktop</div>
           <div class="wp-dims">3840 × 2160 · landscape · 4K</div>
+        </div>
+        <span class="wp-dl">↓</span>
+      </div>
+      <div class="wp-card" onclick="downloadWallpaper('instagram')">
+        <div class="wp-frame wp-frame-social"><img class="wp-art" data-format="instagram" alt="" /></div>
+        <div class="wp-info">
+          <div class="wp-name">Instagram</div>
+          <div class="wp-dims">1080 × 1350 · portrait · 4:5</div>
         </div>
         <span class="wp-dl">↓</span>
       </div>
@@ -1362,9 +1393,26 @@ function toggleGrid() {
 // FINISH MODAL / POSTCARD
 // ═══════════════════════════════════════════════════
 const WALLPAPER_PRESETS = {
-  phone:   { w: 1290, h: 2796, rotate: true  },
-  desktop: { w: 3840, h: 2160, rotate: false },
+  phone:     { w: 1290, h: 2796, rotate: true  },
+  desktop:   { w: 3840, h: 2160, rotate: false },
+  instagram: { w: 1080, h: 1350, rotate: false },
 };
+
+const GRID_PRESETS = {
+  phone:   { cols: 52, rows: 24 },
+  desktop: { cols: 72, rows: 45 },
+  social:  { cols: 36, rows: 45 },
+};
+
+function newGridPreset(preset) {
+  if (!confirm('Start a new canvas? Your current design will be cleared.')) return;
+  const { cols, rows } = GRID_PRESETS[preset];
+  S.cells = {};
+  S.cols = cols;
+  S.rows = rows;
+  initCanvas();
+  fitZoom();
+}
 
 function openFinishModal() {
   document.getElementById('finish-modal').classList.add('on');
@@ -1376,9 +1424,10 @@ function _renderWallpaperPreviews() {
   const savedGrid = S.grid; S.grid = false; _doRender();
   const logW = S.cols * CELL, logH = S.rows * CELL;
 
-  // Desktop preview — natural orientation
+  // Desktop + Instagram preview — natural orientation (instagram centered on export)
   const src = canvas.toDataURL('image/png');
   document.querySelectorAll('.wp-art[data-format="desktop"]').forEach(img => { img.src = src; });
+  document.querySelectorAll('.wp-art[data-format="instagram"]').forEach(img => { img.src = src; });
 
   // Phone preview — rotate 90° to portrait
   const PH = 108, PW = Math.round(PH * logH / logW);
