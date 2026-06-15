@@ -446,9 +446,11 @@
     .s-cta h2 { font-size: 34px; font-weight: 600; color: #F72585; margin: 0 0 10px; }
     .s-cta p  { font-size: 13px; color: #ffffff; margin: 0 0 36px; }
     .s-footer-note {
-      text-align: center; margin-top: 72px; padding: 0;
-      font-size: 11px; color: rgba(255,255,255,0.28);
+      position: sticky; bottom: 0; left: 0; right: 0;
+      text-align: center; padding: 14px 40px;
+      font-size: 11px; color: #ffffff;
       letter-spacing: 0.06em; font-family: 'Bricolage Grotesque', sans-serif;
+      background: #0d0d0d; z-index: 5;
     }
     body.story-open, body.story-open * { cursor: none !important; }
     #s-wallpaper {
@@ -801,10 +803,11 @@
       <h2>Start designing.</h2>
       <p>Runs entirely in your browser. No account, no installation.</p>
       <button class="snav-cta" onclick="closeStoryPage()">Open the Tool →</button>
-      <div class="s-footer-note">Made with 🩷 for all phulkari lovers. © pixelkari 2026.</div>
     </div>
 
   </div>
+
+  <div class="s-footer-note">Made with 🩷 for all phulkari lovers. © pixelkari 2026.</div>
 </div>
 
 <script>
