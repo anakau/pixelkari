@@ -218,13 +218,6 @@
     }
     .motif-create-btn:hover .mcb-tip { opacity: 1; }
 
-    .save-motif-btn {
-      padding: 3px 7px; background: transparent; border: 1px dashed var(--border); border-radius: 0;
-      color: var(--muted); cursor: pointer; font-size: 10px;
-      font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: 0.06em;
-      transition: border-color 0.12s, color 0.12s;
-    }
-    .save-motif-btn:hover { border-color: var(--accent); color: var(--accent); }
     .motif-grid { display: flex; flex-direction: row; gap: 6px; overflow-x: auto; align-items: flex-start; flex: 1; }
     .motif-thumb { flex-shrink: 0; width: 60px; }
     .motif-thumb {
@@ -245,17 +238,22 @@
     .view-all-tile {
       flex-shrink: 0; width: 60px; cursor: pointer;
       border: 1px solid #2a2a2a; background: #161616;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 5px; transition: border-color 0.12s, background 0.12s; aspect-ratio: 1;
+      display: flex; flex-direction: column;
+      transition: border-color 0.12s, background 0.12s;
     }
     .view-all-tile:hover { border-color: rgba(255,255,255,0.35); background: #1f1f1f; }
+    .va-frame {
+      width: 100%; aspect-ratio: 1;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px;
+    }
     .view-all-tile svg { color: #444; transition: color 0.12s; }
     .view-all-tile:hover svg { color: #888; }
-    .view-all-tile .va-label {
-      font-size: 7.5px; font-weight: 600; letter-spacing: 0.12em;
-      text-transform: uppercase; color: #444; transition: color 0.12s; line-height: 1;
+    .view-all-tile .va-count {
+      font-size: 8px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #555; transition: color 0.12s; line-height: 1;
     }
-    .view-all-tile:hover .va-label { color: #aaa; }
+    .view-all-tile:hover .va-count { color: #aaa; }
     /* ── MOTIF LIBRARY MODAL ── */
     .lib-box {
       background: #141414; border: 1px solid #2a2a2a;
@@ -301,7 +299,7 @@
     .overlay.on { display: flex; }
     .finish-box {
       background: #141414; border: 1px solid #2a2a2a;
-      width: min(740px, 94vw); max-height: 92vh;
+      width: min(440px, 92vw); max-height: 92vh;
       display: flex; flex-direction: column; overflow: hidden;
     }
     .finish-head {
@@ -318,37 +316,31 @@
       transition: color 0.12s;
     }
     .finish-close:hover { color: var(--text); }
-    .finish-face-toggle {
-      display: flex; gap: 0; padding: 14px 20px 0; flex-shrink: 0;
+    #wallpaper-grid {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 16px 20px 4px; flex: 1; overflow-y: auto; min-height: 0;
     }
-    .face-btn {
-      padding: 6px 18px; background: transparent; border: 1px solid #2a2a2a;
-      color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 600;
-      letter-spacing: 0.12em; text-transform: uppercase;
-      font-family: 'Bricolage Grotesque', sans-serif; transition: all 0.12s;
+    .wp-card {
+      border: 1px solid #222; padding: 12px 14px;
+      cursor: pointer; transition: border-color 0.12s, background 0.12s;
+      display: flex; align-items: center; gap: 14px;
     }
-    .face-btn.on { background: #222; border-color: #444; color: var(--text); }
-    .face-btn:hover:not(.on) { border-color: #3a3a3a; color: #888; }
-    .finish-preview-wrap {
-      flex: 1; overflow-y: auto; padding: 16px 20px 0;
-      display: flex; flex-direction: column; gap: 14px; min-height: 0;
+    .wp-card:hover { border-color: #555; background: #1a1a1a; }
+    .wp-frame {
+      background: #0a0a0a; border: 1px solid #222; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
     }
-    .finish-preview-wrap img {
-      width: 100%; border: 1px solid #222; display: block;
+    .wp-frame-portrait  { width: 30px; height: 54px; }
+    .wp-frame-landscape { width: 76px; height: 48px; }
+    .wp-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .wp-info { flex: 1; }
+    .wp-name {
+      font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text); margin-bottom: 3px;
     }
-    .finish-inputs {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-      padding: 0 20px; flex-shrink: 0;
-    }
-    .mfield label { display: block; font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
-    .mfield input, .mfield textarea {
-      width: 100%; background: #1e1e1e; border: 1px solid #2a2a2a;
-      color: var(--text); padding: 7px 10px; box-sizing: border-box;
-      font-size: 12px; font-family: 'Bricolage Grotesque', sans-serif; resize: none;
-      transition: border-color 0.12s;
-    }
-    .mfield input:focus, .mfield textarea:focus { outline: none; border-color: #555; }
-    .mfield textarea { height: 56px; }
+    .wp-dims { font-size: 9px; color: var(--muted); letter-spacing: 0.06em; }
+    .wp-dl { font-size: 17px; color: #444; transition: color 0.12s; flex-shrink: 0; }
+    .wp-card:hover .wp-dl { color: #aaa; }
     .finish-actions {
       display: flex; align-items: center; justify-content: space-between;
       padding: 14px 20px 18px; border-top: 1px solid #1e1e1e; flex-shrink: 0;
@@ -367,13 +359,6 @@
       font-weight: 700; transition: opacity 0.12s;
     }
     .btn-pri:hover { opacity: 0.88; }
-    .btn-share {
-      padding: 8px 16px; background: transparent; border: 1px solid #444;
-      color: #888; cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
-      text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif;
-      transition: all 0.12s;
-    }
-    .btn-share:hover { border-color: #888; color: var(--text); }
 
     /* ── STORY PAGE ── */
     #story-page {
@@ -407,7 +392,7 @@
     }
     .s-h1 {
       font-size: clamp(40px, 6vw, 68px); font-weight: 600; line-height: 1.04;
-      color: #E8388A; letter-spacing: -0.025em; margin: 0 0 28px;
+      color: #C2185B; letter-spacing: -0.025em; margin: 0 0 28px;
     }
     .s-lead {
       font-size: 17px; color: #ffffff; line-height: 1.7; max-width: 500px; margin: 0;
@@ -415,7 +400,7 @@
     .s-section { padding: 64px 0; border-bottom: 1px solid #181818; }
     .s-section .s-eyebrow { margin-bottom: 16px; }
     .s-section h2 {
-      font-size: 26px; font-weight: 600; color: #E8388A;
+      font-size: 26px; font-weight: 600; color: #C2185B;
       margin: 0 0 18px; line-height: 1.25;
     }
     .s-section p {
@@ -432,7 +417,7 @@
     .s-img-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 28px 0; }
     .s-img-pair .s-img { margin: 0; aspect-ratio: 4/3; }
     .s-cta { padding: 80px 0; text-align: center; }
-    .s-cta h2 { font-size: 34px; font-weight: 600; color: #E8388A; margin: 0 0 10px; }
+    .s-cta h2 { font-size: 34px; font-weight: 600; color: #C2185B; margin: 0 0 10px; }
     .s-cta p  { font-size: 13px; color: #ffffff; margin: 0 0 36px; }
 
     /* ── RESPONSIVE TOOLBAR ── */
@@ -575,7 +560,6 @@
         <div id="motif-panel">
           <div class="motif-panel-head">
             <span class="motif-panel-label">Motif Library</span>
-            <button class="save-motif-btn" onclick="showMotifData()" title="Export motif data">⬆ Export</button>
           </div>
           <div class="motif-grid" id="motif-pal"></div>
         </div>
@@ -591,22 +575,45 @@
 <div class="overlay" id="finish-modal">
   <div class="finish-box">
     <div class="finish-head">
-      <span class="finish-head-title">Your Postcard</span>
+      <span class="finish-head-title">Export Wallpaper</span>
       <button class="finish-close" onclick="closeFinishModal()">✕</button>
     </div>
-    <div class="finish-face-toggle">
-      <button class="face-btn on" id="face-front" onclick="setFinishFace('front')">◀ Front</button>
-      <button class="face-btn" id="face-back" onclick="setFinishFace('back')">Back ▶</button>
-    </div>
-    <div class="finish-preview-wrap">
-      <img id="finish-preview" src="" alt="Postcard preview" />
+    <div id="wallpaper-grid">
+      <div class="wp-card" onclick="downloadWallpaper('iphone')">
+        <div class="wp-frame wp-frame-portrait"><img class="wp-art" alt="" /></div>
+        <div class="wp-info">
+          <div class="wp-name">iPhone</div>
+          <div class="wp-dims">1290 × 2796</div>
+        </div>
+        <span class="wp-dl">↓</span>
+      </div>
+      <div class="wp-card" onclick="downloadWallpaper('phone')">
+        <div class="wp-frame wp-frame-portrait"><img class="wp-art" alt="" /></div>
+        <div class="wp-info">
+          <div class="wp-name">Phone</div>
+          <div class="wp-dims">1080 × 1920</div>
+        </div>
+        <span class="wp-dl">↓</span>
+      </div>
+      <div class="wp-card" onclick="downloadWallpaper('macbook')">
+        <div class="wp-frame wp-frame-landscape"><img class="wp-art" alt="" /></div>
+        <div class="wp-info">
+          <div class="wp-name">MacBook</div>
+          <div class="wp-dims">2560 × 1600</div>
+        </div>
+        <span class="wp-dl">↓</span>
+      </div>
+      <div class="wp-card" onclick="downloadWallpaper('desktop')">
+        <div class="wp-frame wp-frame-landscape"><img class="wp-art" alt="" /></div>
+        <div class="wp-info">
+          <div class="wp-name">Desktop</div>
+          <div class="wp-dims">1920 × 1080</div>
+        </div>
+        <span class="wp-dl">↓</span>
+      </div>
     </div>
     <div class="finish-actions">
-      <button class="btn-sec" onclick="closeFinishModal()">Cancel</button>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-share" onclick="shareFinished()">↗ Share</button>
-        <button class="btn-pri" onclick="downloadFinished()">↓ Save</button>
-      </div>
+      <button class="btn-sec" onclick="closeFinishModal()">Close</button>
     </div>
   </div>
 </div>
@@ -622,20 +629,6 @@
   </div>
 </div>
 
-<div class="overlay" id="motif-data-modal">
-  <div class="finish-box" style="max-width:480px;">
-    <div class="finish-head">
-      <span class="finish-head-title">Motif Data</span>
-      <button class="finish-close" onclick="closeMotifDataModal()">✕</button>
-    </div>
-    <p style="color:var(--muted);font-size:11px;margin:0 0 10px;line-height:1.5;">Select all and copy — send this to the developer to add your patterns as presets.</p>
-    <textarea id="motif-data-ta" readonly style="width:100%;box-sizing:border-box;height:220px;background:#111;border:1px solid var(--border);color:#ccc;font-size:10px;font-family:monospace;padding:8px;resize:vertical;outline:none;"></textarea>
-    <div class="finish-actions" style="margin-top:12px;">
-      <button class="btn-sec" onclick="closeMotifDataModal()">Close</button>
-      <button class="btn-pri" onclick="selectMotifData()">Select All</button>
-    </div>
-  </div>
-</div>
 
 <!-- STORY PAGE -->
 <div id="story-page">
@@ -1275,159 +1268,65 @@ function toggleGrid() {
 // ═══════════════════════════════════════════════════
 // FINISH MODAL / POSTCARD
 // ═══════════════════════════════════════════════════
-let _finishFace = 'front';
-let _finishCanvas = null;
+const WALLPAPER_PRESETS = {
+  iphone:  { w: 1290, h: 2796 },
+  phone:   { w: 1080, h: 1920 },
+  macbook: { w: 2560, h: 1600 },
+  desktop: { w: 1920, h: 1080 },
+};
 
 function openFinishModal() {
-  _finishFace = 'front';
-  document.getElementById('face-front').classList.add('on');
-  document.getElementById('face-back').classList.remove('on');
   document.getElementById('finish-modal').classList.add('on');
-  refreshFinishPreview();
+  _renderWallpaperPreviews();
 }
 function closeFinishModal() { document.getElementById('finish-modal').classList.remove('on'); }
-function showStoryPage()  { document.getElementById('story-page').classList.add('on'); }
-function closeStoryPage() { document.getElementById('story-page').classList.remove('on'); }
 
-function showMotifData() {
-  const ta = document.getElementById('motif-data-ta');
-  const data = S.activeMotif ? [S.activeMotif] : MOTIFS;
-  ta.value = JSON.stringify(data, null, 2);
-  document.getElementById('motif-data-modal').classList.add('on');
-}
-function closeMotifDataModal() { document.getElementById('motif-data-modal').classList.remove('on'); }
-function selectMotifData() {
-  const ta = document.getElementById('motif-data-ta');
-  ta.focus();
-  ta.select();
+function _renderWallpaperPreviews() {
+  const savedGrid = S.grid; S.grid = false; _doRender();
+  const src = canvas.toDataURL('image/png');
+  document.querySelectorAll('.wp-art').forEach(img => { img.src = src; });
+  S.grid = savedGrid; _doRender();
 }
 
-function setFinishFace(face) {
-  _finishFace = face;
-  document.getElementById('face-front').classList.toggle('on', face === 'front');
-  document.getElementById('face-back').classList.toggle('on', face === 'back');
-  refreshFinishPreview();
-}
-
-function refreshFinishPreview() {
-  _finishCanvas = _finishFace === 'front' ? _buildFrontCanvas() : _buildBackCanvas();
-  document.getElementById('finish-preview').src = _finishCanvas.toDataURL('image/png');
-}
-
-function _buildFrontCanvas() {
-  const EW = 1748, EH = 1240;   // A6 landscape @ 300 dpi
-  const M  = 24;                 // ~2 mm border all sides
-  const LOGO_STRIP = 80;         // space below design for logo text
-
+function _buildWallpaperCanvas(presetId) {
+  const { w: EW, h: EH } = WALLPAPER_PRESETS[presetId];
+  const M = Math.round(Math.min(EW, EH) * 0.05);
   const logW = S.cols * CELL, logH = S.rows * CELL;
-  const availW = EW - 2 * M, availH = EH - 2 * M - LOGO_STRIP;
-  const scale  = Math.min(availW / logW, availH / logH);
+  const scale = Math.min((EW - 2 * M) / logW, (EH - 2 * M) / logH);
   const dw = Math.round(logW * scale), dh = Math.round(logH * scale);
-  const dx = Math.round((EW - dw) / 2), dy = M;
+  const dx = Math.round((EW - dw) / 2), dy = Math.round((EH - dh) / 2);
 
   const exp = document.createElement('canvas');
   exp.width = EW; exp.height = EH;
   const ec = exp.getContext('2d');
-
   ec.fillStyle = '#000000'; ec.fillRect(0, 0, EW, EH);
 
   const savedGrid = S.grid; S.grid = false; _doRender();
   ec.drawImage(canvas, dx, dy, dw, dh);
   S.grid = savedGrid; _doRender();
 
-  const logoY = dy + dh + Math.round((EH - dy - dh) * 0.62);
-  ec.fillStyle = '#ffffff';
-  if ('letterSpacing' in ec) ec.letterSpacing = Math.round(44 * 0.14) + 'px';
-  ec.font = '600 44px "Bricolage Grotesque", sans-serif'; ec.textAlign = 'left';
-  ec.fillText('PIXELKARI', dx, logoY);
-  ec.fillStyle = '#999999';
-  if ('letterSpacing' in ec) ec.letterSpacing = Math.round(36 * 0.06) + 'px';
-  ec.font = '400 36px "Bricolage Grotesque", sans-serif'; ec.textAlign = 'right';
-  ec.fillText('ਪਿਕਸਲਕਾਰੀ', dx + dw, logoY);
+  const fs = Math.max(16, Math.round(Math.min(EW, EH) * 0.013));
+  ec.fillStyle = 'rgba(255,255,255,0.25)';
+  if ('letterSpacing' in ec) ec.letterSpacing = Math.round(fs * 0.14) + 'px';
+  ec.font = `600 ${fs}px "Bricolage Grotesque", sans-serif`;
+  ec.textAlign = 'left';
+  ec.fillText('PIXELKARI', M, EH - Math.round(M * 0.55));
   if ('letterSpacing' in ec) ec.letterSpacing = '0px';
 
   return exp;
 }
 
-function _buildBackCanvas() {
-  const EW = 1748, EH = 1240;   // A6 landscape @ 300 dpi
-  const exp = document.createElement('canvas');
-  exp.width = EW; exp.height = EH;
-  const ec = exp.getContext('2d');
-
-  ec.fillStyle = '#000000'; ec.fillRect(0, 0, EW, EH);
-
-  // POSTCARD header
-  ec.fillStyle = '#555555'; ec.font = '600 22px "Bricolage Grotesque", sans-serif';
-  ec.textAlign = 'center';
-  if ('letterSpacing' in ec) ec.letterSpacing = '4px';
-  ec.fillText('P O S T C A R D', EW / 2, 64);
-  if ('letterSpacing' in ec) ec.letterSpacing = '0px';
-
-  // centre vertical divider
-  ec.strokeStyle = '#333333'; ec.lineWidth = 1.5;
-  ec.beginPath(); ec.moveTo(EW / 2, 84); ec.lineTo(EW / 2, EH - 65); ec.stroke();
-
-  // left — message lines
-  const lx = 55, lw = EW / 2 - 100;
-  ec.strokeStyle = '#2a2a2a'; ec.lineWidth = 1;
-  for (let i = 0; i < 9; i++) {
-    const y = 120 + i * 108;
-    ec.beginPath(); ec.moveTo(lx, y); ec.lineTo(lx + lw, y); ec.stroke();
-  }
-
-  // right — stamp box (top right)
-  const stampW = 150, stampH = 185;
-  const stampX = EW - 60 - stampW, stampY = 68;
-  ec.strokeStyle = '#333333'; ec.lineWidth = 1.5;
-  ec.strokeRect(stampX, stampY, stampW, stampH);
-  ec.fillStyle = '#111111'; ec.fillRect(stampX + 2, stampY + 2, stampW - 4, stampH - 4);
-  ec.fillStyle = '#444444'; ec.font = '16px "Bricolage Grotesque", sans-serif'; ec.textAlign = 'center';
-  ec.fillText('STAMP', stampX + stampW / 2, stampY + stampH / 2 + 6);
-
-  // right — address lines
-  const ax = EW / 2 + 45, aw = EW / 2 - 105;
-  ec.strokeStyle = '#2a2a2a'; ec.lineWidth = 1;
-  for (let i = 0; i < 5; i++) {
-    const y = 320 + i * 90;
-    ec.beginPath(); ec.moveTo(ax, y); ec.lineTo(ax + aw, y); ec.stroke();
-  }
-
-  // branding bottom
-  ec.fillStyle = '#ffffff';
-  if ('letterSpacing' in ec) ec.letterSpacing = Math.round(44 * 0.14) + 'px';
-  ec.font = '600 44px "Bricolage Grotesque", sans-serif'; ec.textAlign = 'left';
-  ec.fillText('PIXELKARI', 55, EH - 42);
-  ec.fillStyle = '#999999';
-  if ('letterSpacing' in ec) ec.letterSpacing = Math.round(36 * 0.06) + 'px';
-  ec.font = '400 36px "Bricolage Grotesque", sans-serif'; ec.textAlign = 'right';
-  ec.fillText('ਪਿਕਸਲਕਾਰੀ', EW - 55, EH - 42);
-  if ('letterSpacing' in ec) ec.letterSpacing = '0px';
-
-  return exp;
-}
-
-function downloadFinished() {
-  if (!_finishCanvas) return;
+function downloadWallpaper(presetId) {
+  const exp = _buildWallpaperCanvas(presetId);
   const a = document.createElement('a');
-  a.download = `pixelkari-${_finishFace}.png`;
-  a.href = _finishCanvas.toDataURL('image/png');
+  a.download = `pixelkari-${presetId}.png`;
+  a.href = exp.toDataURL('image/png');
   a.click();
 }
+function showStoryPage()  { document.getElementById('story-page').classList.add('on'); }
+function closeStoryPage() { document.getElementById('story-page').classList.remove('on'); }
 
-function shareFinished() {
-  if (!_finishCanvas) return;
-  _finishCanvas.toBlob(blob => {
-    const file = new File([blob], 'pixelkari.png', { type: 'image/png' });
-    if (navigator.share) {
-      navigator.share({ title: 'Pixelkari', files: [file] }).catch(() => {});
-    } else {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'pixelkari-share.png'; a.click();
-    }
-  });
-}
+
 
 // ═══════════════════════════════════════════════════
 // KEYBOARD
@@ -1444,7 +1343,6 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('story-page').classList.contains('on')) { closeStoryPage(); return; }
     if (document.getElementById('finish-modal').classList.contains('on')) { closeFinishModal(); return; }
     if (document.getElementById('motif-library-modal').classList.contains('on')) { closeMotifLibrary(); return; }
-    if (document.getElementById('motif-data-modal').classList.contains('on')) { closeMotifDataModal(); return; }
     if (S.activeMotif) { S.activeMotif = null; clearGhost(); showHint('Motif cancelled'); } return;
   }
   if (e.key === 'p') setTool('paint');
@@ -1781,13 +1679,16 @@ function buildMotifPal() {
   tile.className = 'view-all-tile';
   tile.title = 'View all motifs';
   tile.onclick = showMotifLibrary;
-  const count = MOTIFS.length > 3 ? `+${MOTIFS.length - 3}` : 'All';
+  const extra = MOTIFS.length > 3 ? `+${MOTIFS.length - 3}` : '';
   tile.innerHTML = `
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
-      <rect x="1" y="1" width="6" height="6"/><rect x="9" y="1" width="6" height="6"/>
-      <rect x="1" y="9" width="6" height="6"/><rect x="9" y="9" width="6" height="6"/>
-    </svg>
-    <span class="va-label">${count}</span>`;
+    <div class="va-frame">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+        <rect x="1" y="1" width="6" height="6"/><rect x="9" y="1" width="6" height="6"/>
+        <rect x="1" y="9" width="6" height="6"/><rect x="9" y="9" width="6" height="6"/>
+      </svg>
+      ${extra ? `<span class="va-count">${extra}</span>` : ''}
+    </div>
+    <div class="m-lbl">View All</div>`;
   el.appendChild(tile);
 }
 
