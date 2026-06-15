@@ -116,7 +116,7 @@
     .eye-btn .tool-emoji { font-size: 15px; margin-right: 4px; vertical-align: middle; }
     .nav-block { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
     .nav-row   { display: flex; gap: 3px; }
-    .preset-btn { font-size: 11px !important; padding: 0 9px !important; height: 32px !important; background: #1a1a1a !important; border: 1px solid #2a2a2a !important; letter-spacing: 0.06em; }
+    .preset-btn { padding: 0 9px !important; height: 32px !important; background: #1a1a1a !important; border: 1px solid #2a2a2a !important; letter-spacing: 0.06em; }
     .preset-btn:hover { background: #252525 !important; border-color: #444 !important; }
     .zoom-row  { display: flex; align-items: center; gap: 3px; }
 
@@ -160,10 +160,10 @@
     .icon-btn {
       width: 30px; height: 30px; background: #222; border: 1px solid var(--border); border-radius: 0;
       color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 16px; transition: background 0.1s; flex-shrink: 0;
+      font-size: 13px; transition: background 0.1s; flex-shrink: 0;
     }
     .icon-btn:hover { background: #2a2a2a; }
-    .zoom-lbl { font-size: 12px; color: var(--muted); min-width: 34px; text-align: center; flex-shrink: 0; }
+    .zoom-lbl { font-size: 13px; color: var(--muted); min-width: 34px; text-align: center; flex-shrink: 0; }
 
     /* toggle */
     .toggle {
@@ -392,7 +392,7 @@
     .s-hero {
       width: 100vw; position: relative; left: 50%; margin-left: -50vw;
       padding: 96px 0 72px; border-bottom: 1px solid #181818;
-      background-size: auto; background-repeat: repeat;
+      overflow: hidden;
     }
     .s-hero-inner {
       max-width: 780px; margin: 0 auto; padding: 0 40px;
@@ -439,7 +439,7 @@
     .s-cta {
       width: 100vw; position: relative; left: 50%; margin-left: -50vw;
       padding: 80px 40px; text-align: center;
-      background-size: auto; background-repeat: repeat;
+      overflow: hidden;
     }
     .s-cta h2 { font-size: 34px; font-weight: 600; color: #F72585; margin: 0 0 10px; }
     .s-cta p  { font-size: 13px; color: #ffffff; margin: 0 0 36px; }
@@ -656,7 +656,7 @@
       <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
         <button class="tbtn motif-create-btn" id="motif-btn" onclick="saveAsMotif()">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(0 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(45 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(90 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(135 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(180 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(225 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(270 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(315 12 12)"/><circle cx="12" cy="12" r="2.5"/></svg>
-          <span style="font-size:10px;line-height:1.3;text-align:center;">Create<br>Motif</span>
+          <span style="font-size:13px;line-height:1.3;text-align:center;">Create<br>Motif</span>
           <div class="mcb-tip">Paint a design on the canvas, then click <strong style="color:#ddd;">Create Motif</strong> to save it. Pick it from the library to stamp it anywhere — click to place, drag to tile.</div>
         </button>
         <div id="motif-panel">
@@ -734,6 +734,7 @@
 
     <!-- Hero -->
     <div class="s-hero">
+      <canvas id="hero-pat-canvas" aria-hidden="true" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0.16;"></canvas>
       <div class="s-hero-inner">
         <div class="s-eyebrow">A digital design tool</div>
         <h1 class="s-h1">Phulkari,<br>pixel by pixel.</h1>
@@ -795,6 +796,7 @@
 
     <!-- CTA -->
     <div class="s-cta">
+      <canvas id="footer-pat-canvas" aria-hidden="true" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0.16;"></canvas>
       <h2>Start designing.</h2>
       <p>Runs entirely in your browser. No account, no installation.</p>
       <button class="snav-cta" onclick="closeStoryPage()">Open the Tool →</button>
@@ -1474,44 +1476,56 @@ let _storyTrailRaf = null;
 let _storyMoveHandler = null;
 let _storyResizeHandler = null;
 
-function _buildHeroPattern() {
-  const C = 20;
-  // Tara geometry recolored: yellow top+bottom arms, pink left+right arms
-  const cells = {
-    "0,-1,l":"#D4A827","0,-1,b":"#D4A827","0,0,t":"#D4A827","0,-1,r":"#D4A827",
-    "1,0,t":"#F72585","1,0,l":"#F72585","0,0,r":"#F72585","1,0,b":"#F72585",
-    "0,1,r":"#D4A827","0,1,t":"#D4A827","0,0,b":"#D4A827","0,1,l":"#D4A827",
-    "-1,0,b":"#F72585","-1,0,r":"#F72585","0,0,l":"#F72585","-1,0,t":"#F72585"
-  };
-  const tile = document.createElement('canvas');
-  tile.width = 3 * C; tile.height = 3 * C;
-  const tc = tile.getContext('2d');
-  tc.fillStyle = '#0d0d0d'; tc.fillRect(0, 0, tile.width, tile.height);
-  for (const [key, color] of Object.entries(cells)) {
-    const [dc, dr, tri] = key.split(',');
-    const x = (1 + +dc) * C, y = (1 + +dr) * C;
-    const mx = x + C/2, my = y + C/2;
-    tc.fillStyle = color; tc.beginPath();
-    if      (tri==='t') { tc.moveTo(x,y);     tc.lineTo(x+C,y);     tc.lineTo(mx,my); }
-    else if (tri==='r') { tc.moveTo(x+C,y);   tc.lineTo(x+C,y+C);   tc.lineTo(mx,my); }
-    else if (tri==='b') { tc.moveTo(x+C,y+C); tc.lineTo(x,y+C);     tc.lineTo(mx,my); }
-    else                { tc.moveTo(x,y+C);   tc.lineTo(x,y);       tc.lineTo(mx,my); }
-    tc.closePath(); tc.fill();
+function _drawTaraTileAt(ctx, ox, oy, C) {
+  const cells = [
+    [0,-1,"t","#D4A827"],[0,-1,"b","#D4A827"],[0,0,"t","#D4A827"],[0,-1,"r","#D4A827"],
+    [1,0,"t","#F72585"],[1,0,"l","#F72585"],[0,0,"r","#F72585"],[1,0,"b","#F72585"],
+    [0,1,"r","#D4A827"],[0,1,"t","#D4A827"],[0,0,"b","#D4A827"],[0,1,"l","#D4A827"],
+    [-1,0,"b","#F72585"],[-1,0,"r","#F72585"],[0,0,"l","#F72585"],[-1,0,"t","#F72585"]
+  ];
+  for (const [dc,dr,tri,color] of cells) {
+    const x = ox+(1+dc)*C, y = oy+(1+dr)*C;
+    const mx = x+C/2, my = y+C/2;
+    ctx.fillStyle = color; ctx.beginPath();
+    if      (tri==='t') { ctx.moveTo(x,y);     ctx.lineTo(x+C,y);     ctx.lineTo(mx,my); }
+    else if (tri==='r') { ctx.moveTo(x+C,y);   ctx.lineTo(x+C,y+C);   ctx.lineTo(mx,my); }
+    else if (tri==='b') { ctx.moveTo(x+C,y+C); ctx.lineTo(x,y+C);     ctx.lineTo(mx,my); }
+    else                { ctx.moveTo(x,y+C);   ctx.lineTo(x,y);       ctx.lineTo(mx,my); }
+    ctx.closePath(); ctx.fill();
   }
-  return tile.toDataURL();
+}
+
+function _drawPatternCanvas(canvasEl, fromBottom) {
+  const C = 20, TILE = 3 * C;
+  const el = canvasEl.parentElement;
+  const W = el.offsetWidth || window.innerWidth;
+  const H = el.offsetHeight || 300;
+  canvasEl.width = W; canvasEl.height = H;
+  const ctx = canvasEl.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  const numCols = Math.ceil(W / TILE) + 1;
+  for (let tc = 0; tc < numCols; tc++) {
+    const numRows = 5 + Math.floor(Math.sin(tc * 1.7 + 0.3) * 2.5 + Math.cos(tc * 0.9) * 1.5 + 3);
+    for (let tr = 0; tr < numRows; tr++) {
+      const x = tc * TILE;
+      const y = fromBottom ? (H - (numRows - tr) * TILE) : tr * TILE;
+      _drawTaraTileAt(ctx, x, y, C);
+    }
+  }
 }
 
 function showStoryPage() {
   document.getElementById('story-page').classList.add('on');
   document.body.classList.add('story-open');
-  const hero = document.querySelector('.s-hero');
-  if (hero && !hero.dataset.patternSet) {
-    const pat = _buildHeroPattern();
-    const overlay = `linear-gradient(rgba(13,13,13,0.84),rgba(13,13,13,0.84)), url(${pat})`;
-    hero.style.backgroundImage = overlay;
-    hero.dataset.patternSet = '1';
-    const cta = document.querySelector('.s-cta');
-    if (cta) cta.style.backgroundImage = overlay;
+  const heroCanvas = document.getElementById('hero-pat-canvas');
+  if (heroCanvas && !heroCanvas.dataset.drawn) {
+    _drawPatternCanvas(heroCanvas, false);
+    heroCanvas.dataset.drawn = '1';
+  }
+  const footerCanvas = document.getElementById('footer-pat-canvas');
+  if (footerCanvas && !footerCanvas.dataset.drawn) {
+    _drawPatternCanvas(footerCanvas, true);
+    footerCanvas.dataset.drawn = '1';
   }
   try { localStorage.setItem('pkPage', 'story'); } catch(e) {}
   _initStoryTrail();
