@@ -420,12 +420,35 @@
     .s-cta h2 { font-size: 34px; font-weight: 600; color: #F72585; margin: 0 0 10px; }
     .s-cta p  { font-size: 13px; color: #ffffff; margin: 0 0 36px; }
     body.story-open { cursor: none; }
+    #s-wallpaper {
+      position: relative; width: 100%; min-height: 78vh;
+      display: flex; align-items: flex-end; overflow: hidden;
+    }
+    #s-wallpaper > img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center 25%; display: block;
+    }
+    #s-wallpaper-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(13,13,13,0.88) 100%);
+    }
+    #s-wallpaper-hero {
+      position: relative; z-index: 1; width: 100%;
+      max-width: 780px; margin: 0 auto; padding: 0 40px 64px;
+    }
+    #s-wallpaper-credit {
+      position: absolute; bottom: 10px; right: 16px; z-index: 1;
+      font-size: 8px; color: rgba(255,255,255,0.28); letter-spacing: 0.05em;
+      font-family: 'Bricolage Grotesque', sans-serif; line-height: 1.5;
+    }
+    #s-wallpaper-credit a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+    #s-wallpaper-credit a:hover { color: rgba(255,255,255,0.65); }
     #story-cursor-el {
       position: fixed; pointer-events: none; z-index: 410;
       width: 26px; height: 31px; display: none;
       transform: translate(-6px, -29px);
-      filter: invert(1);
     }
+    #story-cursor-el svg { width: 100%; height: 100%; }
     #story-trail { display: none; position: fixed; inset: 0; pointer-events: none; z-index: 409; }
 
     /* ── RESPONSIVE TOOLBAR ── */
@@ -632,14 +655,22 @@
     <button class="snav-cta" onclick="closeStoryPage()">Open Tool →</button>
   </nav>
 
-  <div id="story-body">
-
-    <!-- Hero -->
-    <div class="s-hero">
+  <!-- Full-bleed hero photo -->
+  <div id="s-wallpaper">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Women_embroidering_Phulkari_in_Rajpura%2C_Punjab_%28India%29%2C_2015.jpg" alt="Women embroidering Phulkari in Rajpura, Punjab, India, 2015" />
+    <div id="s-wallpaper-overlay"></div>
+    <div id="s-wallpaper-hero">
       <div class="s-eyebrow">A digital design tool</div>
       <h1 class="s-h1">Phulkari,<br>pixel by pixel.</h1>
       <p class="s-lead">Pixelkari is a browser-based tool for designing Phulkari embroidery patterns — bringing the geometry of a centuries-old Punjabi craft into a digital medium.</p>
     </div>
+    <div id="s-wallpaper-credit">
+      Photo: <a href="https://commons.wikimedia.org/wiki/File:Women_embroidering_Phulkari_in_Rajpura,_Punjab_(India),_2015.jpg" target="_blank" rel="noopener">Sheebamadanloewinger</a> /
+      <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> / Wikimedia Commons
+    </div>
+  </div>
+
+  <div id="story-body">
 
     <!-- The Tradition -->
     <section class="s-section">
@@ -1855,7 +1886,7 @@ initCanvas();
 initCursors();
 </script>
 <!-- STORY PAGE CURSOR + TRAIL -->
-<img id="story-cursor-el" src="./weave.svg" alt="" />
+<div id="story-cursor-el"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50.7 60.5"><path fill="white" d="M10.8,57.3c3.6,2.2,7.3,1.9,11.2-1.1h0c0,.1,0,.2,0,.2l.2.4s0,0,0,.1c.1.3,0,.7,0,1-.1.3-.4.6-.7.7,0,0-.1,0-.2,0,0,0-.1,0-.2,0-.3,0-.7,0-1,0-.3-.1-.5-.3-.6-.6-.4.2-.7.3-1.1.4.3.6.7,1.1,1.2,1.4.7.5,1.5.8,2.3.5,0,0,0,0,0,0,0,0,0,0,0,0,.8-.3,1.3-1.1,1.6-1.9.2-.9.2-1.9-.1-2.8,0,0,0-.1,0-.1v-.3c-.1,0-.1,0-.1,0,0,0,0,0,0,0,4.4-3.6,10.5-5.3,16.2-4.5,4.5.6,8.1,2.7,10.3,5.8.1.2.4.2.6,0,.2-.1.2-.4,0-.6-2.3-3.3-6.2-5.5-10.9-6.1-1-.1-1.9-.2-2.9-.2-4.9,0-9.9,1.7-13.7,4.7-1.7-4.2-3.4-8.5-5.1-12.8C12.5,27.4,6.8,13,0,0c3.6,14.3,8.5,28.7,13.2,43,1.6,4.9,3.3,9.7,4.8,14.5-2.3.8-4.5.5-6.8-.9l-.4.7ZM18.7,54.4c0-.2,0-.5,0-.7s.3-.4.5-.5h.2c.2-.2.5-.2.7,0s.4.2.5.5l.9,1.8s0,0,0,0c-.8.6-1.6,1.1-2.3,1.4l-.6-2.5h0Z"/></svg></div>
 <canvas id="story-trail"></canvas>
 </body>
 </html>
