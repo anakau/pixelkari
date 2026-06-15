@@ -383,12 +383,12 @@
     }
     #story-page.on { display: block; }
     .snav-cta {
-      padding: 9px 22px; background: #fff; color: #000; border: none; cursor: pointer;
+      padding: 9px 22px; background: var(--accent); color: #111; border: none; cursor: pointer;
       font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
-      font-family: 'Bricolage Grotesque', sans-serif; transition: background 0.15s;
+      font-family: 'Bricolage Grotesque', sans-serif; transition: background 0.15s, color 0.15s;
       flex-shrink: 0;
     }
-    .snav-cta:hover { background: #ddd; }
+    .snav-cta:hover { background: #F72585; color: #fff; }
     #story-body { max-width: 780px; margin: -64px auto 0; padding: 0 40px 0; }
     .s-hero {
       width: 100vw; position: relative; left: 50%; margin-left: -50vw;
@@ -479,13 +479,11 @@
     .s-cta h2 { font-size: 34px; font-weight: 600; color: #F72585; margin: 0 0 10px; }
     .s-cta p  { font-size: 13px; color: #ffffff; margin: 0 0 36px; }
     .s-footer-note {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      text-align: center; padding: 14px 40px;
+      text-align: center; padding: 20px 40px;
       font-size: 11px; color: #ffffff;
       letter-spacing: 0.06em; font-family: 'Bricolage Grotesque', sans-serif;
-      background: #0d0d0d; z-index: 405; display: none;
+      background: #0d0d0d;
     }
-    #story-page.on .s-footer-note { display: block; }
     body.story-open, body.story-open * { cursor: none !important; }
     #s-wallpaper {
       position: relative; width: 100%; min-height: 78vh;
