@@ -360,6 +360,67 @@
       transition: all 0.12s;
     }
     .btn-share:hover { border-color: #888; color: var(--text); }
+
+    /* ── STORY PAGE ── */
+    #story-page {
+      position: fixed; inset: 0; z-index: 400;
+      background: #0d0d0d; overflow-y: auto; display: none;
+    }
+    #story-page.on { display: block; }
+    #story-nav {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(13,13,13,0.9); backdrop-filter: blur(10px);
+      border-bottom: 1px solid #1e1e1e;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 40px;
+    }
+    .snav-brand .logo-title { font-size: 22px; }
+    .snav-brand .logo-sub   { font-size: 15px; }
+    .snav-cta {
+      padding: 9px 22px; background: #fff; color: #000; border: none; cursor: pointer;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+      font-family: 'Bricolage Grotesque', sans-serif; transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .snav-cta:hover { background: #ddd; }
+    #story-body { max-width: 780px; margin: 0 auto; padding: 0 40px 100px; }
+    .s-hero {
+      padding: 96px 0 72px; border-bottom: 1px solid #181818;
+    }
+    .s-eyebrow {
+      font-size: 9px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 20px;
+    }
+    .s-h1 {
+      font-size: clamp(40px, 6vw, 68px); font-weight: 600; line-height: 1.04;
+      color: #fff; letter-spacing: -0.025em; margin: 0 0 28px;
+    }
+    .s-lead {
+      font-size: 17px; color: #777; line-height: 1.7; max-width: 500px; margin: 0;
+    }
+    .s-section { padding: 64px 0; border-bottom: 1px solid #181818; }
+    .s-section .s-eyebrow { margin-bottom: 16px; }
+    .s-section h2 {
+      font-size: 26px; font-weight: 600; color: var(--text);
+      margin: 0 0 18px; line-height: 1.25;
+    }
+    .s-section p {
+      font-size: 15px; color: #777; line-height: 1.8; margin: 0 0 14px;
+    }
+    .s-img {
+      width: 100%; background: #111; border: 1px solid #1e1e1e;
+      display: flex; align-items: center; justify-content: center;
+      margin: 28px 0;
+    }
+    .s-img.ratio-wide { aspect-ratio: 16/7; }
+    .s-img.ratio-sq   { aspect-ratio: 1; }
+    .s-img span { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #2a2a2a; }
+    .s-img-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 28px 0; }
+    .s-img-pair .s-img { margin: 0; aspect-ratio: 4/3; }
+    .s-cta { padding: 80px 0; text-align: center; }
+    .s-cta h2 { font-size: 34px; font-weight: 600; color: #fff; margin: 0 0 10px; }
+    .s-cta p  { font-size: 13px; color: var(--muted); margin: 0 0 36px; }
+
     /* ── RESPONSIVE TOOLBAR ── */
     @media (max-width: 1400px) {
       :root { --bar-h: 120px; }
@@ -451,7 +512,7 @@
   <!-- BOTTOM BAR -->
   <div id="bottombar">
     <!-- Logo (grid col 1) -->
-    <div id="bar-logo">
+    <div id="bar-logo" onclick="showStoryPage()" title="About Pixelkari" style="cursor:pointer;">
       <div class="logo-title">Pixelkari</div>
       <div class="logo-sub">ਪਿਕਸਲਕਾਰੀ</div>
     </div>
@@ -562,6 +623,78 @@
       <button class="btn-sec" onclick="closeMotifDataModal()">Close</button>
       <button class="btn-pri" onclick="selectMotifData()">Select All</button>
     </div>
+  </div>
+</div>
+
+<!-- STORY PAGE -->
+<div id="story-page">
+  <nav id="story-nav">
+    <div class="snav-brand">
+      <div class="logo-title">Pixelkari</div>
+      <div class="logo-sub">ਪਿਕਸਲਕਾਰੀ</div>
+    </div>
+    <button class="snav-cta" onclick="closeStoryPage()">Open Tool →</button>
+  </nav>
+
+  <div id="story-body">
+
+    <!-- Hero -->
+    <div class="s-hero">
+      <div class="s-eyebrow">A digital design tool</div>
+      <h1 class="s-h1">Phulkari,<br>pixel by pixel.</h1>
+      <p class="s-lead">Pixelkari is a browser-based tool for designing Phulkari embroidery patterns — bringing the geometry of a centuries-old Punjabi craft into a digital medium.</p>
+    </div>
+
+    <!-- The Tradition -->
+    <section class="s-section">
+      <div class="s-eyebrow">The Tradition</div>
+      <h2>What is Phulkari?</h2>
+      <p>Phulkari (ਫੁਲਕਾਰੀ) literally means "flower work." It is one of Punjab's oldest folk embroidery traditions — worked in vibrant silk thread on handspun cotton, built from geometric patterns of extraordinary precision and colour.</p>
+      <p>Passed down through generations, each piece was a personal document — a record of the maker's skill, her community, her season. A bride's dowry would include phulkaris her mother and grandmother had stitched for years in anticipation.</p>
+      <div class="s-img ratio-wide"><span>[ placeholder — traditional phulkari textile ]</span></div>
+      <p>The patterns are built on a grid. Diagonal stitches counted across warp and weft. The geometry is strict; the colour is free. Motifs repeat across a field, borders frame the edges, and the whole becomes something larger than its parts.</p>
+    </section>
+
+    <!-- The Tool -->
+    <section class="s-section">
+      <div class="s-eyebrow">The Tool</div>
+      <h2>Why Pixelkari?</h2>
+      <p>Pixelkari was built to make the design process of Phulkari accessible — to let anyone explore the geometry of the tradition without needing cloth, thread, or years of practice to begin.</p>
+      <p>Each cell in the grid corresponds to a cross-stitch. Colours are chosen from a palette of thread hues. Motifs can be saved, stamped, and repeated across the canvas — mirroring the logic of the craft itself.</p>
+      <div class="s-img-pair">
+        <div class="s-img"><span>[ placeholder — tool screenshot ]</span></div>
+        <div class="s-img"><span>[ placeholder — motif detail ]</span></div>
+      </div>
+      <p>The tool is not a simulation of embroidery. It is a design surface that shares the same underlying grammar — a place to think in patterns before committing to thread.</p>
+    </section>
+
+    <!-- The Motivation -->
+    <section class="s-section">
+      <div class="s-eyebrow">The Motivation</div>
+      <h2>Where this comes from.</h2>
+      <p>[ Placeholder — personal story and connection to the tradition. Why this tool needed to exist, and what it means to bring it into a digital space. ]</p>
+      <div class="s-img ratio-wide"><span>[ placeholder — personal or archival image ]</span></div>
+      <p>[ Placeholder — continuation of narrative. ]</p>
+    </section>
+
+    <!-- The Maker -->
+    <section class="s-section">
+      <div class="s-eyebrow">The Maker</div>
+      <h2>[ Placeholder — name ]</h2>
+      <p>[ Placeholder — brief bio and context. ]</p>
+      <div class="s-img-pair">
+        <div class="s-img"><span>[ placeholder — maker image ]</span></div>
+        <div class="s-img"><span>[ placeholder — process image ]</span></div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <div class="s-cta">
+      <h2>Start designing.</h2>
+      <p>Runs entirely in your browser. No account, no installation.</p>
+      <button class="snav-cta" onclick="closeStoryPage()">Open the Tool →</button>
+    </div>
+
   </div>
 </div>
 
@@ -1120,6 +1253,8 @@ function openFinishModal() {
   refreshFinishPreview();
 }
 function closeFinishModal() { document.getElementById('finish-modal').classList.remove('on'); }
+function showStoryPage()  { document.getElementById('story-page').classList.add('on'); }
+function closeStoryPage() { document.getElementById('story-page').classList.remove('on'); }
 
 function showMotifData() {
   const ta = document.getElementById('motif-data-ta');
@@ -1273,6 +1408,7 @@ document.addEventListener('keydown', e => {
   }
   if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); return; }
   if (e.key === 'Escape') {
+    if (document.getElementById('story-page').classList.contains('on')) { closeStoryPage(); return; }
     if (document.getElementById('finish-modal').classList.contains('on')) { closeFinishModal(); return; }
     if (document.getElementById('motif-library-modal').classList.contains('on')) { closeMotifLibrary(); return; }
     if (document.getElementById('motif-data-modal').classList.contains('on')) { closeMotifDataModal(); return; }
