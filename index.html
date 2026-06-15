@@ -622,7 +622,7 @@ if (localStorage.getItem('pkPresetsLoaded') !== '2') {
 const S = {
   tool:      'paint',
   color:     THREAD[0],
-  base:      BASES[0].hex,
+  base:      BASES[Math.floor(Math.random() * BASES.length)].hex,
   sym:       null,
   grid:      true,
   zoom:      1,
