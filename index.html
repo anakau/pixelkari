@@ -1074,7 +1074,7 @@ function triFlip(tri, flipH, flipV) {
 }
 
 function symTris(col, row, tri) {
-  const cx = S.cols / 2, cy = S.rows / 2;
+  const cx = (S.cols - 1) / 2, cy = (S.rows - 1) / 2;
   const dx = col - cx,   dy = row - cy;
   const clamp = (c, r) => { c = Math.round(c); r = Math.round(r); return c>=0&&c<S.cols&&r>=0&&r<S.rows ? [c,r] : null; };
   const res = [{col, row, tri}];
