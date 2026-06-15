@@ -242,6 +242,20 @@
     }
     .motif-thumb:hover .m-del { opacity: 1; }
     .motif-thumb .m-lbl { font-size: 8px; color: var(--muted); text-align: center; padding: 2px 0; background: #1c1c1c; }
+    .view-all-tile {
+      flex-shrink: 0; width: 60px; cursor: pointer;
+      border: 1px solid #2a2a2a; background: #161616;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 5px; transition: border-color 0.12s, background 0.12s; aspect-ratio: 1;
+    }
+    .view-all-tile:hover { border-color: rgba(255,255,255,0.35); background: #1f1f1f; }
+    .view-all-tile svg { color: #444; transition: color 0.12s; }
+    .view-all-tile:hover svg { color: #888; }
+    .view-all-tile .va-label {
+      font-size: 7.5px; font-weight: 600; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #444; transition: color 0.12s; line-height: 1;
+    }
+    .view-all-tile:hover .va-label { color: #aaa; }
     /* ── MOTIF LIBRARY MODAL ── */
     .lib-box {
       background: #141414; border: 1px solid #2a2a2a;
@@ -561,10 +575,7 @@
         <div id="motif-panel">
           <div class="motif-panel-head">
             <span class="motif-panel-label">Motif Library</span>
-            <div style="display:flex;gap:4px;align-items:center;">
-              <button class="save-motif-btn" onclick="showMotifLibrary()">View all</button>
-              <button class="save-motif-btn" onclick="showMotifData()" title="Export motif data">⬆</button>
-            </div>
+            <button class="save-motif-btn" onclick="showMotifData()" title="Export motif data">⬆ Export</button>
           </div>
           <div class="motif-grid" id="motif-pal"></div>
         </div>
@@ -1722,7 +1733,7 @@ function buildMotifPal() {
   const el = document.getElementById('motif-pal');
   el.innerHTML = '';
   if (!MOTIFS.length) return;
-  MOTIFS.slice(0, 2).forEach((motif, idx) => {
+  MOTIFS.slice(0, 3).forEach((motif, idx) => {
     const wrap = document.createElement('div');
     wrap.className = 'motif-thumb';
     const tc = _drawMotifThumb(motif, 60);
@@ -1736,6 +1747,18 @@ function buildMotifPal() {
     wrap.appendChild(tc); wrap.appendChild(del); wrap.appendChild(lbl);
     el.appendChild(wrap);
   });
+  const tile = document.createElement('div');
+  tile.className = 'view-all-tile';
+  tile.title = 'View all motifs';
+  tile.onclick = showMotifLibrary;
+  const count = MOTIFS.length > 3 ? `+${MOTIFS.length - 3}` : 'All';
+  tile.innerHTML = `
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+      <rect x="1" y="1" width="6" height="6"/><rect x="9" y="1" width="6" height="6"/>
+      <rect x="1" y="9" width="6" height="6"/><rect x="9" y="9" width="6" height="6"/>
+    </svg>
+    <span class="va-label">${count}</span>`;
+  el.appendChild(tile);
 }
 
 function showMotifLibrary() {
