@@ -385,7 +385,17 @@
     #story-body { max-width: 780px; margin: 0 auto; padding: 0 40px 100px; }
     .s-hero {
       padding: 96px 0 72px; border-bottom: 1px solid #181818;
+      background-size: auto; background-repeat: repeat;
     }
+    .s-photo { margin: 28px 0; }
+    .s-photo img { width: 100%; display: block; }
+    .s-photo-credit {
+      font-size: 9px; color: #3a3a3a; letter-spacing: 0.06em;
+      padding: 6px 0 0; text-align: right;
+      font-family: 'Bricolage Grotesque', sans-serif;
+    }
+    .s-photo-credit a { color: #3a3a3a; text-decoration: underline; text-underline-offset: 2px; }
+    .s-photo-credit a:hover { color: #666; }
     .s-eyebrow {
       font-size: 9px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase;
       color: #D4A827; margin-bottom: 20px;
@@ -669,13 +679,13 @@
       <h2>What is Phulkari?</h2>
       <p>Phulkari (ਫੁਲਕਾਰੀ) literally means "flower work." It is one of Punjab's oldest folk embroidery traditions — worked in vibrant silk thread on handspun cotton, built from geometric patterns of extraordinary precision and colour.</p>
       <p>Passed down through generations, each piece was a personal document — a record of the maker's skill, her community, her season. A bride's dowry would include phulkaris her mother and grandmother had stitched for years in anticipation.</p>
-      <div class="s-img ratio-wide" style="position:relative;overflow:hidden;">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Women_embroidering_Phulkari_in_Rajpura%2C_Punjab_%28India%29%2C_2015.jpg" alt="Women embroidering Phulkari in Rajpura, Punjab, India, 2015" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block;" />
-        <div style="position:absolute;bottom:0;right:0;background:rgba(0,0,0,0.55);padding:4px 10px;font-size:8px;color:rgba(255,255,255,0.5);letter-spacing:0.05em;font-family:'Bricolage Grotesque',sans-serif;">
-          Photo: <a href="https://commons.wikimedia.org/wiki/File:Women_embroidering_Phulkari_in_Rajpura,_Punjab_(India),_2015.jpg" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Sheebamadanloewinger</a> /
-          <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">CC BY-SA 4.0</a> / Wikimedia Commons
-        </div>
-      </div>
+      <figure class="s-photo">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Women_embroidering_Phulkari_in_Rajpura%2C_Punjab_%28India%29%2C_2015.jpg" alt="Women embroidering Phulkari in Rajpura, Punjab, India, 2015" />
+        <figcaption class="s-photo-credit">
+          Photo: <a href="https://commons.wikimedia.org/wiki/File:Women_embroidering_Phulkari_in_Rajpura,_Punjab_(India),_2015.jpg" target="_blank" rel="noopener">Sheebamadanloewinger</a> /
+          <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> / Wikimedia Commons
+        </figcaption>
+      </figure>
       <p>The patterns are built on a grid. Diagonal stitches counted across warp and weft. The geometry is strict; the colour is free. Motifs repeat across a field, borders frame the edges, and the whole becomes something larger than its parts.</p>
     </section>
 
@@ -1377,9 +1387,42 @@ let _storyTrailRaf = null;
 let _storyMoveHandler = null;
 let _storyResizeHandler = null;
 
+function _buildHeroPattern() {
+  const C = 20;
+  // Tara geometry recolored: yellow top+bottom arms, pink left+right arms
+  const cells = {
+    "0,-1,l":"#D4A827","0,-1,b":"#D4A827","0,0,t":"#D4A827","0,-1,r":"#D4A827",
+    "1,0,t":"#F72585","1,0,l":"#F72585","0,0,r":"#F72585","1,0,b":"#F72585",
+    "0,1,r":"#D4A827","0,1,t":"#D4A827","0,0,b":"#D4A827","0,1,l":"#D4A827",
+    "-1,0,b":"#F72585","-1,0,r":"#F72585","0,0,l":"#F72585","-1,0,t":"#F72585"
+  };
+  const tile = document.createElement('canvas');
+  tile.width = 3 * C; tile.height = 3 * C;
+  const tc = tile.getContext('2d');
+  tc.fillStyle = '#0d0d0d'; tc.fillRect(0, 0, tile.width, tile.height);
+  for (const [key, color] of Object.entries(cells)) {
+    const [dc, dr, tri] = key.split(',');
+    const x = (1 + +dc) * C, y = (1 + +dr) * C;
+    const mx = x + C/2, my = y + C/2;
+    tc.fillStyle = color; tc.beginPath();
+    if      (tri==='t') { tc.moveTo(x,y);     tc.lineTo(x+C,y);     tc.lineTo(mx,my); }
+    else if (tri==='r') { tc.moveTo(x+C,y);   tc.lineTo(x+C,y+C);   tc.lineTo(mx,my); }
+    else if (tri==='b') { tc.moveTo(x+C,y+C); tc.lineTo(x,y+C);     tc.lineTo(mx,my); }
+    else                { tc.moveTo(x,y+C);   tc.lineTo(x,y);       tc.lineTo(mx,my); }
+    tc.closePath(); tc.fill();
+  }
+  return tile.toDataURL();
+}
+
 function showStoryPage() {
   document.getElementById('story-page').classList.add('on');
   document.body.classList.add('story-open');
+  const hero = document.querySelector('.s-hero');
+  if (hero && !hero.dataset.patternSet) {
+    const pat = _buildHeroPattern();
+    hero.style.backgroundImage = `linear-gradient(rgba(13,13,13,0.84),rgba(13,13,13,0.84)), url(${pat})`;
+    hero.dataset.patternSet = '1';
+  }
   _initStoryTrail();
 }
 
