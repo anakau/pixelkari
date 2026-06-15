@@ -816,6 +816,7 @@ const S = {
   color:     THREAD[0],
   base:      BASES[Math.floor(Math.random() * BASES.length)].hex,
   sym:       null,
+  brushSize: 1,
   grid:      true,
   zoom:      1,
   panX:      0,
@@ -1112,12 +1113,33 @@ function symTris(col, row, tri) {
 
 function paint(col, row, tri) {
   if (!isInner(col, row)) return;
-  symTris(col, row, tri).forEach(({col: c, row: r, tri: t}) => {
-    if (!isInner(c, r)) return;
-    const key = `${c},${r},${t}`;
-    if (S.tool === 'erase') { delete S.cells[key]; }
-    else                    { S.cells[key] = S.color; }
-  });
+  if (S.brushSize <= 1) {
+    symTris(col, row, tri).forEach(({col: c, row: r, tri: t}) => {
+      if (!isInner(c, r)) return;
+      const key = `${c},${r},${t}`;
+      if (S.tool === 'erase') { delete S.cells[key]; }
+      else                    { S.cells[key] = S.color; }
+    });
+  } else {
+    const R = S.brushSize - 1;
+    const seen = new Set();
+    symTris(col, row, tri).forEach(({col: cc, row: cr}) => {
+      const sk = `${cc},${cr}`;
+      if (seen.has(sk)) return;
+      seen.add(sk);
+      for (let dc = -R; dc <= R; dc++) {
+        for (let dr = -R; dr <= R; dr++) {
+          const bc = cc + dc, br = cr + dr;
+          if (!isInner(bc, br)) continue;
+          for (const t of ['t','r','b','l']) {
+            const key = `${bc},${br},${t}`;
+            if (S.tool === 'erase') { delete S.cells[key]; }
+            else                    { S.cells[key] = S.color; }
+          }
+        }
+      }
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -1431,6 +1453,14 @@ document.addEventListener('keydown', e => {
   if (e.key === '+' || e.key === '=') doZoom(0.25);
   if (e.key === '-') doZoom(-0.25);
   if (e.key === '0') fitZoom();
+  if (e.key === ']') {
+    S.brushSize = Math.min(4, S.brushSize + 1);
+    showHint(S.brushSize === 1 ? 'Brush: single' : `Brush: ${S.brushSize}× — ${(S.brushSize*2-1)}×${(S.brushSize*2-1)} cells`);
+  }
+  if (e.key === '[') {
+    S.brushSize = Math.max(1, S.brushSize - 1);
+    showHint(S.brushSize === 1 ? 'Brush: single' : `Brush: ${S.brushSize}× — ${(S.brushSize*2-1)}×${(S.brushSize*2-1)} cells`);
+  }
 });
 document.addEventListener('keyup', e => {
   if (e.key === ' ') {
