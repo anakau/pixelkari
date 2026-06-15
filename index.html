@@ -118,6 +118,7 @@
     .nav-row   { display: flex; gap: 3px; }
     .preset-btn { padding: 0 9px !important; height: 32px !important; background: #1a1a1a !important; border: 1px solid #2a2a2a !important; letter-spacing: 0.06em; }
     .preset-btn:hover { background: #252525 !important; border-color: #444 !important; }
+    .preset-btn.on { background: var(--accent) !important; color: #111 !important; border-color: var(--accent) !important; }
     .zoom-row  { display: flex; align-items: center; gap: 3px; }
 
     .tool-row { display: flex; align-items: center; gap: 6px; }
@@ -388,10 +389,10 @@
       flex-shrink: 0;
     }
     .snav-cta:hover { background: #ddd; }
-    #story-body { max-width: 780px; margin: 0 auto; padding: 0 40px 100px; }
+    #story-body { max-width: 780px; margin: -64px auto 0; padding: 0 40px 100px; }
     .s-hero {
       width: 100vw; position: relative; left: 50%; margin-left: -50vw;
-      padding: 96px 0 72px; border-bottom: 1px solid #181818;
+      padding: 160px 0 72px; border-bottom: 1px solid #181818;
       overflow: hidden;
     }
     .s-hero-inner {
@@ -578,7 +579,6 @@
   <div class="page-header">
     <div id="bar-logo" onclick="showStoryPage()" title="About Pixelkari" style="cursor:pointer;">
       <div class="logo-title">Pixelkari</div>
-      <div class="logo-sub">ਪਿਕਸਲਕਾਰੀ</div>
     </div>
     <button class="export-btn" onclick="openFinishModal()" style="line-height:1;">Finish ✦</button>
   </div>
@@ -727,7 +727,6 @@
   <div id="story-header">
     <div style="cursor:pointer;" onclick="closeStoryPage()">
       <div class="logo-title">Pixelkari</div>
-      <div class="logo-sub">ਪਿਕਸਲਕਾਰੀ</div>
     </div>
     <button class="snav-cta" onclick="closeStoryPage()">Use Tool →</button>
   </div>
@@ -805,7 +804,7 @@
 
   </div>
 
-  <div class="s-footer-note">Made with 🩷 for all craft lovers. © pixelkari 2026.</div>
+  <div class="s-footer-note">Made with 🩷 for all phulkari lovers. © pixelkari 2026.</div>
 </div>
 
 <script>
@@ -1479,7 +1478,7 @@ let _storyResizeHandler = null;
 
 function _drawTaraTileAt(ctx, ox, oy, C) {
   const cells = [
-    [0,-1,"t","#D4A827"],[0,-1,"b","#D4A827"],[0,0,"t","#D4A827"],[0,-1,"r","#D4A827"],
+    [0,-1,"l","#D4A827"],[0,-1,"b","#D4A827"],[0,0,"t","#D4A827"],[0,-1,"r","#D4A827"],
     [1,0,"t","#F72585"],[1,0,"l","#F72585"],[0,0,"r","#F72585"],[1,0,"b","#F72585"],
     [0,1,"r","#D4A827"],[0,1,"t","#D4A827"],[0,0,"b","#D4A827"],[0,1,"l","#D4A827"],
     [-1,0,"b","#F72585"],[-1,0,"r","#F72585"],[0,0,"l","#F72585"],[-1,0,"t","#F72585"]
@@ -1505,8 +1504,10 @@ function _drawPatternCanvas(canvasEl, fromBottom) {
   const ctx = canvasEl.getContext('2d');
   ctx.clearRect(0, 0, W, H);
   const numCols = Math.ceil(W / TILE) + 1;
+  const maxRows = Math.floor(H / TILE);
   for (let tc = 0; tc < numCols; tc++) {
-    const numRows = 5 + Math.floor(Math.sin(tc * 1.7 + 0.3) * 2.5 + Math.cos(tc * 0.9) * 1.5 + 3);
+    const baseRows = 5 + Math.floor(Math.sin(tc * 1.7 + 0.3) * 2.5 + Math.cos(tc * 0.9) * 1.5 + 3);
+    const numRows = Math.min(maxRows, baseRows);
     for (let tr = 0; tr < numRows; tr++) {
       const x = tc * TILE;
       const y = fromBottom ? (H - (numRows - tr) * TILE) : tr * TILE;
@@ -1519,15 +1520,9 @@ function showStoryPage() {
   document.getElementById('story-page').classList.add('on');
   document.body.classList.add('story-open');
   const heroCanvas = document.getElementById('hero-pat-canvas');
-  if (heroCanvas && !heroCanvas.dataset.drawn) {
-    _drawPatternCanvas(heroCanvas, false);
-    heroCanvas.dataset.drawn = '1';
-  }
+  if (heroCanvas) { _drawPatternCanvas(heroCanvas, false); }
   const footerCanvas = document.getElementById('footer-pat-canvas');
-  if (footerCanvas && !footerCanvas.dataset.drawn) {
-    _drawPatternCanvas(footerCanvas, true);
-    footerCanvas.dataset.drawn = '1';
-  }
+  if (footerCanvas) { _drawPatternCanvas(footerCanvas, true); }
   try { localStorage.setItem('pkPage', 'story'); } catch(e) {}
   _initStoryTrail();
 }
