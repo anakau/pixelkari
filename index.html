@@ -242,6 +242,41 @@
     }
     .motif-thumb:hover .m-del { opacity: 1; }
     .motif-thumb .m-lbl { font-size: 8px; color: var(--muted); text-align: center; padding: 2px 0; background: #1c1c1c; }
+    /* ── MOTIF LIBRARY MODAL ── */
+    .lib-box {
+      background: #141414; border: 1px solid #2a2a2a;
+      width: min(680px, 92vw); max-height: 86vh;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .library-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      gap: 8px; padding: 16px; overflow-y: auto; flex: 1;
+    }
+    .lib-thumb {
+      position: relative; cursor: pointer; border: 1px solid var(--border); transition: border-color 0.12s;
+    }
+    .lib-thumb:hover, .lib-thumb.selected { border-color: var(--accent); }
+    .lib-thumb canvas { display: block; width: 100%; aspect-ratio: 1; }
+    .lib-thumb .lib-del {
+      position: absolute; top: 3px; right: 3px; width: 14px; height: 14px;
+      background: rgba(0,0,0,0.7); border: none; color: #aaa; cursor: pointer;
+      font-size: 10px; line-height: 1; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.1s;
+    }
+    .lib-thumb:hover .lib-del { opacity: 1; }
+    .lib-name {
+      font-size: 9px; color: var(--muted); text-align: center; padding: 3px 4px;
+      background: #1c1c1c; cursor: text; white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; transition: color 0.12s;
+    }
+    .lib-name:hover { color: var(--accent); }
+    .lib-name-input {
+      width: 100%; font-size: 9px; color: var(--text); background: #222;
+      border: none; border-top: 1px solid var(--accent); padding: 3px 4px;
+      text-align: center; outline: none; box-sizing: border-box;
+      font-family: 'Bricolage Grotesque', sans-serif;
+    }
 
     /* ── FINISH MODAL ── */
     .overlay {
@@ -465,7 +500,10 @@
         <div id="motif-panel">
           <div class="motif-panel-head">
             <span class="motif-panel-label">Motif Library</span>
-            <button class="save-motif-btn" onclick="showMotifData()" title="Export motif data">⬆ Export</button>
+            <div style="display:flex;gap:4px;align-items:center;">
+              <button class="save-motif-btn" onclick="showMotifLibrary()">View all</button>
+              <button class="save-motif-btn" onclick="showMotifData()" title="Export motif data">⬆</button>
+            </div>
           </div>
           <div class="motif-grid" id="motif-pal"></div>
         </div>
@@ -502,6 +540,16 @@
 </div>
 
 <!-- MOTIF DATA MODAL -->
+<div class="overlay" id="motif-library-modal">
+  <div class="lib-box">
+    <div class="finish-head">
+      <span class="finish-head-title">Motif Library</span>
+      <button class="finish-close" onclick="closeMotifLibrary()">✕</button>
+    </div>
+    <div class="library-grid" id="library-grid"></div>
+  </div>
+</div>
+
 <div class="overlay" id="motif-data-modal">
   <div class="finish-box" style="max-width:480px;">
     <div class="finish-head">
@@ -1226,6 +1274,7 @@ document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); return; }
   if (e.key === 'Escape') {
     if (document.getElementById('finish-modal').classList.contains('on')) { closeFinishModal(); return; }
+    if (document.getElementById('motif-library-modal').classList.contains('on')) { closeMotifLibrary(); return; }
     if (document.getElementById('motif-data-modal').classList.contains('on')) { closeMotifDataModal(); return; }
     if (S.activeMotif) { S.activeMotif = null; clearGhost(); showHint('Motif cancelled'); } return;
   }
@@ -1501,62 +1550,114 @@ function copyMotifData() {
     .catch(() => showHint('Copy failed — open console and type: JSON.stringify(MOTIFS)'));
 }
 
+function _drawMotifThumb(motif, px) {
+  const tc = document.createElement('canvas');
+  tc.width = px; tc.height = px;
+  const tctx = tc.getContext('2d');
+  const keys = Object.keys(motif.cells);
+  tctx.fillStyle = '#1c0508';
+  tctx.fillRect(0, 0, px, px);
+  if (keys.length) {
+    const dcs = keys.map(k => +k.split(',')[0]);
+    const drs = keys.map(k => +k.split(',')[1]);
+    const minDC = Math.min(...dcs), maxDC = Math.max(...dcs);
+    const minDR = Math.min(...drs), maxDR = Math.max(...drs);
+    const spanC = maxDC - minDC + 1, spanR = maxDR - minDR + 1;
+    const tCell = Math.max(1, Math.floor((px - 4) / Math.max(spanC, spanR)));
+    const offX = (px - spanC * tCell) / 2, offY = (px - spanR * tCell) / 2;
+    for (const [key, color] of Object.entries(motif.cells)) {
+      const p = key.split(',');
+      const dc = +p[0] - minDC, dr = +p[1] - minDR, tri = p[2];
+      const x = offX + dc * tCell, y = offY + dr * tCell;
+      const mx = x + tCell / 2, my = y + tCell / 2;
+      tctx.fillStyle = color;
+      tctx.beginPath();
+      if      (tri==='t') { tctx.moveTo(x,y);              tctx.lineTo(x+tCell,y);       tctx.lineTo(mx,my); }
+      else if (tri==='r') { tctx.moveTo(x+tCell,y);        tctx.lineTo(x+tCell,y+tCell); tctx.lineTo(mx,my); }
+      else if (tri==='b') { tctx.moveTo(x+tCell,y+tCell);  tctx.lineTo(x,y+tCell);       tctx.lineTo(mx,my); }
+      else                { tctx.moveTo(x,y+tCell);        tctx.lineTo(x,y);             tctx.lineTo(mx,my); }
+      tctx.closePath(); tctx.fill();
+    }
+  }
+  return tc;
+}
+
 function buildMotifPal() {
   const el = document.getElementById('motif-pal');
   el.innerHTML = '';
   if (!MOTIFS.length) return;
-
-  MOTIFS.forEach((motif, idx) => {
+  MOTIFS.slice(0, 2).forEach((motif, idx) => {
     const wrap = document.createElement('div');
     wrap.className = 'motif-thumb';
-
-    // thumbnail canvas (60×60 physical px)
-    const tc    = document.createElement('canvas');
-    const TPX   = 60;
-    tc.width     = TPX; tc.height = TPX;
-    const tctx  = tc.getContext('2d');
-    const keys  = Object.keys(motif.cells);
-
-    if (keys.length) {
-      const dcs  = keys.map(k => +k.split(',')[0]);
-      const drs  = keys.map(k => +k.split(',')[1]);
-      const minDC = Math.min(...dcs), maxDC = Math.max(...dcs);
-      const minDR = Math.min(...drs), maxDR = Math.max(...drs);
-      const spanC = maxDC - minDC + 1, spanR = maxDR - minDR + 1;
-      const tCell = Math.max(1, Math.floor((TPX - 4) / Math.max(spanC, spanR)));
-      const offX  = (TPX - spanC * tCell) / 2;
-      const offY  = (TPX - spanR * tCell) / 2;
-
-      tctx.fillStyle = '#1c0508';
-      tctx.fillRect(0, 0, TPX, TPX);
-
-      for (const [key, color] of Object.entries(motif.cells)) {
-        const p  = key.split(',');
-        const dc = +p[0] - minDC, dr = +p[1] - minDR, tri = p[2];
-        const x  = offX + dc * tCell, y = offY + dr * tCell;
-        const mx = x + tCell / 2,     my = y + tCell / 2;
-        tctx.fillStyle = color;
-        tctx.beginPath();
-        if      (tri==='t') { tctx.moveTo(x,y);        tctx.lineTo(x+tCell,y);        tctx.lineTo(mx,my); }
-        else if (tri==='r') { tctx.moveTo(x+tCell,y);  tctx.lineTo(x+tCell,y+tCell);  tctx.lineTo(mx,my); }
-        else if (tri==='b') { tctx.moveTo(x+tCell,y+tCell); tctx.lineTo(x,y+tCell);   tctx.lineTo(mx,my); }
-        else                { tctx.moveTo(x,y+tCell);  tctx.lineTo(x,y);              tctx.lineTo(mx,my); }
-        tctx.closePath(); tctx.fill();
-      }
-    }
-
+    const tc = _drawMotifThumb(motif, 60);
     tc.addEventListener('click', () => { selectMotif(motif); wrap.classList.add('selected'); });
     tc.title = `Select "${motif.name}" to place on canvas`;
-
     const del = document.createElement('button');
     del.className = 'm-del'; del.textContent = '×';
     del.addEventListener('click', e => { e.stopPropagation(); deleteMotif(idx); });
-
     const lbl = document.createElement('div');
     lbl.className = 'm-lbl'; lbl.textContent = motif.name;
-
     wrap.appendChild(tc); wrap.appendChild(del); wrap.appendChild(lbl);
     el.appendChild(wrap);
+  });
+}
+
+function showMotifLibrary() {
+  buildLibraryGrid();
+  document.getElementById('motif-library-modal').classList.add('on');
+}
+function closeMotifLibrary() {
+  document.getElementById('motif-library-modal').classList.remove('on');
+}
+function buildLibraryGrid() {
+  const el = document.getElementById('library-grid');
+  el.innerHTML = '';
+  if (!MOTIFS.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:11px;padding:8px 0;grid-column:1/-1;">No motifs saved yet — paint something and click Create Motif.</p>';
+    return;
+  }
+  MOTIFS.forEach((motif, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'lib-thumb';
+    const tc = _drawMotifThumb(motif, 88);
+    tc.addEventListener('click', () => {
+      selectMotif(motif);
+      document.querySelectorAll('.lib-thumb').forEach(t => t.classList.remove('selected'));
+      wrap.classList.add('selected');
+      closeMotifLibrary();
+    });
+    tc.title = `Select "${motif.name}"`;
+    const del = document.createElement('button');
+    del.className = 'lib-del'; del.textContent = '×';
+    del.addEventListener('click', e => { e.stopPropagation(); deleteMotif(idx); buildLibraryGrid(); });
+    const lbl = document.createElement('div');
+    lbl.className = 'lib-name'; lbl.textContent = motif.name; lbl.title = 'Click to rename';
+    lbl.addEventListener('click', () => _startRename(lbl, idx));
+    wrap.appendChild(tc); wrap.appendChild(del); wrap.appendChild(lbl);
+    el.appendChild(wrap);
+  });
+}
+function _startRename(lbl, idx) {
+  const inp = document.createElement('input');
+  inp.className = 'lib-name-input';
+  inp.value = MOTIFS[idx].name;
+  inp.maxLength = 32;
+  lbl.replaceWith(inp);
+  inp.focus(); inp.select();
+  const commit = () => {
+    const name = inp.value.trim() || MOTIFS[idx].name;
+    MOTIFS[idx].name = name;
+    try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
+    buildMotifPal();
+    const newLbl = document.createElement('div');
+    newLbl.className = 'lib-name'; newLbl.textContent = name; newLbl.title = 'Click to rename';
+    newLbl.addEventListener('click', () => _startRename(newLbl, idx));
+    inp.replaceWith(newLbl);
+  };
+  inp.addEventListener('blur', commit);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') inp.blur();
+    if (e.key === 'Escape') { inp.value = MOTIFS[idx].name; inp.blur(); }
   });
 }
 
