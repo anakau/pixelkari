@@ -686,6 +686,10 @@
           <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> / Wikimedia Commons
         </figcaption>
       </figure>
+      <figure class="s-photo">
+        <img src="./public/geography.jpeg" alt="Phulkari geography and origins" />
+        <figcaption class="s-photo-credit">[ Photo credit to be added ]</figcaption>
+      </figure>
       <p>The patterns are built on a grid. Diagonal stitches counted across warp and weft. The geometry is strict; the colour is free. Motifs repeat across a field, borders frame the edges, and the whole becomes something larger than its parts.</p>
     </section>
 
@@ -1423,12 +1427,14 @@ function showStoryPage() {
     hero.style.backgroundImage = `linear-gradient(rgba(13,13,13,0.84),rgba(13,13,13,0.84)), url(${pat})`;
     hero.dataset.patternSet = '1';
   }
+  try { localStorage.setItem('pkPage', 'story'); } catch(e) {}
   _initStoryTrail();
 }
 
 function closeStoryPage() {
   document.getElementById('story-page').classList.remove('on');
   document.body.classList.remove('story-open');
+  try { localStorage.setItem('pkPage', 'tool'); } catch(e) {}
   _stopStoryTrail();
 }
 
@@ -1924,6 +1930,7 @@ buildSym();
 buildMotifPal();
 initCanvas();
 initCursors();
+if (localStorage.getItem('pkPage') === 'story') showStoryPage();
 </script>
 <!-- STORY PAGE CURSOR + TRAIL -->
 <div id="story-cursor-el"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50.7 60.5"><path fill="white" d="M10.8,57.3c3.6,2.2,7.3,1.9,11.2-1.1h0c0,.1,0,.2,0,.2l.2.4s0,0,0,.1c.1.3,0,.7,0,1-.1.3-.4.6-.7.7,0,0-.1,0-.2,0,0,0-.1,0-.2,0-.3,0-.7,0-1,0-.3-.1-.5-.3-.6-.6-.4.2-.7.3-1.1.4.3.6.7,1.1,1.2,1.4.7.5,1.5.8,2.3.5,0,0,0,0,0,0,0,0,0,0,0,0,.8-.3,1.3-1.1,1.6-1.9.2-.9.2-1.9-.1-2.8,0,0,0-.1,0-.1v-.3c-.1,0-.1,0-.1,0,0,0,0,0,0,0,4.4-3.6,10.5-5.3,16.2-4.5,4.5.6,8.1,2.7,10.3,5.8.1.2.4.2.6,0,.2-.1.2-.4,0-.6-2.3-3.3-6.2-5.5-10.9-6.1-1-.1-1.9-.2-2.9-.2-4.9,0-9.9,1.7-13.7,4.7-1.7-4.2-3.4-8.5-5.1-12.8C12.5,27.4,6.8,13,0,0c3.6,14.3,8.5,28.7,13.2,43,1.6,4.9,3.3,9.7,4.8,14.5-2.3.8-4.5.5-6.8-.9l-.4.7ZM18.7,54.4c0-.2,0-.5,0-.7s.3-.4.5-.5h.2c.2-.2.5-.2.7,0s.4.2.5.5l.9,1.8s0,0,0,0c-.8.6-1.6,1.1-2.3,1.4l-.6-2.5h0Z"/></svg></div>
