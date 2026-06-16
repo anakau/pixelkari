@@ -218,6 +218,9 @@
     .motif-thumb.selected { border-color: var(--accent); }
     .motif-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 10px; }
     .motif-panel-label { font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+    .motif-rot-btn { background: none; border: 1px solid #333; color: var(--muted); font-size: 10px; padding: 2px 7px; cursor: pointer; font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: 0.05em; transition: border-color 0.12s, color 0.12s; white-space: nowrap; }
+    .motif-rot-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .motif-rot-btn.active { border-color: var(--accent); color: var(--accent); }
     /* Create Motif tooltip */
     .motif-create-btn { position: relative; }
     .motif-create-btn .mcb-tip {
@@ -698,6 +701,7 @@
         <div id="motif-panel">
           <div class="motif-panel-head">
             <span class="motif-panel-label">Motif Library</span>
+            <button class="motif-rot-btn" id="motif-rot-btn" onclick="cycleMotifRotation()" title="Rotate motif 90° clockwise">↻ <span id="motif-rot-lbl">0°</span></button>
           </div>
           <div class="motif-grid" id="motif-pal"></div>
         </div>
@@ -971,6 +975,7 @@ const S = {
   panStart:   null,
   lastCell:   null,
   activeMotif: null,
+  motifRotation: 0,
   ghostCol:   null,
   ghostRow:   null,
   motifDrawing:    false,
@@ -1837,9 +1842,42 @@ function saveAsMotif() {
   showHint(`Saved as "${name}"`);
 }
 
+function rotateMotifCells(cells, deg) {
+  const steps = ((deg / 90) % 4 + 4) % 4;
+  if (!steps) return cells;
+  const TRI_CW = { t: 'r', r: 'b', b: 'l', l: 't' };
+  let cur = cells;
+  for (let s = 0; s < steps; s++) {
+    const next = {};
+    for (const [key, color] of Object.entries(cur)) {
+      const p = key.split(',');
+      next[`${-parseInt(p[1])},${parseInt(p[0])},${TRI_CW[p[2]]}`] = color;
+    }
+    cur = next;
+  }
+  return cur;
+}
+
+function getActiveCells() {
+  if (!S.activeMotif) return {};
+  return rotateMotifCells(S.activeMotif.cells, S.motifRotation);
+}
+
+function cycleMotifRotation() {
+  if (!S.activeMotif) return;
+  S.motifRotation = (S.motifRotation + 90) % 360;
+  const lbl = document.getElementById('motif-rot-lbl');
+  if (lbl) lbl.textContent = S.motifRotation + '°';
+  const btn = document.getElementById('motif-rot-btn');
+  if (btn) btn.classList.toggle('active', S.motifRotation !== 0);
+  S.motifBounds = getMotifBounds();
+  if (S.ghostCol !== null) drawGhost(S.ghostCol, S.ghostRow);
+}
+
 function clampMotifPos(col, row) {
   if (!S.activeMotif) return { col, row };
-  const keys = Object.keys(S.activeMotif.cells);
+  const cells = getActiveCells();
+  const keys = Object.keys(cells);
   const dcs  = keys.map(k => +k.split(',')[0]);
   const drs  = keys.map(k => +k.split(',')[1]);
   col = Math.max(-Math.min(...dcs), Math.min(col, S.cols - 1 - Math.max(...dcs)));
@@ -1849,6 +1887,11 @@ function clampMotifPos(col, row) {
 
 function selectMotif(motif) {
   S.activeMotif = motif;
+  S.motifRotation = 0;
+  const lbl = document.getElementById('motif-rot-lbl');
+  if (lbl) lbl.textContent = '0°';
+  const btn = document.getElementById('motif-rot-btn');
+  if (btn) btn.classList.remove('active');
   document.querySelectorAll('.motif-thumb').forEach(t => t.classList.remove('selected'));
   if (motif) {
     showHint(`"${motif.name}" selected — click canvas to place, Esc to cancel`);
@@ -1859,7 +1902,7 @@ function selectMotif(motif) {
 
 function getMotifBounds() {
   if (!S.activeMotif) return { w: 1, h: 1 };
-  const keys = Object.keys(S.activeMotif.cells);
+  const keys = Object.keys(getActiveCells());
   const dcs = keys.map(k => +k.split(',')[0]);
   const drs = keys.map(k => +k.split(',')[1]);
   return {
@@ -1870,7 +1913,7 @@ function getMotifBounds() {
 
 function placeMotif(col, row) {
   ({ col, row } = clampMotifPos(col, row));
-  for (const [key, color] of Object.entries(S.activeMotif.cells)) {
+  for (const [key, color] of Object.entries(getActiveCells())) {
     const p = key.split(',');
     const c = Math.round(col + +p[0]);
     const r = Math.round(row + +p[1]);
@@ -1896,7 +1939,7 @@ function drawGhost(col, row) {
   const ctx = gc.getContext('2d');
   ctx.clearRect(0, 0, gc.width, gc.height);
   ctx.globalAlpha = 0.45;
-  for (const [key, color] of Object.entries(S.activeMotif.cells)) {
+  for (const [key, color] of Object.entries(getActiveCells())) {
     const p = key.split(',');
     const c = Math.round(col + +p[0]);
     const r = Math.round(row + +p[1]);
