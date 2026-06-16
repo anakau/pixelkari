@@ -1309,10 +1309,10 @@ function symTris(col, row, tri) {
 }
 
 function paint(col, row, tri) {
-  if (!isInner(col, row)) return;
+  if (col < 0 || col >= S.cols || row < 0 || row >= S.rows) return;
   if (S.brushSize <= 1) {
     symTris(col, row, tri).forEach(({col: c, row: r, tri: t}) => {
-      if (!isInner(c, r)) return;
+      if (c < 0 || c >= S.cols || r < 0 || r >= S.rows) return;
       const key = `${c},${r},${t}`;
       if (S.tool === 'erase') { delete S.cells[key]; }
       else                    { S.cells[key] = S.color; }
@@ -1327,7 +1327,7 @@ function paint(col, row, tri) {
       for (let dc = -R; dc <= R; dc++) {
         for (let dr = -R; dr <= R; dr++) {
           const bc = cc + dc, br = cr + dr;
-          if (!isInner(bc, br)) continue;
+          if (bc < 0 || bc >= S.cols || br < 0 || br >= S.rows) continue;
           for (const t of ['t','r','b','l']) {
             const key = `${bc},${br},${t}`;
             if (S.tool === 'erase') { delete S.cells[key]; }
@@ -1762,7 +1762,7 @@ async function initCursors() {
       return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${hx} ${hy}, crosshair`;
     };
     TOOL_CURSORS.paint = make(wText, 25, 30, 0, 0);
-    TOOL_CURSORS.erase = make(cText, 32, 26, 3, 0);
+    TOOL_CURSORS.erase = make(cText, 56, 45, 5, 0);
     const mc = document.getElementById('mc');
     if (mc && !S.spaceDown) mc.style.cursor = TOOL_CURSORS[S.tool] || 'crosshair';
   } catch(e) {}
