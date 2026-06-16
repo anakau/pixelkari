@@ -256,6 +256,24 @@
     .mm-btn.on { border-color: var(--accent); color: var(--accent); }
     .mm-save { background: var(--accent); border: 1px solid var(--accent); color: #111; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif; padding: 5px 14px; cursor: pointer; transition: background 0.12s; }
     .mm-save:hover { background: #F72585; border-color: #F72585; color: #fff; }
+    /* Capture Motif mode */
+    body.capture-mode .page-header,
+    body.capture-mode #bottombar { opacity: 0.15; pointer-events: none; transition: opacity 0.2s; }
+    .capture-banner {
+      display: none; position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.82); border: 1px solid var(--accent); color: var(--accent);
+      font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+      padding: 7px 16px; pointer-events: none; z-index: 50; white-space: nowrap;
+      font-family: 'Bricolage Grotesque', sans-serif;
+    }
+    body.capture-mode .capture-banner { display: block; }
+    /* Capture preview */
+    .cp-box { background: #181818; border: 1px solid #2c2c2c; padding: 0; min-width: 260px; }
+    .cp-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #222; }
+    .cp-title { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #aaa; }
+    .cp-preview { padding: 20px; display: flex; justify-content: center; align-items: center; background: #111; min-height: 120px; }
+    #capture-preview-canvas { display: block; image-rendering: pixelated; }
+    .cp-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 16px; }
     .motif-local-info { display: inline-flex; align-items: center; margin-left: 4px; cursor: default; color: #444; font-size: 10px; line-height: 1; }
     .motif-local-info:hover { color: #888; }
     .motif-local-tip { display: none; position: fixed; width: 210px; background: #1c1c1c; border: 1px solid #333; color: #aaa; font-size: 10px; font-family: 'Bricolage Grotesque', sans-serif; line-height: 1.5; padding: 8px 10px; letter-spacing: 0.02em; pointer-events: none; z-index: 9999; }
@@ -681,6 +699,7 @@
 
   <!-- CANVAS -->
   <div id="canvas-area">
+    <div class="capture-banner">Drag to select your motif &nbsp;·&nbsp; Esc to cancel</div>
     <div id="canvas-wrap">
       <canvas id="mc"></canvas>
       <canvas id="ghost-canvas"></canvas>
@@ -751,7 +770,7 @@
       <div class="bb-divider"></div>
       <!-- Motifs: flower button + inline library -->
       <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
-        <button class="tbtn motif-create-btn" id="motif-btn" onclick="saveAsMotif()">
+        <button class="tbtn motif-create-btn" id="motif-btn" onclick="startCaptureMode()">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(0 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(45 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(90 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(135 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(180 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(225 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(270 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(315 12 12)"/><circle cx="12" cy="12" r="2.5"/></svg>
           <span style="line-height:1.3;text-align:center;">Create<br>Motif</span>
           <div class="mcb-tip">Paint a design on the canvas, then click <strong style="color:#ddd;">Create Motif</strong> to save it. Pick it from the library to stamp it anywhere — click to place, drag to tile.</div>
@@ -808,6 +827,23 @@
     </div>
     <div class="finish-actions">
       <button class="btn-sec" onclick="closeFinishModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAPTURE PREVIEW MODAL -->
+<div class="overlay" id="capture-preview-modal">
+  <div class="cp-box">
+    <div class="cp-head">
+      <span class="cp-title">Save as Motif?</span>
+      <button class="finish-close" onclick="cancelCapture()">✕</button>
+    </div>
+    <div class="cp-preview">
+      <canvas id="capture-preview-canvas"></canvas>
+    </div>
+    <div class="cp-foot">
+      <button class="mm-btn" onclick="cancelCapture()">Cancel</button>
+      <button class="mm-save" onclick="confirmCaptureMotif()">Save to Library →</button>
     </div>
   </div>
 </div>
@@ -1073,6 +1109,10 @@ const S = {
   lastStampI:      0,
   lastStampJ:      0,
   motifFlipH:      false,
+  capturingMotif:  false,
+  captureStart:    null,
+  captureEnd:      null,
+  captureDrawing:  false,
 };
 
 // ═══════════════════════════════════════════════════
@@ -1382,6 +1422,15 @@ function paint(col, row, tri) {
 // CANVAS EVENTS
 // ═══════════════════════════════════════════════════
 canvas.addEventListener('mousedown', e => {
+  if (S.capturingMotif) {
+    e.preventDefault();
+    const {col, row} = triAt(e);
+    S.captureStart = {col, row};
+    S.captureEnd = {col, row};
+    S.captureDrawing = true;
+    drawCaptureOverlay();
+    return;
+  }
   if (S.activeMotif) {
     e.preventDefault();
     let {col, row} = triAt(e);
@@ -1415,6 +1464,13 @@ canvas.addEventListener('mousedown', e => {
 });
 
 canvas.addEventListener('mousemove', e => {
+  if (S.capturingMotif) {
+    if (!S.captureDrawing) return;
+    const {col, row} = triAt(e);
+    S.captureEnd = {col, row};
+    drawCaptureOverlay();
+    return;
+  }
   if (S.activeMotif) {
     let {col, row} = triAt(e);
     ({ col, row } = clampMotifPos(col, row));
@@ -1460,6 +1516,11 @@ canvas.addEventListener('mousemove', e => {
 });
 
 canvas.addEventListener('mouseup', () => {
+  if (S.capturingMotif && S.captureDrawing) {
+    S.captureDrawing = false;
+    if (S.captureStart && S.captureEnd) showCapturePreview();
+    return;
+  }
   S.drawing = false;
   if (S.motifDrawing) {
     S.motifDrawing = false;
@@ -1756,8 +1817,10 @@ document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); return; }
   if (e.key === 'Escape') {
     if (document.getElementById('story-page').classList.contains('on')) { closeStoryPage(); return; }
+    if (document.getElementById('capture-preview-modal').classList.contains('on')) { cancelCapture(); return; }
     if (document.getElementById('finish-modal').classList.contains('on')) { closeFinishModal(); return; }
     if (document.getElementById('motif-library-modal').classList.contains('on')) { closeMotifLibrary(); return; }
+    if (S.capturingMotif) { stopCaptureMode(); return; }
     if (S.activeMotif) { S.activeMotif = null; clearGhost(); showHint('Motif cancelled'); } return;
   }
   if (e.key === 'p') setTool('paint');
@@ -1920,6 +1983,128 @@ function showHint(msg) {
 // ═══════════════════════════════════════════════════
 // MOTIF SAVE / STAMP / PALETTE
 // ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+// CAPTURE MOTIF
+// ═══════════════════════════════════════════════════
+let _capturedCells = {};
+
+function startCaptureMode() {
+  if (S.activeMotif) { S.activeMotif = null; clearGhost(); }
+  S.capturingMotif = true;
+  S.captureStart = null;
+  S.captureEnd = null;
+  S.captureDrawing = false;
+  document.body.classList.add('capture-mode');
+  canvas.style.cursor = 'crosshair';
+}
+
+function stopCaptureMode() {
+  S.capturingMotif = false;
+  S.captureStart = null;
+  S.captureEnd = null;
+  S.captureDrawing = false;
+  document.body.classList.remove('capture-mode');
+  clearGhost();
+  if (!S.spaceDown) canvas.style.cursor = toolCursor();
+}
+
+function drawCaptureOverlay() {
+  const gc = document.getElementById('ghost-canvas');
+  const ctx = gc.getContext('2d');
+  ctx.clearRect(0, 0, gc.width, gc.height);
+  if (!S.captureStart || !S.captureEnd) return;
+  const minC = Math.min(S.captureStart.col, S.captureEnd.col);
+  const maxC = Math.max(S.captureStart.col, S.captureEnd.col);
+  const minR = Math.min(S.captureStart.row, S.captureEnd.row);
+  const maxR = Math.max(S.captureStart.row, S.captureEnd.row);
+  const x = minC * CELL, y = minR * CELL;
+  const w = (maxC - minC + 1) * CELL, h = (maxR - minR + 1) * CELL;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(0, 0, gc.width, gc.height);
+  ctx.clearRect(x, y, w, h);
+  ctx.strokeStyle = '#D4A827';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+}
+
+function showCapturePreview() {
+  const minC = Math.min(S.captureStart.col, S.captureEnd.col);
+  const maxC = Math.max(S.captureStart.col, S.captureEnd.col);
+  const minR = Math.min(S.captureStart.row, S.captureEnd.row);
+  const maxR = Math.max(S.captureStart.row, S.captureEnd.row);
+  const captured = {};
+  for (const [key, color] of Object.entries(S.cells)) {
+    const p = key.split(',');
+    const c = +p[0], r = +p[1];
+    if (c >= minC && c <= maxC && r >= minR && r <= maxR) captured[key] = color;
+  }
+  if (!Object.keys(captured).length) {
+    showHint('No painted cells in selection — try a larger area');
+    stopCaptureMode(); return;
+  }
+  _capturedCells = captured;
+  renderCapturePreview(captured);
+  document.getElementById('capture-preview-modal').classList.add('on');
+}
+
+function renderCapturePreview(cells) {
+  const keys = Object.keys(cells);
+  const cs = keys.map(k => +k.split(',')[0]);
+  const rs = keys.map(k => +k.split(',')[1]);
+  const minC = Math.min(...cs), maxC = Math.max(...cs);
+  const minR = Math.min(...rs), maxR = Math.max(...rs);
+  const cols = maxC - minC + 1, rows = maxR - minR + 1;
+  const cs2 = Math.min(Math.floor(240 / cols), Math.floor(240 / rows), 32);
+  const pc = document.getElementById('capture-preview-canvas');
+  pc.width = cols * cs2; pc.height = rows * cs2;
+  const ctx = pc.getContext('2d');
+  ctx.fillStyle = '#141414';
+  ctx.fillRect(0, 0, pc.width, pc.height);
+  for (const [key, color] of Object.entries(cells)) {
+    const p = key.split(',');
+    const c = +p[0] - minC, r = +p[1] - minR, tri = p[2];
+    const x = c * cs2, y = r * cs2, mx = x + cs2/2, my = y + cs2/2;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    if      (tri==='t') { ctx.moveTo(x,y); ctx.lineTo(x+cs2,y); ctx.lineTo(mx,my); }
+    else if (tri==='r') { ctx.moveTo(x+cs2,y); ctx.lineTo(x+cs2,y+cs2); ctx.lineTo(mx,my); }
+    else if (tri==='b') { ctx.moveTo(x,y+cs2); ctx.lineTo(x+cs2,y+cs2); ctx.lineTo(mx,my); }
+    else                { ctx.moveTo(x,y); ctx.lineTo(x,y+cs2); ctx.lineTo(mx,my); }
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 0.5;
+  for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
+    const x = c * cs2, y = r * cs2;
+    ctx.strokeRect(x, y, cs2, cs2);
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+cs2,y+cs2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+cs2,y); ctx.lineTo(x,y+cs2); ctx.stroke();
+  }
+}
+
+function confirmCaptureMotif() {
+  const keys = Object.keys(_capturedCells);
+  const cs = keys.map(k => +k.split(',')[0]);
+  const rs = keys.map(k => +k.split(',')[1]);
+  const cx = (Math.min(...cs) + Math.max(...cs)) / 2;
+  const cy = (Math.min(...rs) + Math.max(...rs)) / 2;
+  const cells = {};
+  for (const [key, color] of Object.entries(_capturedCells)) {
+    const p = key.split(',');
+    cells[`${+p[0]-cx},${+p[1]-cy},${p[2]}`] = color;
+  }
+  const name = `Motif ${MOTIFS.length + 1}`;
+  MOTIFS.push({ name, cells });
+  try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
+  buildMotifPal();
+  cancelCapture();
+  showHint(`Saved "${name}" to library`);
+}
+
+function cancelCapture() {
+  document.getElementById('capture-preview-modal').classList.remove('on');
+  stopCaptureMode();
+}
+
 // ═══════════════════════════════════════════════════
 // MOTIF MAKER
 // ═══════════════════════════════════════════════════
