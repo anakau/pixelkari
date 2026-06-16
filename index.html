@@ -745,6 +745,7 @@
             <div style="display:flex;align-items:center;gap:3px;"><span class="motif-panel-label">Motif Library</span><span class="motif-local-info" id="motif-info-icon">ⓘ<span class="motif-local-tip" id="motif-local-tip">Motifs are saved locally in your browser. Clearing your browser data will remove them.</span></span></div>
             <div style="display:flex;align-items:center;gap:4px;">
               <button class="motif-rot-btn" id="motif-export-btn" onclick="copyMotifsToClipboard()" title="Copy all motifs as JSON">⬆ Export</button>
+              <button class="motif-rot-btn" id="motif-flip-btn" onclick="toggleMotifFlip()" title="Mirror motif horizontally">↔ Flip</button>
               <button class="motif-rot-btn" id="motif-rot-btn" onclick="cycleMotifRotation()" title="Rotate motif 90° clockwise">↻ <span id="motif-rot-lbl">0°</span></button>
             </div>
           </div>
@@ -1032,6 +1033,7 @@ const S = {
   motifBounds:     null,
   lastStampI:      0,
   lastStampJ:      0,
+  motifFlipH:      false,
 };
 
 // ═══════════════════════════════════════════════════
@@ -1913,16 +1915,37 @@ function rotateMotifCells(cells, deg) {
     const next = {};
     for (const [key, color] of Object.entries(cur)) {
       const p = key.split(',');
-      next[`${-parseInt(p[1])},${parseInt(p[0])},${TRI_CW[p[2]]}`] = color;
+      next[`${-(+p[1])},${+(p[0])},${TRI_CW[p[2]]}`] = color;
     }
     cur = next;
   }
   return cur;
 }
 
+function mirrorMotifCells(cells) {
+  const TRI_H = { l: 'r', r: 'l', t: 't', b: 'b' };
+  const next = {};
+  for (const [key, color] of Object.entries(cells)) {
+    const p = key.split(',');
+    next[`${-(+p[0])},${+(p[1])},${TRI_H[p[2]]}`] = color;
+  }
+  return next;
+}
+
 function getActiveCells() {
   if (!S.activeMotif) return {};
-  return rotateMotifCells(S.activeMotif.cells, S.motifRotation);
+  let cells = rotateMotifCells(S.activeMotif.cells, S.motifRotation);
+  if (S.motifFlipH) cells = mirrorMotifCells(cells);
+  return cells;
+}
+
+function toggleMotifFlip() {
+  if (!S.activeMotif) return;
+  S.motifFlipH = !S.motifFlipH;
+  const btn = document.getElementById('motif-flip-btn');
+  if (btn) btn.classList.toggle('active', S.motifFlipH);
+  S.motifBounds = getMotifBounds();
+  if (S.ghostCol !== null) drawGhost(S.ghostCol, S.ghostRow);
 }
 
 function copyMotifsToClipboard() {
@@ -1960,10 +1983,13 @@ function clampMotifPos(col, row) {
 function selectMotif(motif) {
   S.activeMotif = motif;
   S.motifRotation = 0;
+  S.motifFlipH = false;
   const lbl = document.getElementById('motif-rot-lbl');
   if (lbl) lbl.textContent = '0°';
   const btn = document.getElementById('motif-rot-btn');
   if (btn) btn.classList.remove('active');
+  const flipBtn = document.getElementById('motif-flip-btn');
+  if (flipBtn) flipBtn.classList.remove('active');
   document.querySelectorAll('.motif-thumb').forEach(t => t.classList.remove('selected'));
   if (motif) {
     showHint(`"${motif.name}" selected — click canvas to place, Esc to cancel`);
