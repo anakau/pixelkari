@@ -1587,7 +1587,7 @@ function toggleGrid() {
 const WALLPAPER_PRESETS = {
   phone:     { w: 1290, h: 2796, rotate: true  },
   desktop:   { w: 3840, h: 2160, rotate: false },
-  instagram: { w: 1080, h: 1350, rotate: true  },
+  instagram: { w: 1080, h: 1350, rotate: false },
 };
 
 const GRID_PRESETS = {
@@ -1623,10 +1623,19 @@ function _renderWallpaperPreviews() {
   const savedGrid = S.grid; S.grid = false; _doRender();
   const logW = S.cols * CELL, logH = S.rows * CELL;
 
-  // Desktop + Instagram preview — natural orientation (instagram centered on export)
+  // Desktop preview — natural orientation
   const src = canvas.toDataURL('image/png');
   document.querySelectorAll('.wp-art[data-format="desktop"]').forEach(img => { img.src = src; });
-  document.querySelectorAll('.wp-art[data-format="instagram"]').forEach(img => { img.src = src; });
+
+  // Instagram preview — portrait 4:5 canvas (1080×1350 ratio)
+  const IH = 126, IW = Math.round(IH * 1080 / 1350);
+  const ic = document.createElement('canvas');
+  ic.width = IW; ic.height = IH;
+  const ictx = ic.getContext('2d');
+  const is = Math.min(IW / logW, IH / logH);
+  const idw = Math.round(logW * is), idh = Math.round(logH * is);
+  ictx.drawImage(canvas, Math.round((IW - idw) / 2), Math.round((IH - idh) / 2), idw, idh);
+  document.querySelectorAll('.wp-art[data-format="instagram"]').forEach(img => { img.src = ic.toDataURL(); });
 
   // Phone preview — rotate 90° to portrait
   const PH = 108, PW = Math.round(PH * logH / logW);
