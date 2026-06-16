@@ -240,6 +240,22 @@
     .motif-rot-btn { background: none; border: 1px solid #333; color: var(--muted); font-size: 10px; padding: 2px 7px; cursor: pointer; font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: 0.05em; transition: border-color 0.12s, color 0.12s; white-space: nowrap; }
     .motif-rot-btn:hover { border-color: var(--accent); color: var(--accent); }
     .motif-rot-btn.active { border-color: var(--accent); color: var(--accent); }
+    /* Motif Maker */
+    .mm-box { background: #181818; border: 1px solid #2c2c2c; padding: 0; width: 380px; }
+    .mm-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #222; }
+    .mm-title { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #aaa; }
+    .mm-canvas-wrap { padding: 16px 16px 0; display: flex; justify-content: center; }
+    #mm-canvas { display: block; cursor: crosshair; }
+    .mm-palette { display: flex; flex-wrap: wrap; gap: 4px; padding: 12px 16px 0; }
+    .mm-swatch { width: 18px; height: 18px; cursor: pointer; border: 2px solid transparent; flex-shrink: 0; transition: border-color 0.1s; }
+    .mm-swatch.on { border-color: #fff; }
+    .mm-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 12px 16px 16px; }
+    .mm-tools { display: flex; gap: 4px; }
+    .mm-btn { background: #222; border: 1px solid #333; color: #888; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif; padding: 5px 10px; cursor: pointer; transition: border-color 0.12s, color 0.12s; }
+    .mm-btn:hover { border-color: #888; color: #ccc; }
+    .mm-btn.on { border-color: var(--accent); color: var(--accent); }
+    .mm-save { background: var(--accent); border: 1px solid var(--accent); color: #111; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif; padding: 5px 14px; cursor: pointer; transition: background 0.12s; }
+    .mm-save:hover { background: #F72585; border-color: #F72585; color: #fff; }
     .motif-local-info { display: inline-flex; align-items: center; margin-left: 4px; cursor: default; color: #444; font-size: 10px; line-height: 1; }
     .motif-local-info:hover { color: #888; }
     .motif-local-tip { display: none; position: fixed; width: 210px; background: #1c1c1c; border: 1px solid #333; color: #aaa; font-size: 10px; font-family: 'Bricolage Grotesque', sans-serif; line-height: 1.5; padding: 8px 10px; letter-spacing: 0.02em; pointer-events: none; z-index: 9999; }
@@ -744,6 +760,7 @@
           <div class="motif-panel-head">
             <div style="display:flex;align-items:center;gap:3px;"><span class="motif-panel-label">Motif Library</span><span class="motif-local-info" id="motif-info-icon">ⓘ<span class="motif-local-tip" id="motif-local-tip">Motifs are saved locally in your browser. Clearing your browser data will remove them.</span></span></div>
             <div style="display:flex;align-items:center;gap:4px;">
+              <button class="motif-rot-btn" onclick="openMotifMaker()" title="Design a new motif">+ New</button>
               <button class="motif-rot-btn" id="motif-export-btn" onclick="copyMotifsToClipboard()" title="Copy all motifs as JSON">⬆ Export</button>
               <button class="motif-rot-btn" id="motif-flip-btn" onclick="toggleMotifFlip()" title="Mirror motif horizontally">↔ Flip</button>
               <button class="motif-rot-btn" id="motif-rot-btn" onclick="cycleMotifRotation()" title="Rotate motif 90° clockwise">↻ <span id="motif-rot-lbl">0°</span></button>
@@ -791,6 +808,28 @@
     </div>
     <div class="finish-actions">
       <button class="btn-sec" onclick="closeFinishModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- MOTIF MAKER MODAL -->
+<div class="overlay" id="motif-maker-modal">
+  <div class="mm-box">
+    <div class="mm-head">
+      <span class="mm-title">Motif Maker</span>
+      <button class="finish-close" onclick="closeMotifMaker()">✕</button>
+    </div>
+    <div class="mm-palette" id="mm-palette"></div>
+    <div class="mm-canvas-wrap">
+      <canvas id="mm-canvas"></canvas>
+    </div>
+    <div class="mm-foot">
+      <div class="mm-tools">
+        <button class="mm-btn on" id="mm-paint-btn" onclick="mmSetTool('paint')">Paint</button>
+        <button class="mm-btn" id="mm-erase-btn" onclick="mmSetTool('erase')">Erase</button>
+        <button class="mm-btn" onclick="mmClear()">Clear</button>
+      </div>
+      <button class="mm-save" onclick="saveMotifFromMaker()">Save to Library →</button>
     </div>
   </div>
 </div>
@@ -1881,6 +1920,167 @@ function showHint(msg) {
 // ═══════════════════════════════════════════════════
 // MOTIF SAVE / STAMP / PALETTE
 // ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+// MOTIF MAKER
+// ═══════════════════════════════════════════════════
+const MM_COLS = 13, MM_ROWS = 13, MM_CELL = 26;
+let mmState = { cells: {}, color: '#F5C518', tool: 'paint', drawing: false, lastCell: null };
+
+function openMotifMaker() {
+  document.getElementById('motif-maker-modal').classList.add('on');
+  mmState.cells = {};
+  mmState.tool  = 'paint';
+  mmState.color = THREAD[0];
+  mmState.drawing = false;
+  const c = document.getElementById('mm-canvas');
+  c.width  = MM_COLS * MM_CELL;
+  c.height = MM_ROWS * MM_CELL;
+  document.getElementById('mm-paint-btn').classList.add('on');
+  document.getElementById('mm-erase-btn').classList.remove('on');
+  buildMmPalette();
+  mmRender();
+}
+
+function closeMotifMaker() {
+  document.getElementById('motif-maker-modal').classList.remove('on');
+}
+
+function buildMmPalette() {
+  const el = document.getElementById('mm-palette');
+  el.innerHTML = '';
+  THREAD.forEach(hex => {
+    const sw = document.createElement('div');
+    sw.className = 'mm-swatch' + (hex === mmState.color ? ' on' : '');
+    sw.style.background = hex;
+    sw.onclick = () => {
+      mmState.color = hex;
+      mmState.tool  = 'paint';
+      document.getElementById('mm-paint-btn').classList.add('on');
+      document.getElementById('mm-erase-btn').classList.remove('on');
+      el.querySelectorAll('.mm-swatch').forEach(s => s.classList.remove('on'));
+      sw.classList.add('on');
+    };
+    el.appendChild(sw);
+  });
+}
+
+function mmSetTool(t) {
+  mmState.tool = t;
+  document.getElementById('mm-paint-btn').classList.toggle('on', t === 'paint');
+  document.getElementById('mm-erase-btn').classList.toggle('on', t === 'erase');
+}
+
+function mmClear() { mmState.cells = {}; mmRender(); }
+
+function mmTriAt(e) {
+  const c = document.getElementById('mm-canvas');
+  const rect = c.getBoundingClientRect();
+  const px = e.clientX - rect.left, py = e.clientY - rect.top;
+  const col = Math.floor(px / MM_CELL), row = Math.floor(py / MM_CELL);
+  if (col < 0 || col >= MM_COLS || row < 0 || row >= MM_ROWS) return null;
+  const u = (px - col * MM_CELL) / MM_CELL, v = (py - row * MM_CELL) / MM_CELL;
+  let tri;
+  if      (v < u  && v < 1-u) tri = 't';
+  else if (v > u  && v > 1-u) tri = 'b';
+  else if (u >= v && u >= 1-v) tri = 'r';
+  else                         tri = 'l';
+  return { col, row, tri };
+}
+
+function mmPaintAt(hit) {
+  if (!hit) return;
+  const key = `${hit.col},${hit.row},${hit.tri}`;
+  if (mmState.tool === 'erase') delete mmState.cells[key];
+  else mmState.cells[key] = mmState.color;
+  mmRender();
+}
+
+(function() {
+  function init() {
+    const c = document.getElementById('mm-canvas');
+    if (!c) return;
+    c.addEventListener('mousedown', e => {
+      e.preventDefault();
+      mmState.drawing = true;
+      const hit = mmTriAt(e);
+      mmState.lastCell = hit ? `${hit.col},${hit.row},${hit.tri}` : null;
+      mmPaintAt(hit);
+    });
+    c.addEventListener('mousemove', e => {
+      if (!mmState.drawing) return;
+      const hit = mmTriAt(e);
+      if (!hit) return;
+      const key = `${hit.col},${hit.row},${hit.tri}`;
+      if (key === mmState.lastCell) return;
+      mmState.lastCell = key;
+      mmPaintAt(hit);
+    });
+    window.addEventListener('mouseup', () => { mmState.drawing = false; });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+function mmRender() {
+  const c = document.getElementById('mm-canvas');
+  if (!c || !c.width) return;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#141414';
+  ctx.fillRect(0, 0, c.width, c.height);
+
+  for (const [key, color] of Object.entries(mmState.cells)) {
+    const p = key.split(',');
+    const col = +p[0], row = +p[1], tri = p[2];
+    const x = col * MM_CELL, y = row * MM_CELL;
+    const mx = x + MM_CELL / 2, my = y + MM_CELL / 2;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    if      (tri==='t') { ctx.moveTo(x,y); ctx.lineTo(x+MM_CELL,y); ctx.lineTo(mx,my); }
+    else if (tri==='r') { ctx.moveTo(x+MM_CELL,y); ctx.lineTo(x+MM_CELL,y+MM_CELL); ctx.lineTo(mx,my); }
+    else if (tri==='b') { ctx.moveTo(x,y+MM_CELL); ctx.lineTo(x+MM_CELL,y+MM_CELL); ctx.lineTo(mx,my); }
+    else                { ctx.moveTo(x,y); ctx.lineTo(x,y+MM_CELL); ctx.lineTo(mx,my); }
+    ctx.closePath(); ctx.fill();
+  }
+
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.lineWidth = 0.5;
+  for (let col = 0; col < MM_COLS; col++) {
+    for (let row = 0; row < MM_ROWS; row++) {
+      const x = col * MM_CELL, y = row * MM_CELL;
+      ctx.strokeRect(x, y, MM_CELL, MM_CELL);
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+MM_CELL,y+MM_CELL); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+MM_CELL,y); ctx.lineTo(x,y+MM_CELL); ctx.stroke();
+    }
+  }
+
+  // center cross hair
+  const cx = Math.floor(MM_COLS/2) * MM_CELL, cy = Math.floor(MM_ROWS/2) * MM_CELL;
+  ctx.strokeStyle = '#3a3a3a';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, c.height); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(c.width, cy); ctx.stroke();
+}
+
+function saveMotifFromMaker() {
+  const keys = Object.keys(mmState.cells);
+  if (!keys.length) { return; }
+  const cs = keys.map(k => +k.split(',')[0]);
+  const rs = keys.map(k => +k.split(',')[1]);
+  const cx = (Math.min(...cs) + Math.max(...cs)) / 2;
+  const cy = (Math.min(...rs) + Math.max(...rs)) / 2;
+  const cells = {};
+  for (const [key, color] of Object.entries(mmState.cells)) {
+    const p = key.split(',');
+    cells[`${+p[0]-cx},${+p[1]-cy},${p[2]}`] = color;
+  }
+  const name = `Motif ${MOTIFS.length + 1}`;
+  MOTIFS.push({ name, cells });
+  try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
+  buildMotifPal();
+  closeMotifMaker();
+  showHint(`Saved "${name}" to library`);
+}
+
 function saveAsMotif() {
   const innerKeys = Object.keys(S.cells).filter(k => {
     const p = k.split(','); return isInner(+p[0], +p[1]);
