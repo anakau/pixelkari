@@ -1030,6 +1030,8 @@ const S = {
   stampOriginRow:  0,
   stampedPositions: null,
   motifBounds:     null,
+  lastStampI:      0,
+  lastStampJ:      0,
 };
 
 // ═══════════════════════════════════════════════════
@@ -1349,6 +1351,8 @@ canvas.addEventListener('mousedown', e => {
     S.stampOriginRow  = row;
     S.motifBounds     = getMotifBounds();
     S.stampedPositions = new Set([`${col},${row}`]);
+    S.lastStampI      = 0;
+    S.lastStampJ      = 0;
     placeMotif(col, row);
     render();
     drawGhost(col, row);
@@ -1376,17 +1380,27 @@ canvas.addEventListener('mousemove', e => {
 
     if (S.motifDrawing && S.motifBounds) {
       const { w, h } = S.motifBounds;
-      const i = Math.round((col - S.stampOriginCol) / w);
-      const j = Math.round((row - S.stampOriginRow) / h);
-      const tc = S.stampOriginCol + i * w;
-      const tr = S.stampOriginRow + j * h;
-      const posKey = `${tc},${tr}`;
-      if (!S.stampedPositions.has(posKey)) {
-        S.stampedPositions.add(posKey);
-        placeMotif(tc, tr);
-        render();
+      const curI = Math.round((col - S.stampOriginCol) / w);
+      const curJ = Math.round((row - S.stampOriginRow) / h);
+      const di = curI - S.lastStampI, dj = curJ - S.lastStampJ;
+      const steps = Math.max(Math.abs(di), Math.abs(dj), 1);
+      let didPlace = false;
+      for (let s = 1; s <= steps; s++) {
+        const si = S.lastStampI + Math.round(s * di / steps);
+        const sj = S.lastStampJ + Math.round(s * dj / steps);
+        const tc = S.stampOriginCol + si * w;
+        const tr = S.stampOriginRow + sj * h;
+        const posKey = `${tc},${tr}`;
+        if (!S.stampedPositions.has(posKey)) {
+          S.stampedPositions.add(posKey);
+          placeMotif(tc, tr);
+          didPlace = true;
+        }
       }
-      drawGhost(tc, tr);
+      S.lastStampI = curI;
+      S.lastStampJ = curJ;
+      if (didPlace) render();
+      drawGhost(S.stampOriginCol + curI * w, S.stampOriginRow + curJ * h);
       return;
     }
 
