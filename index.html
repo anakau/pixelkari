@@ -198,6 +198,15 @@
       white-space: nowrap; justify-self: end; line-height: 1;
     }
     .export-btn:hover { background: #F72585; border-color: #F72585; color: #fff; }
+    .feedback-btn {
+      position: fixed; bottom: 20px; right: 20px; z-index: 300;
+      padding: 8px 14px; background: #1a1a1a; border: 1px solid #333;
+      color: #888; font-size: 9px; font-weight: 600; letter-spacing: 0.12em;
+      text-transform: uppercase; text-decoration: none;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .feedback-btn:hover { border-color: var(--accent); color: var(--accent); }
 
     /* logo */
     #bar-logo { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; overflow: hidden; }
@@ -628,6 +637,9 @@
 </head>
 <body>
 <div id="app">
+
+  <!-- FEEDBACK BUTTON -->
+  <a href="https://www.instagram.com/pixelkari.art?igsh=MjNwNXF3dHNpaXR0&utm_source=qr" target="_blank" rel="noopener" class="feedback-btn">Suggestions? Write to us ↗</a>
 
   <!-- TOOL PAGE HEADER -->
   <div class="page-header">
