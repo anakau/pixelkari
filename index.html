@@ -2599,7 +2599,7 @@ initCursors();
   const match = Object.keys(GRID_PRESETS).find(k => GRID_PRESETS[k].cols === S.cols && GRID_PRESETS[k].rows === S.rows);
   _updatePresetBtns(match || null);
 })();
-if (window.innerWidth <= 900 || localStorage.getItem('pkPage') !== 'tool') setTimeout(showStoryPage, 0);
+setTimeout(showStoryPage, 0);
 
 // Motif local storage info tooltip
 (function() {
