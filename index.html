@@ -743,7 +743,10 @@
         <div id="motif-panel">
           <div class="motif-panel-head">
             <div style="display:flex;align-items:center;gap:3px;"><span class="motif-panel-label">Motif Library</span><span class="motif-local-info" id="motif-info-icon">ⓘ<span class="motif-local-tip" id="motif-local-tip">Motifs are saved locally in your browser. Clearing your browser data will remove them.</span></span></div>
-            <button class="motif-rot-btn" id="motif-rot-btn" onclick="cycleMotifRotation()" title="Rotate motif 90° clockwise">↻ <span id="motif-rot-lbl">0°</span></button>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <button class="motif-rot-btn" id="motif-export-btn" onclick="copyMotifsToClipboard()" title="Copy all motifs as JSON">⬆ Export</button>
+              <button class="motif-rot-btn" id="motif-rot-btn" onclick="cycleMotifRotation()" title="Rotate motif 90° clockwise">↻ <span id="motif-rot-lbl">0°</span></button>
+            </div>
           </div>
           <div class="motif-grid" id="motif-pal"></div>
         </div>
@@ -1906,6 +1909,16 @@ function rotateMotifCells(cells, deg) {
 function getActiveCells() {
   if (!S.activeMotif) return {};
   return rotateMotifCells(S.activeMotif.cells, S.motifRotation);
+}
+
+function copyMotifsToClipboard() {
+  const btn = document.getElementById('motif-export-btn');
+  navigator.clipboard.writeText(JSON.stringify(MOTIFS, null, 2)).then(function() {
+    btn.textContent = '✓ Copied!';
+    setTimeout(function() { btn.textContent = '⬆ Export'; }, 2000);
+  }).catch(function() {
+    prompt('Copy this JSON:', JSON.stringify(MOTIFS));
+  });
 }
 
 function cycleMotifRotation() {
