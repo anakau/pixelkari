@@ -1443,7 +1443,7 @@ canvas.addEventListener('mousedown', e => {
     S.stampedPositions = new Set([`${col},${row}`]);
     S.lastStampI      = 0;
     S.lastStampJ      = 0;
-    placeMotif(col, row);
+    if (S.tool === 'erase') { eraseMotif(col, row); } else { placeMotif(col, row); }
     render();
     drawGhost(col, row);
     return;
@@ -1488,9 +1488,9 @@ canvas.addEventListener('mousemove', e => {
         const tc = S.stampOriginCol + si * w;
         const tr = S.stampOriginRow + sj * h;
         const posKey = `${tc},${tr}`;
-        if (!S.stampedPositions.has(posKey)) {
-          S.stampedPositions.add(posKey);
-          placeMotif(tc, tr);
+        if (S.tool === 'erase' || !S.stampedPositions.has(posKey)) {
+          if (S.tool !== 'erase') S.stampedPositions.add(posKey);
+          if (S.tool === 'erase') { eraseMotif(tc, tr); } else { placeMotif(tc, tr); }
           didPlace = true;
         }
       }
@@ -2411,6 +2411,17 @@ function placeMotif(col, row) {
     const r = Math.round(row + +p[1]);
     if (c < 0 || c >= S.cols || r < 0 || r >= S.rows) continue;
     S.cells[`${c},${r},${p[2]}`] = color;
+  }
+}
+
+function eraseMotif(col, row) {
+  ({ col, row } = clampMotifPos(col, row));
+  for (const key of Object.keys(getActiveCells())) {
+    const p = key.split(',');
+    const c = Math.round(col + +p[0]);
+    const r = Math.round(row + +p[1]);
+    if (c < 0 || c >= S.cols || r < 0 || r >= S.rows) continue;
+    delete S.cells[`${c},${r},${p[2]}`];
   }
 }
 
