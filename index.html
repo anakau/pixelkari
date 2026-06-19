@@ -116,7 +116,7 @@
     .eye-btn .tool-emoji { font-size: 15px; margin-right: 4px; vertical-align: middle; }
     .nav-block { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
     .nav-row   { display: flex; gap: 3px; }
-    .preset-btn { padding: 0 9px !important; height: 32px !important; background: rgba(255,255,255,0.05) !important; border: none !important; letter-spacing: 0.06em; }
+    .preset-btn { padding: 0 9px !important; background: rgba(255,255,255,0.05) !important; border: none !important; letter-spacing: 0.06em; }
     .preset-btn:hover { background: rgba(255,255,255,0.10) !important; }
     .preset-btn.on { background: var(--accent) !important; color: #111 !important; }
     .zoom-row  { display: flex; align-items: center; gap: 3px; }
@@ -191,11 +191,11 @@
 
     /* export button */
     .export-btn {
-      padding: 8px 16px; background: var(--accent); border: none;
-      border-radius: 0; color: #111; cursor: pointer; font-size: 12px;
+      height: 38px; padding: 0 16px; background: var(--accent); border: none;
+      border-radius: 0; color: #111; cursor: pointer; font-size: 12px; box-sizing: border-box;
       font-family: 'Bricolage Grotesque', sans-serif; font-weight: 400;
       letter-spacing: 0.02em; transition: background 0.15s, color 0.15s;
-      white-space: nowrap; justify-self: end; line-height: 1;
+      white-space: nowrap; justify-self: end; display: inline-flex; align-items: center;
     }
     .export-btn:hover { background: #F72585; color: #fff; }
     .feedback-btn {
@@ -208,12 +208,12 @@
     .feedback-btn:hover { background: rgba(255,255,255,0.09); }
     .feedback-emoji { font-size: 18px; line-height: 1; margin-bottom: 4px; }
     .feedback-line1 {
-      font-size: 9px; font-weight: 600; letter-spacing: 0.12em;
-      text-transform: uppercase; color: #888;
+      font-size: 9px; font-weight: 400; letter-spacing: 0.04em;
+      color: #888;
     }
     .feedback-line2 {
-      font-size: 9px; font-weight: 600; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--accent);
+      font-size: 9px; font-weight: 400; letter-spacing: 0.04em;
+      color: var(--accent);
     }
     .feedback-btn:hover .feedback-line1,
     .feedback-btn:hover .feedback-line2 { color: var(--accent); }
@@ -232,7 +232,7 @@
     .motif-create-btn {
       width: 79px !important; height: 79px !important; padding: 0 !important;
       flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 5px; text-transform: uppercase;
+      justify-content: center; gap: 5px;
     }
     .motif-thumb.selected { border-color: var(--accent); }
     .motif-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 10px; }
@@ -443,7 +443,7 @@
     #story-page.on { display: block; }
     .snav-cta {
       padding: 9px 22px; background: var(--accent); color: #111; border: none; cursor: pointer;
-      font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+      font-size: 10px; font-weight: 400; letter-spacing: 0.04em;
       font-family: 'Bricolage Grotesque', sans-serif; transition: background 0.15s, color 0.15s;
       flex-shrink: 0;
     }
@@ -631,7 +631,7 @@
       .bb-divider { margin: 0 10px; }
       .logo-title { font-size: 24px; letter-spacing: 0.05em; }
       .logo-sub   { font-size: 24px; }
-      .export-btn { padding: 6px 11px; font-size: 11px; letter-spacing: 0.07em; }
+      .export-btn { height: 32px; padding: 0 11px; font-size: 11px; letter-spacing: 0.04em; }
       .motif-create-btn { width: 67px !important; height: 67px !important; }
       .thread-spool { margin-left: -8px; transform: translateY(-12px); }
       .thread-spool:hover { transform: translateY(-22px); }
@@ -648,7 +648,7 @@
       .bb-divider { margin: 0 8px; }
       .logo-title { font-size: 20px; letter-spacing: 0.04em; }
       .logo-sub   { font-size: 20px; }
-      .export-btn { padding: 5px 10px; font-size: 10px; letter-spacing: 0.06em; }
+      .export-btn { height: 30px; padding: 0 10px; font-size: 10px; letter-spacing: 0.04em; }
       .motif-create-btn { width: 63px !important; height: 63px !important; }
       .thread-spool { margin-left: -7px; transform: translateY(-11px); }
       .thread-spool:hover { transform: translateY(-20px); }
@@ -668,7 +668,7 @@
       .bb-divider { margin: 0 7px; height: 20px; }
       .logo-title { font-size: 16px; letter-spacing: 0.03em; }
       .logo-sub   { font-size: 16px; }
-      .export-btn { padding: 4px 8px; font-size: 9px; letter-spacing: 0.05em; }
+      .export-btn { height: 27px; padding: 0 8px; font-size: 9px; letter-spacing: 0.04em; }
       .motif-create-btn { width: 57px !important; height: 57px !important; }
       .motif-panel-head { margin-bottom: 3px; }
       .thread-spool { margin-left: -6px; transform: translateY(-9px); }
