@@ -9,7 +9,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #111; --bar: #181818; --border: #2c2c2c;
+      --bg: #111; --bar: #181818; --border: rgba(255,255,255,0.08);
       --text: #e8e8e8; --muted: #555;
       --accent: #D4A827; --accent-dim: rgba(212,168,39,0.10);
       --bar-h: 144px;
@@ -59,7 +59,7 @@
 
     #hint {
       position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.72); border: 1px solid var(--border);
+      background: rgba(0,0,0,0.72); border: none;
       border-radius: 0; padding: 5px 14px; font-size: 11px; color: var(--muted);
       pointer-events: none; opacity: 0; transition: opacity 0.25s; white-space: nowrap;
     }
@@ -68,7 +68,7 @@
     /* ── BOTTOM BAR ── */
     #bottombar {
       height: var(--bar-h); background: var(--bar);
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(255,255,255,0.06);
       display: flex; flex-direction: row; align-items: center;
       padding: 0 20px 22px; flex-shrink: 0; overflow: visible;
       position: relative; z-index: 100;
@@ -79,28 +79,28 @@
       display: flex; align-items: center; justify-content: center; gap: 0;
       overflow: visible;
     }
-    .bb-divider { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; margin: 0 14px; }
+    .bb-divider { width: 1px; height: 26px; background: rgba(255,255,255,0.07); flex-shrink: 0; margin: 0 14px; }
     .bb-group   { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .bb-label   { font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-right: 6px; white-space: nowrap; }
 
     /* tool / sym buttons */
     .tbtn {
-      height: 38px; padding: 0 13px; background: #222; border: none; border-radius: 0;
+      height: 38px; padding: 0 13px; background: rgba(255,255,255,0.06); border: none; border-radius: 0;
       color: var(--text); cursor: pointer; font-size: 13px; box-sizing: border-box;
       font-family: 'Bricolage Grotesque', sans-serif; font-weight: 500;
       letter-spacing: 0.04em; transition: all 0.12s; white-space: nowrap; flex-shrink: 0;
     }
-    .tbtn:hover { background: #2a2a2a; }
+    .tbtn:hover { background: rgba(255,255,255,0.10); }
     .tbtn.on { background: var(--accent); color: #111; }
     .tool-emoji { font-size: 15px; margin-right: 5px; vertical-align: middle; line-height: 1; }
 
     /* symmetry icon buttons */
     .sym-btn {
-      height: 38px; background: #222; border: none; border-radius: 0;
+      height: 38px; background: rgba(255,255,255,0.06); border: none; border-radius: 0;
       color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: all 0.12s;
     }
-    .sym-btn:hover { background: #2a2a2a; color: var(--text); }
+    .sym-btn:hover { background: rgba(255,255,255,0.10); color: var(--text); }
     .sym-btn.on { background: var(--accent); color: #111; }
     .sym-btn svg { display: block; pointer-events: none; }
     /* tool block */
@@ -110,15 +110,15 @@
     #sym-group .sym-btn { flex: 1; width: auto; }
 
     /* eye toggle button */
-    .eye-btn { height: 38px; padding: 0 10px; background: #222; border: none; border-radius: 0; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 500; transition: all 0.12s; flex-shrink: 0; box-sizing: border-box; }
-    .eye-btn:hover { background: #2a2a2a; color: var(--text); }
+    .eye-btn { height: 38px; padding: 0 10px; background: rgba(255,255,255,0.06); border: none; border-radius: 0; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 500; transition: all 0.12s; flex-shrink: 0; box-sizing: border-box; }
+    .eye-btn:hover { background: rgba(255,255,255,0.10); color: var(--text); }
     .eye-btn.on { color: var(--text); }
     .eye-btn .tool-emoji { font-size: 15px; margin-right: 4px; vertical-align: middle; }
     .nav-block { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
     .nav-row   { display: flex; gap: 3px; }
-    .preset-btn { padding: 0 9px !important; height: 32px !important; background: #1a1a1a !important; border: 1px solid #2a2a2a !important; letter-spacing: 0.06em; }
-    .preset-btn:hover { background: #252525 !important; border-color: #444 !important; }
-    .preset-btn.on { background: var(--accent) !important; color: #111 !important; border-color: var(--accent) !important; }
+    .preset-btn { padding: 0 9px !important; height: 32px !important; background: rgba(255,255,255,0.05) !important; border: none !important; letter-spacing: 0.06em; }
+    .preset-btn:hover { background: rgba(255,255,255,0.10) !important; }
+    .preset-btn.on { background: var(--accent) !important; color: #111 !important; }
     .zoom-row  { display: flex; align-items: center; gap: 3px; }
 
     .tool-row { display: flex; align-items: center; gap: 6px; }
@@ -159,11 +159,11 @@
 
     /* icon buttons */
     .icon-btn {
-      width: 30px; height: 30px; background: #222; border: 1px solid var(--border); border-radius: 0;
+      width: 30px; height: 30px; background: rgba(255,255,255,0.06); border: none; border-radius: 0;
       color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
       font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; transition: background 0.1s; flex-shrink: 0;
     }
-    .icon-btn:hover { background: #2a2a2a; }
+    .icon-btn:hover { background: rgba(255,255,255,0.10); }
     .zoom-lbl { font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; color: var(--muted); min-width: 34px; text-align: center; flex-shrink: 0; }
 
     /* toggle */
@@ -180,32 +180,32 @@
 
     /* action buttons */
     .act-btn {
-      height: 38px; padding: 0 11px; background: #222; border: none; border-radius: 0;
+      height: 38px; padding: 0 11px; background: rgba(255,255,255,0.06); border: none; border-radius: 0;
       color: var(--text); cursor: pointer; font-size: 13px; box-sizing: border-box;
       font-family: 'Bricolage Grotesque', sans-serif; font-weight: 500;
       transition: background 0.1s; white-space: nowrap; flex-shrink: 0;
     }
-    .act-btn:hover { background: #2a2a2a; }
+    .act-btn:hover { background: rgba(255,255,255,0.10); }
     .act-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
     .act-btn.danger { color: #c46060; }
 
     /* export button */
     .export-btn {
-      padding: 8px 16px; background: var(--accent); border: 1px solid var(--accent);
+      padding: 8px 16px; background: var(--accent); border: none;
       border-radius: 0; color: #111; cursor: pointer; font-size: 12px;
       font-family: 'Bricolage Grotesque', sans-serif; font-weight: 600;
-      letter-spacing: 0.10em; text-transform: uppercase; transition: background 0.15s, border-color 0.15s, color 0.15s;
+      letter-spacing: 0.10em; text-transform: uppercase; transition: background 0.15s, color 0.15s;
       white-space: nowrap; justify-self: end; line-height: 1;
     }
-    .export-btn:hover { background: #F72585; border-color: #F72585; color: #fff; }
+    .export-btn:hover { background: #F72585; color: #fff; }
     .feedback-btn {
       position: fixed; bottom: calc(var(--bar-h)/2 - 22px); right: 20px; z-index: 300;
-      padding: 12px 16px; background: #1a1a1a; border: 1px solid #333;
+      padding: 12px 16px; background: rgba(255,255,255,0.05); border: none;
       text-decoration: none; font-family: 'Bricolage Grotesque', sans-serif;
       display: flex; flex-direction: column; align-items: center; gap: 2px;
-      transition: border-color 0.15s;
+      transition: background 0.15s;
     }
-    .feedback-btn:hover { border-color: var(--accent); }
+    .feedback-btn:hover { background: rgba(255,255,255,0.09); }
     .feedback-emoji { font-size: 18px; line-height: 1; margin-bottom: 4px; }
     .feedback-line1 {
       font-size: 9px; font-weight: 600; letter-spacing: 0.12em;
@@ -237,9 +237,9 @@
     .motif-thumb.selected { border-color: var(--accent); }
     .motif-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 10px; }
     .motif-panel-label { font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
-    .motif-rot-btn { background: none; border: 1px solid #333; color: var(--muted); font-size: 10px; padding: 2px 7px; cursor: pointer; font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: 0.05em; transition: border-color 0.12s, color 0.12s; white-space: nowrap; }
-    .motif-rot-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .motif-rot-btn.active { border-color: var(--accent); color: var(--accent); }
+    .motif-rot-btn { background: rgba(255,255,255,0.05); border: none; color: var(--muted); font-size: 10px; padding: 3px 8px; cursor: pointer; font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: 0.05em; transition: background 0.12s, color 0.12s; white-space: nowrap; }
+    .motif-rot-btn:hover { background: rgba(255,255,255,0.10); color: var(--text); }
+    .motif-rot-btn.active { background: var(--accent-dim); color: var(--accent); }
     /* Motif Maker */
     .mm-box { background: #181818; border: 1px solid #2c2c2c; padding: 0; width: 380px; }
     .mm-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #222; }
@@ -251,11 +251,11 @@
     .mm-swatch.on { border-color: #fff; }
     .mm-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 12px 16px 16px; }
     .mm-tools { display: flex; gap: 4px; }
-    .mm-btn { background: #222; border: 1px solid #333; color: #888; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif; padding: 5px 10px; cursor: pointer; transition: border-color 0.12s, color 0.12s; }
-    .mm-btn:hover { border-color: #888; color: #ccc; }
-    .mm-btn.on { border-color: var(--accent); color: var(--accent); }
-    .mm-save { background: var(--accent); border: 1px solid var(--accent); color: #111; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif; padding: 5px 14px; cursor: pointer; transition: background 0.12s; }
-    .mm-save:hover { background: #F72585; border-color: #F72585; color: #fff; }
+    .mm-btn { background: rgba(255,255,255,0.06); border: none; color: #888; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif; padding: 5px 10px; cursor: pointer; transition: background 0.12s, color 0.12s; }
+    .mm-btn:hover { background: rgba(255,255,255,0.11); color: #ccc; }
+    .mm-btn.on { background: var(--accent-dim); color: var(--accent); }
+    .mm-save { background: var(--accent); border: none; color: #111; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif; padding: 5px 14px; cursor: pointer; transition: background 0.12s; }
+    .mm-save:hover { background: #F72585; color: #fff; }
     /* Capture Motif mode */
     body.capture-mode .page-header,
     body.capture-mode #bottombar { opacity: 0.15; pointer-events: none; transition: opacity 0.2s; }
@@ -514,8 +514,7 @@
     }
     .s-app-shot img {
       display: block; width: 100%; max-width: 1100px; margin: 0 auto;
-      border: 1px solid rgba(212,168,39,0.55);
-      box-shadow: 0 0 32px rgba(212,168,39,0.12);
+      box-shadow: 0 0 48px rgba(0,0,0,0.5);
     }
     .s-app-shot-label {
       text-align: center; margin-top: 14px;
@@ -533,7 +532,7 @@
       font-size: 15px; color: #ffffff; line-height: 1.8; margin: 0 0 14px;
     }
     .s-img {
-      width: 100%; background: #111; border: 1px solid #1e1e1e;
+      width: 100%; background: #111; border: none;
       display: flex; align-items: center; justify-content: center;
       margin: 28px 0;
     }
@@ -989,7 +988,7 @@ const THREAD_PATH = `M1.6,45.5v1.1c1.3-.5,2.7-.9,4-1.4,1.4-.5,2.7-1,4.1-1.6-.9-.
 
 const THREAD = [
   '#8840D0','#4848E0','#48A8F0','#28B8B8',
-  '#1A6B35','#40C070','#C8DC40','#F5C518','#F0920A',
+  '#2E8B4A','#40C070','#C8DC40','#F5C518','#F0920A',
   '#E8521A','#D93030','#D93068','#E040A0',
   '#E080C0','#FFFFFF','#222222',
 ];
