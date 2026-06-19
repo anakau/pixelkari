@@ -225,9 +225,8 @@
 
     /* ── MOTIF PANEL (inline, right of flower button) ── */
     #motif-panel {
-      display: flex; flex-direction: column; justify-content: center;
-      padding: 8px 12px;
-      overflow: hidden; min-width: 120px;
+      display: flex; flex-direction: row; align-items: center; gap: 6px;
+      padding: 0 8px; overflow: hidden;
     }
     .motif-create-btn {
       width: 79px !important; height: 79px !important; padding: 0 !important;
@@ -670,7 +669,6 @@
       .logo-sub   { font-size: 16px; }
       .export-btn { height: 27px; padding: 0 8px; font-size: 9px; letter-spacing: 0.04em; }
       .motif-create-btn { width: 57px !important; height: 57px !important; }
-      .motif-panel-head { margin-bottom: 3px; }
       .thread-spool { margin-left: -6px; transform: translateY(-9px); }
       .thread-spool:hover { transform: translateY(-17px); }
       .thread-spool.on { transform: translateY(-26px); }
@@ -775,16 +773,12 @@
           <div class="mcb-tip">Paint a design on the canvas, then click <strong style="color:#ddd;">Create Motif</strong> to save it. Pick it from the library to stamp it anywhere — click to place, drag to tile.</div>
         </button>
         <div id="motif-panel">
-          <div class="motif-panel-head">
-            <div style="display:flex;align-items:center;gap:3px;"><span class="motif-panel-label">Motif Library</span><span class="motif-local-info" id="motif-info-icon">ⓘ<span class="motif-local-tip" id="motif-local-tip">Motifs are saved locally in your browser. Clearing your browser data will remove them.</span></span></div>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <button class="motif-rot-btn" onclick="openMotifMaker()" title="Design a new motif" style="display:none;">+ New</button>
-              <button class="motif-rot-btn" id="motif-export-btn" onclick="copyMotifsToClipboard()" title="Copy all motifs as JSON" style="display:none;">⬆ Export</button>
-              <button class="motif-rot-btn" id="motif-flip-btn" onclick="toggleMotifFlip()" title="Mirror motif horizontally">↔ Flip</button>
-              <button class="motif-rot-btn" id="motif-rot-btn" onclick="cycleMotifRotation()" title="Rotate motif 90° clockwise">↻ <span id="motif-rot-lbl">0°</span></button>
-            </div>
-          </div>
           <div class="motif-grid" id="motif-pal"></div>
+          <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">
+            <button class="motif-rot-btn" id="motif-export-btn" onclick="copyMotifsToClipboard()" title="Copy all motifs as JSON" style="display:none;">⬆ Export</button>
+            <button class="motif-rot-btn" id="motif-flip-btn" onclick="toggleMotifFlip()" title="Mirror motif horizontally">↔ Flip</button>
+            <button class="motif-rot-btn" id="motif-rot-btn" onclick="cycleMotifRotation()" title="Rotate motif 90° clockwise">↻ <span id="motif-rot-lbl">0°</span></button>
+          </div>
         </div>
       </div>
     </div>
@@ -2548,7 +2542,7 @@ function buildMotifPal() {
       </svg>
       ${extra ? `<span class="va-count">${extra}</span>` : ''}
     </div>
-    <div class="m-lbl">View All</div>`;
+    <div class="m-lbl">Motif Library</div>`;
   el.appendChild(tile);
 }
 
