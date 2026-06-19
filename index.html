@@ -229,7 +229,7 @@
       padding: 0 8px; overflow: hidden;
     }
     .motif-create-btn {
-      width: 79px !important; height: 79px !important; padding: 0 !important;
+      width: 60px !important; height: auto; padding: 0 !important;
       flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 5px;
     }
@@ -310,7 +310,7 @@
     .m-lbl { font-size: 8px; color: var(--muted); text-align: center; padding: 2px 0; background: #1c1c1c; font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: 0.06em; }
     .view-all-tile {
       flex-shrink: 0; width: 60px; cursor: pointer;
-      border: 1px solid var(--border); overflow: hidden;
+      border: 1px solid var(--border); overflow: hidden; border-radius: 4px;
       display: flex; flex-direction: column;
       transition: border-color 0.12s;
     }
@@ -338,7 +338,7 @@
       gap: 8px; padding: 16px; overflow-y: auto; flex: 1;
     }
     .lib-thumb {
-      position: relative; cursor: pointer; border: 1px solid var(--border); transition: border-color 0.12s;
+      position: relative; cursor: pointer; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; transition: border-color 0.12s;
     }
     .lib-thumb:hover, .lib-thumb.selected { border-color: var(--accent); }
     .lib-thumb canvas { display: block; width: 100%; aspect-ratio: 1; }
@@ -631,7 +631,7 @@
       .logo-title { font-size: 24px; letter-spacing: 0.05em; }
       .logo-sub   { font-size: 24px; }
       .export-btn { height: 32px; padding: 0 11px; font-size: 11px; letter-spacing: 0.04em; }
-      .motif-create-btn { width: 67px !important; height: 67px !important; }
+      .motif-create-btn { width: 60px !important; }
       .thread-spool { margin-left: -8px; transform: translateY(-12px); }
       .thread-spool:hover { transform: translateY(-22px); }
       .thread-spool.on { transform: translateY(-34px); }
@@ -648,7 +648,7 @@
       .logo-title { font-size: 20px; letter-spacing: 0.04em; }
       .logo-sub   { font-size: 20px; }
       .export-btn { height: 30px; padding: 0 10px; font-size: 10px; letter-spacing: 0.04em; }
-      .motif-create-btn { width: 63px !important; height: 63px !important; }
+      .motif-create-btn { width: 60px !important; }
       .thread-spool { margin-left: -7px; transform: translateY(-11px); }
       .thread-spool:hover { transform: translateY(-20px); }
       .thread-spool.on { transform: translateY(-30px); }
@@ -668,7 +668,7 @@
       .logo-title { font-size: 16px; letter-spacing: 0.03em; }
       .logo-sub   { font-size: 16px; }
       .export-btn { height: 27px; padding: 0 8px; font-size: 9px; letter-spacing: 0.04em; }
-      .motif-create-btn { width: 57px !important; height: 57px !important; }
+      .motif-create-btn { width: 60px !important; }
       .thread-spool { margin-left: -6px; transform: translateY(-9px); }
       .thread-spool:hover { transform: translateY(-17px); }
       .thread-spool.on { transform: translateY(-26px); }
@@ -766,7 +766,7 @@
       </div>
       <div class="bb-divider"></div>
       <!-- Motifs: flower button + inline library -->
-      <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
+      <div style="display:flex;align-items:stretch;gap:3px;flex-shrink:0;">
         <button class="tbtn motif-create-btn" id="motif-btn" onclick="startCaptureMode()">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(0 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(45 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(90 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(135 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(180 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(225 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(270 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(315 12 12)"/><circle cx="12" cy="12" r="2.5"/></svg>
           <span style="line-height:1.3;text-align:center;">Create<br>Motif</span>
@@ -2484,7 +2484,7 @@ function _drawMotifThumb(motif, px) {
   tc.width = px; tc.height = px;
   const tctx = tc.getContext('2d');
   const keys = Object.keys(motif.cells);
-  tctx.fillStyle = '#1c0508';
+  tctx.fillStyle = '#000000';
   tctx.fillRect(0, 0, px, px);
   if (keys.length) {
     const dcs = keys.map(k => +k.split(',')[0]);
