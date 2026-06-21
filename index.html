@@ -2520,7 +2520,10 @@ function buildMotifPal() {
   const el = document.getElementById('motif-pal');
   el.innerHTML = '';
   if (!MOTIFS.length) return;
-  MOTIFS.slice(0, 3).forEach((motif, idx) => {
+  const recent = MOTIFS.slice(-3);
+  const startIdx = MOTIFS.length - recent.length;
+  recent.forEach((motif, i) => {
+    const idx = startIdx + i;
     const wrap = document.createElement('div');
     wrap.className = 'motif-thumb';
     const tc = _drawMotifThumb(motif, 60);
