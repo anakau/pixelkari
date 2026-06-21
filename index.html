@@ -2052,6 +2052,11 @@ function showCapturePreview() {
     showHint('No painted cells in selection — try a larger area');
     stopCaptureMode(); return;
   }
+  const cs = Object.keys(captured).map(k => +k.split(',')[0]);
+  const rs = Object.keys(captured).map(k => +k.split(',')[1]);
+  S.captureStart = { col: Math.min(...cs), row: Math.min(...rs) };
+  S.captureEnd   = { col: Math.max(...cs), row: Math.max(...rs) };
+  drawCaptureOverlay();
   _capturedCells = captured;
   renderCapturePreview(captured);
   document.getElementById('capture-preview-modal').classList.add('on');
