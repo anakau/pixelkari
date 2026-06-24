@@ -201,25 +201,24 @@
       white-space: nowrap; justify-self: end; display: inline-flex; align-items: center;
     }
     .export-btn:hover { background: #F72585; color: #fff; }
-    .feedback-btn {
+    .feedback-group {
       position: fixed; bottom: calc(var(--bar-h)/2 - 22px); right: 20px; z-index: 300;
-      padding: 12px 16px; background: rgba(255,255,255,0.05); border: none;
+      display: flex; gap: 6px;
+    }
+    .feedback-btn {
+      padding: 12px 14px; background: rgba(255,255,255,0.05); border: none;
       text-decoration: none; font-family: 'Bricolage Grotesque', sans-serif;
-      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
       transition: background 0.15s;
     }
     .feedback-btn:hover { background: rgba(255,255,255,0.09); }
-    .feedback-emoji { font-size: 18px; line-height: 1; margin-bottom: 4px; }
-    .feedback-line1 {
+    .feedback-icon { width: 18px; height: 18px; color: #888; transition: color 0.15s; }
+    .feedback-label {
       font-size: 9px; font-weight: 400; letter-spacing: 0.04em;
       color: #888;
     }
-    .feedback-line2 {
-      font-size: 9px; font-weight: 400; letter-spacing: 0.04em;
-      color: var(--accent);
-    }
-    .feedback-btn:hover .feedback-line1,
-    .feedback-btn:hover .feedback-line2 { color: var(--accent); }
+    .feedback-btn:hover .feedback-icon,
+    .feedback-btn:hover .feedback-label { color: var(--accent); }
 
     /* logo */
     #bar-logo { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; overflow: hidden; }
@@ -686,12 +685,24 @@
 <body>
 <div id="app">
 
-  <!-- FEEDBACK BUTTON -->
-  <a href="https://www.instagram.com/pixelkari.art?igsh=MjNwNXF3dHNpaXR0&utm_source=qr" target="_blank" rel="noopener" class="feedback-btn">
-    <span class="feedback-emoji">💌</span>
-    <span class="feedback-line1">Suggestions?</span>
-    <span class="feedback-line2">Write to Us!</span>
-  </a>
+  <!-- FEEDBACK BUTTONS -->
+  <div class="feedback-group">
+    <a href="https://tally.so/r/dWgeVA" target="_blank" rel="noopener" class="feedback-btn">
+      <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="14" rx="2"/>
+        <path d="M3 6l9 7 9-7"/>
+      </svg>
+      <span class="feedback-label">Suggestions?</span>
+    </a>
+    <a href="https://www.instagram.com/pixelkari.art?igsh=MjNwNXF3dHNpaXR0&utm_source=qr" target="_blank" rel="noopener" class="feedback-btn">
+      <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="5"/>
+        <circle cx="12" cy="12" r="4"/>
+        <circle cx="17.3" cy="6.7" r="0.6" fill="currentColor" stroke="none"/>
+      </svg>
+      <span class="feedback-label">Submit design!</span>
+    </a>
+  </div>
 
   <!-- TOOL PAGE HEADER -->
   <div class="page-header">
