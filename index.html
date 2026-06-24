@@ -203,12 +203,12 @@
     .export-btn:hover { background: #F72585; color: #fff; }
     .feedback-group {
       position: fixed; bottom: calc(var(--bar-h)/2 - 22px); right: 20px; z-index: 300;
-      display: flex; gap: 6px;
+      display: flex; flex-direction: column; gap: 6px;
     }
     .feedback-btn {
-      padding: 12px 14px; background: rgba(255,255,255,0.05); border: none;
+      padding: 8px 14px; background: rgba(255,255,255,0.05); border: none;
       text-decoration: none; font-family: 'Bricolage Grotesque', sans-serif;
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      display: flex; flex-direction: row; align-items: center; gap: 8px;
       transition: background 0.15s;
     }
     .feedback-btn:hover { background: rgba(255,255,255,0.09); }
