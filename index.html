@@ -469,12 +469,11 @@
     .wp-dl { font-size: 17px; color: #444; transition: color 0.12s; flex-shrink: 0; }
     .wp-card:hover .wp-dl { color: var(--accent); }
     .riso-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
-    .riso-size-select {
-      background: rgba(255,255,255,0.06); border: none; border-radius: 5px; color: var(--text);
-      font-size: 10px; letter-spacing: 0.06em; padding: 5px 9px;
-      font-family: 'Bricolage Grotesque', sans-serif; transition: background 0.12s, color 0.12s;
+    .riso-size-badge {
+      background: rgba(255,255,255,0.06); border-radius: 5px; color: var(--accent);
+      font-size: 10px; font-weight: 600; letter-spacing: 0.06em; padding: 5px 9px;
     }
-    .riso-size-select:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
+    .export-col.disabled { opacity: 0.4; pointer-events: none; }
     .riso-thumbs { display: flex; flex-wrap: wrap; gap: 8px; min-height: 65px; }
     .riso-thumb { display: flex; flex-direction: column; align-items: center; gap: 5px; }
     .riso-thumb-frame {
@@ -900,17 +899,13 @@
           <span class="wp-dl">↓</span>
         </div>
       </div>
-      <div class="export-col">
+      <div class="export-col" id="riso-col">
         <div class="riso-head">
           <span class="export-col-label">Riso Print</span>
-          <select class="riso-size-select" id="riso-size-select" onchange="_renderRisoSwatches()">
-            <option value="a5">A5</option>
-            <option value="a4" selected>A4</option>
-            <option value="a3">A3</option>
-          </select>
+          <span class="riso-size-badge" id="riso-size-badge"></span>
         </div>
         <div class="riso-thumbs" id="riso-swatches"></div>
-        <button class="btn-pri" id="riso-download-btn" onclick="downloadRisoPack(document.getElementById('riso-size-select').value)" style="width:100%;margin-top:auto;">Download Colour Separations (ZIP)</button>
+        <button class="btn-pri" id="riso-download-btn" onclick="downloadRisoPack()" style="width:100%;margin-top:auto;">Download Colour Separations (ZIP)</button>
       </div>
     </div>
   </div>
@@ -1764,13 +1759,20 @@ function setOrientation(mode) {
   _updateOrientBtns();
 }
 
+function _currentRisoSizeId() {
+  return Object.keys(GRID_PRESETS).find(k => {
+    const g = GRID_PRESETS[k];
+    if (!g.paper) return false;
+    return (S.cols === g.cols && S.rows === g.rows) || (S.cols === g.rows && S.rows === g.cols);
+  }) || null;
+}
+
 function openFinishModal() {
   document.getElementById('finish-modal').classList.add('on');
   _renderWallpaperPreviews();
-  const sel = document.getElementById('riso-size-select');
-  if (RISO_PRESETS[document.getElementById('preset-select').value]) {
-    sel.value = document.getElementById('preset-select').value;
-  }
+  const sizeId = _currentRisoSizeId();
+  document.getElementById('riso-col').classList.toggle('disabled', !sizeId);
+  document.getElementById('riso-size-badge').textContent = sizeId ? sizeId.toUpperCase() : '';
   _renderRisoSwatches();
 }
 function closeFinishModal() { document.getElementById('finish-modal').classList.remove('on'); }
@@ -1889,8 +1891,12 @@ function _buildSeparationCanvas(color, EW, EH) {
 
 function _renderRisoSwatches() {
   const el = document.getElementById('riso-swatches');
-  const colors = _getUsedColors();
   el.innerHTML = '';
+  if (!_currentRisoSizeId()) {
+    el.innerHTML = '<span class="riso-empty">Switch to an A5/A4/A3 paper canvas to enable riso separations</span>';
+    return;
+  }
+  const colors = _getUsedColors();
   if (!colors.length) {
     el.innerHTML = '<span class="riso-empty">Paint something to see colour separations here</span>';
     return;
@@ -1917,7 +1923,9 @@ function _renderRisoSwatches() {
   });
 }
 
-async function downloadRisoPack(sizeId) {
+async function downloadRisoPack() {
+  const sizeId = _currentRisoSizeId();
+  if (!sizeId) { showHint('Switch to an A5/A4/A3 paper canvas to export riso separations'); return; }
   const colors = _getUsedColors();
   if (!colors.length) { showHint('Paint something before exporting separations'); return; }
   if (typeof JSZip === 'undefined' || typeof jspdf === 'undefined') {
