@@ -384,7 +384,7 @@
     .overlay.on { display: flex; }
     .finish-box {
       background: #141414; border: 1px solid #2a2a2a;
-      width: min(440px, 92vw); max-height: 92vh;
+      width: min(680px, 94vw); max-height: 92vh;
       display: flex; flex-direction: column; overflow: hidden;
     }
     .finish-head {
@@ -402,8 +402,13 @@
     }
     .finish-close:hover { color: var(--text); }
     #wallpaper-grid {
-      display: flex; flex-direction: column; gap: 6px;
+      display: flex; flex-wrap: wrap; gap: 20px;
       padding: 16px 20px 4px; flex: 1; overflow-y: auto; min-height: 0;
+    }
+    .export-col { flex: 1 1 240px; min-width: 220px; display: flex; flex-direction: column; gap: 6px; }
+    .export-col-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
     }
     .wp-card {
       border: 1px solid #222; padding: 12px 14px;
@@ -438,15 +443,20 @@
       transition: border-color 0.12s;
     }
     .btn-sec:hover { border-color: #555; color: var(--text); }
-    .riso-section { border: 1px solid #222; padding: 12px 14px; margin-top: 2px; }
-    .riso-head { display: flex; align-items: center; justify-content: space-between; }
+    .riso-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
     .riso-size-select {
       background: rgba(255,255,255,0.05); border: 1px solid #2a2a2a; color: var(--text);
       font-size: 10px; letter-spacing: 0.06em; padding: 4px 8px;
       font-family: 'Bricolage Grotesque', sans-serif;
     }
-    .riso-swatches { display: flex; flex-wrap: wrap; gap: 5px; min-height: 18px; margin-top: 10px; }
-    .riso-swatch { width: 18px; height: 18px; border: 1px solid rgba(255,255,255,0.15); flex-shrink: 0; }
+    .riso-thumbs { display: flex; flex-wrap: wrap; gap: 8px; min-height: 65px; }
+    .riso-thumb { width: 50px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .riso-thumb-frame {
+      width: 50px; height: 70px; background: #fff; border: 1px solid #333;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .riso-thumb-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .riso-thumb-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); flex-shrink: 0; }
     .riso-empty { font-size: 9px; color: var(--muted); letter-spacing: 0.04em; }
     .btn-pri {
       padding: 8px 20px; background: var(--accent); border: 1px solid var(--accent);
@@ -770,9 +780,9 @@
             <option value="phone">📱 Phone wallpaper</option>
             <option value="desktop">🖥 Desktop wallpaper</option>
             <option value="social">📸 Social post</option>
-            <option value="a5">📄 A5 riso paper</option>
-            <option value="a4">📄 A4 riso paper</option>
-            <option value="a3">📄 A3 riso paper</option>
+            <option value="a5">📄 A5 paper</option>
+            <option value="a4">📄 A4 paper</option>
+            <option value="a3">📄 A3 paper</option>
           </select>
         </div>
         <!-- Bottom row: view controls -->
@@ -832,44 +842,47 @@
 <div class="overlay" id="finish-modal">
   <div class="finish-box">
     <div class="finish-head">
-      <span class="finish-head-title">Export Wallpaper</span>
+      <span class="finish-head-title">Export</span>
       <button class="finish-close" onclick="closeFinishModal()">✕</button>
     </div>
     <div id="wallpaper-grid">
-      <div class="wp-card" onclick="downloadWallpaper('phone')">
-        <div class="wp-frame wp-frame-portrait"><img class="wp-art" data-format="phone" alt="" /></div>
-        <div class="wp-info">
-          <div class="wp-name">Phone</div>
-          <div class="wp-dims">1290 × 2796 · portrait · retina</div>
+      <div class="export-col">
+        <div class="export-col-label">Digital</div>
+        <div class="wp-card" onclick="downloadWallpaper('phone')">
+          <div class="wp-frame wp-frame-portrait"><img class="wp-art" data-format="phone" alt="" /></div>
+          <div class="wp-info">
+            <div class="wp-name">Phone</div>
+            <div class="wp-dims">1290 × 2796 · portrait · retina</div>
+          </div>
+          <span class="wp-dl">↓</span>
         </div>
-        <span class="wp-dl">↓</span>
-      </div>
-      <div class="wp-card" onclick="downloadWallpaper('desktop')">
-        <div class="wp-frame wp-frame-landscape"><img class="wp-art" data-format="desktop" alt="" /></div>
-        <div class="wp-info">
-          <div class="wp-name">Desktop</div>
-          <div class="wp-dims">3840 × 2160 · landscape · 4K</div>
+        <div class="wp-card" onclick="downloadWallpaper('desktop')">
+          <div class="wp-frame wp-frame-landscape"><img class="wp-art" data-format="desktop" alt="" /></div>
+          <div class="wp-info">
+            <div class="wp-name">Desktop</div>
+            <div class="wp-dims">3840 × 2160 · landscape · 4K</div>
+          </div>
+          <span class="wp-dl">↓</span>
         </div>
-        <span class="wp-dl">↓</span>
-      </div>
-      <div class="wp-card" onclick="downloadWallpaper('instagram')">
-        <div class="wp-frame wp-frame-social"><img class="wp-art" data-format="instagram" alt="" /></div>
-        <div class="wp-info">
-          <div class="wp-name">Instagram</div>
-          <div class="wp-dims">1080 × 1350 · portrait · 4:5</div>
+        <div class="wp-card" onclick="downloadWallpaper('instagram')">
+          <div class="wp-frame wp-frame-social"><img class="wp-art" data-format="instagram" alt="" /></div>
+          <div class="wp-info">
+            <div class="wp-name">Instagram</div>
+            <div class="wp-dims">1080 × 1350 · portrait · 4:5</div>
+          </div>
+          <span class="wp-dl">↓</span>
         </div>
-        <span class="wp-dl">↓</span>
       </div>
-      <div class="riso-section">
+      <div class="export-col">
         <div class="riso-head">
-          <span class="wp-name">Riso Print</span>
-          <select class="riso-size-select" id="riso-size-select">
+          <span class="export-col-label">Riso Print</span>
+          <select class="riso-size-select" id="riso-size-select" onchange="_renderRisoSwatches()">
             <option value="a5">A5</option>
             <option value="a4" selected>A4</option>
             <option value="a3">A3</option>
           </select>
         </div>
-        <div class="riso-swatches" id="riso-swatches"></div>
+        <div class="riso-thumbs" id="riso-swatches"></div>
         <button class="btn-pri" id="riso-download-btn" onclick="downloadRisoPack(document.getElementById('riso-size-select').value)" style="width:100%;margin-top:10px;">Download Colour Separations (ZIP)</button>
       </div>
     </div>
@@ -1143,6 +1156,7 @@ const S = {
   tool:      'paint',
   color:     THREAD[0],
   base:      BASES[Math.floor(Math.random() * BASES.length)].hex,
+  paper:     false,
   sym:       null,
   brushSize: 1,
   grid:      true,
@@ -1281,17 +1295,20 @@ function _doRender() {
   const H   = S.rows * CELL;
   const bpx = BORDER * CELL;
 
-  // Outer border zone — darkened
   ctx.fillStyle = S.base;
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = 'rgba(0,0,0,0.42)';
   ctx.fillRect(0, 0, W, H);
 
-  // Inner painting zone — slightly lightened
-  ctx.fillStyle = S.base;
-  ctx.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
-  ctx.fillStyle = 'rgba(0,0,0,0.18)';
-  ctx.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
+  if (!S.paper) {
+    // Outer border zone — darkened
+    ctx.fillStyle = 'rgba(0,0,0,0.42)';
+    ctx.fillRect(0, 0, W, H);
+
+    // Inner painting zone — slightly lightened
+    ctx.fillStyle = S.base;
+    ctx.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
+  }
 
   // painted triangles
   for (const [key, color] of Object.entries(S.cells)) {
@@ -1686,6 +1703,7 @@ function newGridPreset(preset) {
   S.cells = {};
   S.cols = cols;
   S.rows = rows;
+  S.paper = !!paper;
   initCanvas();
   fitZoom();
   _updatePresetBtns(preset);
@@ -1812,12 +1830,23 @@ function _renderRisoSwatches() {
     el.innerHTML = '<span class="riso-empty">Paint something to see colour separations here</span>';
     return;
   }
+  const THUMB_W = 100, THUMB_H = 140;
   colors.forEach(hex => {
-    const sw = document.createElement('div');
-    sw.className = 'riso-swatch';
-    sw.style.background = hex;
-    sw.title = hex;
-    el.appendChild(sw);
+    const maskCanvas = _buildSeparationCanvas(hex, THUMB_W, THUMB_H);
+    const card = document.createElement('div');
+    card.className = 'riso-thumb';
+    card.title = hex;
+    const frame = document.createElement('div');
+    frame.className = 'riso-thumb-frame';
+    const img = document.createElement('img');
+    img.src = maskCanvas.toDataURL('image/png');
+    frame.appendChild(img);
+    const dot = document.createElement('div');
+    dot.className = 'riso-thumb-dot';
+    dot.style.background = hex;
+    card.appendChild(frame);
+    card.appendChild(dot);
+    el.appendChild(card);
   });
 }
 
@@ -2134,7 +2163,7 @@ function buildSym() {
   SYMS.forEach(s => {
     const btn = document.createElement('button');
     btn.className = 'sym-btn' + (s.id === S.sym ? ' on' : '');
-    btn.title = 'Mirror Weave';
+    btn.title = 'Mirror weaving';
     btn.innerHTML = s.svg;
     btn.addEventListener('click', () => {
       const wasOn = S.sym === s.id;
