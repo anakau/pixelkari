@@ -201,14 +201,14 @@
       white-space: nowrap; justify-self: end; display: inline-flex; align-items: center;
     }
     .export-btn:hover { background: #F72585; color: #fff; }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
     .feedback-group {
-      position: fixed; bottom: calc(var(--bar-h)/2 - 22px); right: 20px; z-index: 300;
-      display: flex; flex-direction: column; gap: 6px;
+      display: flex; flex-direction: column; gap: 4px;
     }
     .feedback-btn {
-      padding: 8px 14px; background: rgba(255,255,255,0.05); border: none;
+      padding: 6px 12px; background: rgba(255,255,255,0.05); border: none;
       text-decoration: none; font-family: 'Bricolage Grotesque', sans-serif;
-      display: flex; flex-direction: row; align-items: center; gap: 8px;
+      display: flex; flex-direction: row; align-items: center; gap: 6px;
       transition: background 0.15s;
     }
     .feedback-btn:hover { background: rgba(255,255,255,0.09); }
@@ -685,31 +685,31 @@
 <body>
 <div id="app">
 
-  <!-- FEEDBACK BUTTONS -->
-  <div class="feedback-group">
-    <a href="https://tally.so/r/dWgeVA" target="_blank" rel="noopener" class="feedback-btn">
-      <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="5" width="18" height="14" rx="2"/>
-        <path d="M3 6l9 7 9-7"/>
-      </svg>
-      <span class="feedback-label">Suggestions?</span>
-    </a>
-    <a href="https://www.instagram.com/pixelkari.art?igsh=MjNwNXF3dHNpaXR0&utm_source=qr" target="_blank" rel="noopener" class="feedback-btn">
-      <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="5"/>
-        <circle cx="12" cy="12" r="4"/>
-        <circle cx="17.3" cy="6.7" r="0.6" fill="currentColor" stroke="none"/>
-      </svg>
-      <span class="feedback-label">Submit design!</span>
-    </a>
-  </div>
-
   <!-- TOOL PAGE HEADER -->
   <div class="page-header">
     <div id="bar-logo" onclick="showStoryPage()" title="About Pixelkari" style="cursor:pointer;">
       <div class="logo-title">Pixelkari</div>
     </div>
-    <button class="export-btn" onclick="openFinishModal()" style="line-height:1;">Finish ✦</button>
+    <div class="header-actions">
+      <div class="feedback-group">
+        <a href="https://tally.so/r/dWgeVA" target="_blank" rel="noopener" class="feedback-btn">
+          <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="5" width="18" height="14" rx="2"/>
+            <path d="M3 6l9 7 9-7"/>
+          </svg>
+          <span class="feedback-label">Suggestions?</span>
+        </a>
+        <a href="https://www.instagram.com/pixelkari.art?igsh=MjNwNXF3dHNpaXR0&utm_source=qr" target="_blank" rel="noopener" class="feedback-btn">
+          <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="5"/>
+            <circle cx="12" cy="12" r="4"/>
+            <circle cx="17.3" cy="6.7" r="0.6" fill="currentColor" stroke="none"/>
+          </svg>
+          <span class="feedback-label">Submit design!</span>
+        </a>
+      </div>
+      <button class="export-btn" onclick="openFinishModal()" style="line-height:1;">Finish ✦</button>
+    </div>
   </div>
 
   <!-- CANVAS -->
