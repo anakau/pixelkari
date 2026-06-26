@@ -427,7 +427,7 @@
     .finish-close:hover { color: var(--accent); background: rgba(255,255,255,0.06); }
     #wallpaper-grid {
       display: flex; flex-wrap: wrap; gap: 20px;
-      padding: 4px 20px 4px; flex: 1; overflow-y: auto; min-height: 0;
+      padding: 4px 20px 20px; flex: 1; overflow-y: auto; min-height: 0;
     }
     .export-col {
       flex: 1 1 240px; min-width: 220px; display: flex; flex-direction: column; gap: 6px;
@@ -460,17 +460,6 @@
     .wp-dims { font-size: 9px; color: var(--muted); letter-spacing: 0.06em; }
     .wp-dl { font-size: 17px; color: #444; transition: color 0.12s; flex-shrink: 0; }
     .wp-card:hover .wp-dl { color: var(--accent); }
-    .finish-actions {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 20px 20px; flex-shrink: 0;
-    }
-    .btn-sec {
-      padding: 8px 16px; background: transparent; border: none; border-radius: 6px;
-      color: var(--muted); cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
-      text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif;
-      transition: background 0.12s, color 0.12s;
-    }
-    .btn-sec:hover { background: rgba(255,255,255,0.06); color: var(--accent); }
     .riso-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
     .riso-size-select {
       background: rgba(255,255,255,0.06); border: none; border-radius: 5px; color: var(--text);
@@ -929,11 +918,8 @@
           </select>
         </div>
         <div class="riso-thumbs" id="riso-swatches"></div>
-        <button class="btn-pri" id="riso-download-btn" onclick="downloadRisoPack(document.getElementById('riso-size-select').value)" style="width:100%;margin-top:10px;">Download Colour Separations (ZIP)</button>
+        <button class="btn-pri" id="riso-download-btn" onclick="downloadRisoPack(document.getElementById('riso-size-select').value)" style="width:100%;margin-top:auto;">Download Colour Separations (ZIP)</button>
       </div>
-    </div>
-    <div class="finish-actions">
-      <button class="btn-sec" onclick="closeFinishModal()">Close</button>
     </div>
   </div>
 </div>
