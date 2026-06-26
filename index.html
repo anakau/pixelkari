@@ -1323,7 +1323,7 @@ function drawGrid() {
   const W = S.cols * CELL;
   const H = S.rows * CELL;
   ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+  ctx.strokeStyle = S.paper ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.22)';
   ctx.lineWidth   = 0.5;
 
   // H + V lines in one path
