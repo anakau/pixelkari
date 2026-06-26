@@ -38,8 +38,8 @@
 
     /* ── CANVAS AREA ── */
     #canvas-area {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      overflow: visible; background: #0d0d0d; position: relative;
+      flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+      overflow: auto; background: #0d0d0d; position: relative;
     }
     #canvas-wrap { position: relative; transform-origin: center center; transition: transform 0.15s; }
     #canvas-wrap canvas { display: block; cursor: crosshair; }
@@ -51,6 +51,7 @@
     }
     #canvas-wrap:hover .edge-ctrl,
     .edge-ctrl:hover { opacity: 1; transition: opacity 0.08s; }
+    body.paper-mode .edge-ctrl { display: none; }
     .edge-top    { bottom: 100%; margin-bottom: 5px; left: 50%; transform: translateX(-50%); flex-direction: row; }
     .edge-bottom { top: 100%;    margin-top: 5px;    left: 50%; transform: translateX(-50%); flex-direction: row; }
     .edge-left   { right: 100%;  margin-right: 5px;  top: 50%;  transform: translateY(-50%); flex-direction: column; }
@@ -1646,9 +1647,15 @@ document.getElementById('canvas-wrap').addEventListener('wheel', e => {
   document.getElementById('zoom-lbl').textContent = Math.round(S.zoom * 100) + '%';
 }, { passive: false });
 function fitZoom() {
-  S.zoom = 1; S.panX = 0; S.panY = 0;
+  const area = document.getElementById('canvas-area');
+  const PAD = 48;
+  const availW = Math.max(50, area.clientWidth - PAD * 2);
+  const availH = Math.max(50, area.clientHeight - PAD * 2);
+  const logW = S.cols * CELL, logH = S.rows * CELL;
+  S.zoom = Math.min(1, availW / logW, availH / logH);
+  S.panX = 0; S.panY = 0;
   applyTransform(true);
-  document.getElementById('zoom-lbl').textContent = '100%';
+  document.getElementById('zoom-lbl').textContent = Math.round(S.zoom * 100) + '%';
 }
 
 // ═══════════════════════════════════════════════════
@@ -1704,6 +1711,7 @@ function newGridPreset(preset) {
   S.cols = cols;
   S.rows = rows;
   S.paper = !!paper;
+  document.body.classList.toggle('paper-mode', S.paper);
   initCanvas();
   fitZoom();
   _updatePresetBtns(preset);
