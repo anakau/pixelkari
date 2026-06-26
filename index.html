@@ -878,7 +878,7 @@
           <div class="wp-frame wp-frame-portrait"><img class="wp-art" data-format="phone" alt="" /></div>
           <div class="wp-info">
             <div class="wp-name">Phone</div>
-            <div class="wp-dims">1290 × 2796 · portrait · retina</div>
+            <div class="wp-dims" id="wp-dims-phone">1290 × 2796 · retina</div>
           </div>
           <span class="wp-dl">↓</span>
         </div>
@@ -886,7 +886,7 @@
           <div class="wp-frame wp-frame-landscape"><img class="wp-art" data-format="desktop" alt="" /></div>
           <div class="wp-info">
             <div class="wp-name">Desktop</div>
-            <div class="wp-dims">3840 × 2160 · landscape · 4K</div>
+            <div class="wp-dims" id="wp-dims-desktop">3840 × 2160 · 4K</div>
           </div>
           <span class="wp-dl">↓</span>
         </div>
@@ -894,7 +894,7 @@
           <div class="wp-frame wp-frame-social"><img class="wp-art" data-format="instagram" alt="" /></div>
           <div class="wp-info">
             <div class="wp-name">Instagram</div>
-            <div class="wp-dims">1080 × 1350 · portrait · 4:5</div>
+            <div class="wp-dims" id="wp-dims-instagram">1080 × 1350</div>
           </div>
           <span class="wp-dl">↓</span>
         </div>
@@ -1210,7 +1210,7 @@ const ctx    = canvas.getContext('2d');
 
 function initCanvas() {
   const dpr  = window.devicePixelRatio || 1;
-  if (!S.cols) S.cols = 72;
+  if (!S.cols) S.cols = 80;
   if (!S.rows) S.rows = 45;
   const logW = S.cols * CELL;
   const logH = S.rows * CELL;
@@ -1688,15 +1688,18 @@ function toggleGrid() {
 // ═══════════════════════════════════════════════════
 // FINISH MODAL / POSTCARD
 // ═══════════════════════════════════════════════════
+// scale = output pixels per logical canvas pixel, chosen so the default
+// matching GRID_PRESETS size lands exactly on the format's quality tier
+// (phone retina, desktop 4K, instagram 1080w) — see comment near GRID_PRESETS
 const WALLPAPER_PRESETS = {
-  phone:     { w: 1290, h: 2796, autoRotate: true },
-  desktop:   { w: 3840, h: 2160 },
-  instagram: { w: 1080, h: 1350 },
+  phone:     { scale: 4.48, autoRotate: true },
+  desktop:   { scale: 4 },
+  instagram: { scale: 2.5 },
 };
 
 const GRID_PRESETS = {
   phone:   { cols: 52, rows: 24 },
-  desktop: { cols: 72, rows: 45 },
+  desktop: { cols: 80, rows: 45 }, // exact 16:9, matches desktop wallpaper scale x4 = 3840x2160
   social:  { cols: 36, rows: 45 },
   a5:      { cols: 30, rows: 42, paper: true },
   a4:      { cols: 42, rows: 59, paper: true },
@@ -1777,73 +1780,82 @@ function openFinishModal() {
 }
 function closeFinishModal() { document.getElementById('finish-modal').classList.remove('on'); }
 
+// Final export pixel size for presetId, always exactly proportional to the
+// current canvas (no padding/letterboxing, no forced device aspect ratio)
+function _wallpaperDims(presetId) {
+  const { scale, autoRotate } = WALLPAPER_PRESETS[presetId];
+  const logW = S.cols * CELL, logH = S.rows * CELL;
+  const rotate = !!autoRotate && logW > logH;
+  return [
+    Math.round((rotate ? logH : logW) * scale),
+    Math.round((rotate ? logW : logH) * scale),
+  ];
+}
+
 function _renderWallpaperPreviews() {
   const savedGrid = S.grid; S.grid = false; _doRender();
   const logW = S.cols * CELL, logH = S.rows * CELL;
 
-  // Desktop preview — natural orientation
+  // Desktop preview — exact canvas shape, no padding
   const src = canvas.toDataURL('image/png');
   document.querySelectorAll('.wp-art[data-format="desktop"]').forEach(img => { img.src = src; });
 
-  // Instagram preview — portrait 4:5 canvas (1080×1350 ratio)
-  const IH = 126, IW = Math.round(IH * 1080 / 1350);
+  // Instagram preview — exact canvas shape, no forced 4:5 frame
+  const is = 126 / Math.max(logW, logH);
   const ic = document.createElement('canvas');
-  ic.width = IW; ic.height = IH;
-  const ictx = ic.getContext('2d');
-  const is = Math.min(IW / logW, IH / logH);
-  const idw = Math.round(logW * is), idh = Math.round(logH * is);
-  ictx.drawImage(canvas, Math.round((IW - idw) / 2), Math.round((IH - idh) / 2), idw, idh);
+  ic.width = Math.round(logW * is); ic.height = Math.round(logH * is);
+  ic.getContext('2d').drawImage(canvas, 0, 0, ic.width, ic.height);
   document.querySelectorAll('.wp-art[data-format="instagram"]').forEach(img => { img.src = ic.toDataURL(); });
 
-  // Phone preview — portrait frame; rotate the canvas into it only if the
-  // canvas is currently landscape-shaped (matches _buildWallpaperCanvas)
+  // Phone preview — rotates to portrait only if the canvas is currently
+  // landscape-shaped (matches _buildWallpaperCanvas)
   const phoneRotate = logW > logH;
-  const PH = 108, PW = phoneRotate ? Math.round(PH * logH / logW) : Math.round(PH * logW / logH);
+  const ps = 108 / Math.max(logW, logH);
   const pc = document.createElement('canvas');
-  pc.width = PW; pc.height = PH;
-  const pctx = pc.getContext('2d');
   if (phoneRotate) {
-    const ps = Math.min(PW / logH, PH / logW);
-    const pdw = Math.round(logW * ps), pdh = Math.round(logH * ps);
+    pc.width = Math.round(logH * ps); pc.height = Math.round(logW * ps);
+    const pctx = pc.getContext('2d');
     pctx.save();
-    pctx.translate(PW / 2, PH / 2);
+    pctx.translate(pc.width / 2, pc.height / 2);
     pctx.rotate(Math.PI / 2);
-    pctx.drawImage(canvas, -pdw / 2, -pdh / 2, pdw, pdh);
+    pctx.drawImage(canvas, -logW * ps / 2, -logH * ps / 2, logW * ps, logH * ps);
     pctx.restore();
   } else {
-    const ps = Math.min(PW / logW, PH / logH);
-    const pdw = Math.round(logW * ps), pdh = Math.round(logH * ps);
-    pctx.drawImage(canvas, Math.round((PW - pdw) / 2), Math.round((PH - pdh) / 2), pdw, pdh);
+    pc.width = Math.round(logW * ps); pc.height = Math.round(logH * ps);
+    pc.getContext('2d').drawImage(canvas, 0, 0, pc.width, pc.height);
   }
   document.querySelectorAll('.wp-art[data-format="phone"]').forEach(img => { img.src = pc.toDataURL(); });
+
+  const tag = { phone: 'retina', desktop: '4K', instagram: '' };
+  ['phone', 'desktop', 'instagram'].forEach(id => {
+    const [w, h] = _wallpaperDims(id);
+    const el = document.getElementById('wp-dims-' + id);
+    if (el) el.textContent = `${w} × ${h}` + (tag[id] ? ` · ${tag[id]}` : '');
+  });
 
   S.grid = savedGrid; _doRender();
 }
 
 function _buildWallpaperCanvas(presetId) {
-  const { w: EW, h: EH, autoRotate } = WALLPAPER_PRESETS[presetId];
+  const { scale, autoRotate } = WALLPAPER_PRESETS[presetId];
   const logW = S.cols * CELL, logH = S.rows * CELL;
   const rotate = !!autoRotate && logW > logH;
-
-  const scale = rotate
-    ? Math.min(EW / logH, EH / logW)
-    : Math.min(EW / logW, EH / logH);
-  const dw = Math.round(logW * scale), dh = Math.round(logH * scale);
+  const preW = logW * scale, preH = logH * scale;
 
   const exp = document.createElement('canvas');
-  exp.width = EW; exp.height = EH;
+  exp.width = Math.round(rotate ? preH : preW);
+  exp.height = Math.round(rotate ? preW : preH);
   const ec = exp.getContext('2d');
 
   const savedGrid = S.grid; S.grid = false; _doRender();
   if (rotate) {
     ec.save();
-    ec.translate(EW / 2, EH / 2);
+    ec.translate(exp.width / 2, exp.height / 2);
     ec.rotate(Math.PI / 2);
-    ec.drawImage(canvas, -dw / 2, -dh / 2, dw, dh);
+    ec.drawImage(canvas, -preW / 2, -preH / 2, preW, preH);
     ec.restore();
   } else {
-    const dx = Math.round((EW - dw) / 2), dy = Math.round((EH - dh) / 2);
-    ec.drawImage(canvas, dx, dy, dw, dh);
+    ec.drawImage(canvas, 0, 0, preW, preH);
   }
   S.grid = savedGrid; _doRender();
 
