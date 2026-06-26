@@ -206,6 +206,7 @@
       display: flex; flex-direction: row; gap: 4px;
     }
     .feedback-btn {
+      position: relative;
       padding: 8px; background: rgba(255,255,255,0.05); border: none;
       display: flex; align-items: center; justify-content: center;
       transition: background 0.15s;
@@ -213,6 +214,14 @@
     .feedback-btn:hover { background: rgba(255,255,255,0.09); }
     .feedback-icon { width: 18px; height: 18px; color: #888; transition: color 0.15s; }
     .feedback-btn:hover .feedback-icon { color: var(--accent); }
+    .feedback-tip {
+      position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+      background: rgba(18,18,18,0.97); border: 1px solid #333; color: #aaa;
+      font-size: 10px; font-weight: 400; letter-spacing: 0.02em; white-space: nowrap;
+      padding: 5px 9px; pointer-events: none; opacity: 0;
+      transition: opacity 0.15s; z-index: 200;
+    }
+    .feedback-btn:hover .feedback-tip { opacity: 1; }
 
     /* logo */
     #bar-logo { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; overflow: hidden; }
@@ -686,18 +695,20 @@
     </div>
     <div class="header-actions">
       <div class="feedback-group">
-        <a href="https://tally.so/r/dWgeVA" target="_blank" rel="noopener" class="feedback-btn" title="Suggestions?" aria-label="Suggestions?">
+        <a href="https://tally.so/r/dWgeVA" target="_blank" rel="noopener" class="feedback-btn" aria-label="Suggestions?">
           <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="5" width="18" height="14" rx="2"/>
             <path d="M3 6l9 7 9-7"/>
           </svg>
+          <span class="feedback-tip">Suggestions?</span>
         </a>
-        <a href="https://www.instagram.com/pixelkari.art?igsh=MjNwNXF3dHNpaXR0&utm_source=qr" target="_blank" rel="noopener" class="feedback-btn" title="Submit design!" aria-label="Submit design!">
+        <a href="https://www.instagram.com/pixelkari.art?igsh=MjNwNXF3dHNpaXR0&utm_source=qr" target="_blank" rel="noopener" class="feedback-btn" aria-label="Submit design!">
           <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="5"/>
             <circle cx="12" cy="12" r="4"/>
             <circle cx="17.3" cy="6.7" r="0.6" fill="currentColor" stroke="none"/>
           </svg>
+          <span class="feedback-tip">Submit design!</span>
         </a>
       </div>
       <button class="export-btn" onclick="openFinishModal()" style="line-height:1;">Finish ✦</button>
