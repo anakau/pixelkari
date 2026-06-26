@@ -9,6 +9,9 @@
   <!-- Cloudflare Web Analytics -->
   <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "25fd5bd2cd284ab3b267f5e113b3f55e"}'></script>
   <!-- End Cloudflare Web Analytics -->
+  <!-- Riso export: zip + PDF generation -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -119,9 +122,13 @@
     .eye-btn .tool-emoji { font-size: 15px; margin-right: 4px; vertical-align: middle; }
     .nav-block { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
     .nav-row   { display: flex; gap: 3px; }
-    .preset-btn { flex: 1 !important; padding: 0 9px !important; background: rgba(255,255,255,0.05) !important; border: none !important; letter-spacing: 0.06em; }
-    .preset-btn:hover { background: rgba(255,255,255,0.10) !important; }
-    .preset-btn.on { background: var(--accent) !important; color: #111 !important; }
+    .preset-select {
+      flex: 1 !important; padding: 0 24px 0 9px !important; letter-spacing: 0.06em;
+      background: rgba(255,255,255,0.05) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="%23888"/></svg>') no-repeat right 9px center !important;
+      border: none !important; appearance: none; -webkit-appearance: none; -moz-appearance: none; cursor: pointer;
+    }
+    .preset-select:hover { background-color: rgba(255,255,255,0.10) !important; }
+    .preset-select option { background: #181818; color: #eee; }
     .zoom-row  { display: flex; align-items: center; gap: 3px; }
 
     .tool-row { display: flex; align-items: center; gap: 3px; }
@@ -431,6 +438,16 @@
       transition: border-color 0.12s;
     }
     .btn-sec:hover { border-color: #555; color: var(--text); }
+    .riso-section { border: 1px solid #222; padding: 12px 14px; margin-top: 2px; }
+    .riso-head { display: flex; align-items: center; justify-content: space-between; }
+    .riso-size-select {
+      background: rgba(255,255,255,0.05); border: 1px solid #2a2a2a; color: var(--text);
+      font-size: 10px; letter-spacing: 0.06em; padding: 4px 8px;
+      font-family: 'Bricolage Grotesque', sans-serif;
+    }
+    .riso-swatches { display: flex; flex-wrap: wrap; gap: 5px; min-height: 18px; margin-top: 10px; }
+    .riso-swatch { width: 18px; height: 18px; border: 1px solid rgba(255,255,255,0.15); flex-shrink: 0; }
+    .riso-empty { font-size: 9px; color: var(--muted); letter-spacing: 0.04em; }
     .btn-pri {
       padding: 8px 20px; background: var(--accent); border: 1px solid var(--accent);
       color: #111; cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
@@ -749,9 +766,14 @@
       <div class="nav-block">
         <!-- Top row: canvas presets -->
         <div class="nav-row">
-          <button class="tbtn preset-btn" data-preset="phone" onclick="newGridPreset('phone')" title="Phone wallpaper canvas">📱 Phone</button>
-          <button class="tbtn preset-btn" data-preset="desktop" onclick="newGridPreset('desktop')" title="Desktop wallpaper canvas">🖥 Desktop</button>
-          <button class="tbtn preset-btn" data-preset="social" onclick="newGridPreset('social')" title="Instagram post canvas">📸 Social</button>
+          <select class="tbtn preset-select" id="preset-select" onchange="newGridPreset(this.value)" title="Canvas size">
+            <option value="phone">📱 Phone wallpaper</option>
+            <option value="desktop">🖥 Desktop wallpaper</option>
+            <option value="social">📸 Social post</option>
+            <option value="a5">📄 A5 riso paper</option>
+            <option value="a4">📄 A4 riso paper</option>
+            <option value="a3">📄 A3 riso paper</option>
+          </select>
         </div>
         <!-- Bottom row: view controls -->
         <div class="nav-row">
@@ -837,6 +859,18 @@
           <div class="wp-dims">1080 × 1350 · portrait · 4:5</div>
         </div>
         <span class="wp-dl">↓</span>
+      </div>
+      <div class="riso-section">
+        <div class="riso-head">
+          <span class="wp-name">Riso Print</span>
+          <select class="riso-size-select" id="riso-size-select">
+            <option value="a5">A5</option>
+            <option value="a4" selected>A4</option>
+            <option value="a3">A3</option>
+          </select>
+        </div>
+        <div class="riso-swatches" id="riso-swatches"></div>
+        <button class="btn-pri" id="riso-download-btn" onclick="downloadRisoPack(document.getElementById('riso-size-select').value)" style="width:100%;margin-top:10px;">Download Colour Separations (ZIP)</button>
       </div>
     </div>
     <div class="finish-actions">
@@ -1357,17 +1391,17 @@ function triAt(e) {
   return { col, row, tri };
 }
 
-function drawTriangle(c, r, tri, color) {
+function drawTriangle(c, r, tri, color, gctx = ctx) {
   const x = c * CELL, y = r * CELL;
   const mx = x + CELL / 2, my = y + CELL / 2;
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  if      (tri === 't') { ctx.moveTo(x,        y);        ctx.lineTo(x+CELL, y);        ctx.lineTo(mx, my); }
-  else if (tri === 'r') { ctx.moveTo(x+CELL,   y);        ctx.lineTo(x+CELL, y+CELL);   ctx.lineTo(mx, my); }
-  else if (tri === 'b') { ctx.moveTo(x+CELL,   y+CELL);   ctx.lineTo(x,      y+CELL);   ctx.lineTo(mx, my); }
-  else                  { ctx.moveTo(x,         y+CELL);   ctx.lineTo(x,      y);        ctx.lineTo(mx, my); }
-  ctx.closePath();
-  ctx.fill();
+  gctx.fillStyle = color;
+  gctx.beginPath();
+  if      (tri === 't') { gctx.moveTo(x,        y);        gctx.lineTo(x+CELL, y);        gctx.lineTo(mx, my); }
+  else if (tri === 'r') { gctx.moveTo(x+CELL,   y);        gctx.lineTo(x+CELL, y+CELL);   gctx.lineTo(mx, my); }
+  else if (tri === 'b') { gctx.moveTo(x+CELL,   y+CELL);   gctx.lineTo(x,      y+CELL);   gctx.lineTo(mx, my); }
+  else                  { gctx.moveTo(x,         y+CELL);   gctx.lineTo(x,      y);        gctx.lineTo(mx, my); }
+  gctx.closePath();
+  gctx.fill();
 }
 
 // Triangle transforms for symmetry
@@ -1629,28 +1663,43 @@ const GRID_PRESETS = {
   phone:   { cols: 52, rows: 24 },
   desktop: { cols: 72, rows: 45 },
   social:  { cols: 36, rows: 45 },
+  a5:      { cols: 30, rows: 42, paper: true },
+  a4:      { cols: 42, rows: 59, paper: true },
+  a3:      { cols: 59, rows: 84, paper: true },
+};
+
+// Riso/paper export sizes at 300dpi
+const RISO_PRESETS = {
+  a5: { mmW: 148, mmH: 210, w: 1748, h: 2480 },
+  a4: { mmW: 210, mmH: 297, w: 2480, h: 3508 },
+  a3: { mmW: 297, mmH: 420, w: 3508, h: 4961 },
 };
 
 function _updatePresetBtns(active) {
-  document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
-    btn.classList.toggle('on', btn.dataset.preset === active);
-  });
+  const sel = document.getElementById('preset-select');
+  if (sel && active) sel.value = active;
 }
 
 function newGridPreset(preset) {
   if (!confirm('Start a new canvas? Your current design will be cleared.')) return;
-  const { cols, rows } = GRID_PRESETS[preset];
+  const { cols, rows, paper } = GRID_PRESETS[preset];
   S.cells = {};
   S.cols = cols;
   S.rows = rows;
   initCanvas();
   fitZoom();
   _updatePresetBtns(preset);
+  if (paper) setBase('#FFFFFF');
 }
 
 function openFinishModal() {
   document.getElementById('finish-modal').classList.add('on');
   _renderWallpaperPreviews();
+  const sel = document.getElementById('riso-size-select');
+  if (RISO_PRESETS[document.getElementById('preset-select').value]) {
+    sel.value = document.getElementById('preset-select').value;
+  }
+  _renderRisoSwatches();
 }
 function closeFinishModal() { document.getElementById('finish-modal').classList.remove('on'); }
 
@@ -1724,6 +1773,85 @@ function downloadWallpaper(presetId) {
   a.download = `pixelkari-${presetId}.png`;
   a.href = exp.toDataURL('image/png');
   a.click();
+}
+
+// ═══════════════════════════════════════════════════
+// RISO PRINT — colour separations
+// ═══════════════════════════════════════════════════
+function _getUsedColors() {
+  const set = new Set(Object.values(S.cells));
+  return THREAD.filter(hex => set.has(hex));
+}
+
+function _buildSeparationCanvas(color, EW, EH) {
+  const logW = S.cols * CELL, logH = S.rows * CELL;
+  const scale = Math.min(EW / logW, EH / logH);
+  const dw = Math.round(logW * scale), dh = Math.round(logH * scale);
+  const dx = Math.round((EW - dw) / 2), dy = Math.round((EH - dh) / 2);
+
+  const exp = document.createElement('canvas');
+  exp.width = EW; exp.height = EH;
+  const ec = exp.getContext('2d');
+  ec.fillStyle = '#fff';
+  ec.fillRect(0, 0, EW, EH);
+  ec.translate(dx, dy);
+  ec.scale(scale, scale);
+  for (const [key, c] of Object.entries(S.cells)) {
+    if (c !== color) continue;
+    const parts = key.split(',');
+    drawTriangle(+parts[0], +parts[1], parts[2], '#000', ec);
+  }
+  return exp;
+}
+
+function _renderRisoSwatches() {
+  const el = document.getElementById('riso-swatches');
+  const colors = _getUsedColors();
+  el.innerHTML = '';
+  if (!colors.length) {
+    el.innerHTML = '<span class="riso-empty">Paint something to see colour separations here</span>';
+    return;
+  }
+  colors.forEach(hex => {
+    const sw = document.createElement('div');
+    sw.className = 'riso-swatch';
+    sw.style.background = hex;
+    sw.title = hex;
+    el.appendChild(sw);
+  });
+}
+
+async function downloadRisoPack(sizeId) {
+  const colors = _getUsedColors();
+  if (!colors.length) { showHint('Paint something before exporting separations'); return; }
+  if (typeof JSZip === 'undefined' || typeof jspdf === 'undefined') {
+    showHint('Riso export tools still loading — try again in a moment');
+    return;
+  }
+  const btn = document.getElementById('riso-download-btn');
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  try {
+    const { mmW, mmH, w: EW, h: EH } = RISO_PRESETS[sizeId];
+    const zip = new JSZip();
+    colors.forEach((hex, i) => {
+      const canvas2 = _buildSeparationCanvas(hex, EW, EH);
+      const pdf = new jspdf.jsPDF({ orientation: mmW > mmH ? 'landscape' : 'portrait', unit: 'mm', format: [mmW, mmH] });
+      pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, mmW, mmH, undefined, 'MEDIUM');
+      const fname = `pixelkari-${sizeId}-separation-${String(i + 1).padStart(2, '0')}-${hex.replace('#', '')}.pdf`;
+      zip.file(fname, pdf.output('blob'));
+    });
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.download = `pixelkari-${sizeId}-riso-separations.zip`;
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
 }
 let _storyTrail = [];
 let _storyTrailRaf = null;
@@ -1980,21 +2108,23 @@ function hexBlend(hex, r2, g2, b2, a) {
   return `rgb(${Math.round(r1*(1-a)+r2*a)},${Math.round(g1*(1-a)+g2*a)},${Math.round(b1*(1-a)+b2*a)})`;
 }
 
+function setBase(hex) {
+  S.base = hex;
+  document.querySelectorAll('#base-pal .base-flag').forEach(s => s.classList.toggle('on', s.dataset.hex === hex));
+  render();
+}
+
 function buildBasePal() {
   const el = document.getElementById('base-pal');
   BASES.forEach(b => {
     const btn = document.createElement('button');
     btn.className = 'base-flag' + (b.hex === S.base ? ' on' : '');
     btn.title = b.label;
+    btn.dataset.hex = b.hex;
     const dark  = hexBlend(b.hex, 0,   0,   0,   0.38);
     const light = hexBlend(b.hex, 128, 128, 128, 0.30);
     btn.style.background = `linear-gradient(135deg, ${dark} 50%, ${light} 50%)`;
-    btn.addEventListener('click', () => {
-      S.base = b.hex;
-      document.querySelectorAll('#base-pal .base-flag').forEach(s => s.classList.remove('on'));
-      btn.classList.add('on');
-      render();
-    });
+    btn.addEventListener('click', () => setBase(b.hex));
     el.appendChild(btn);
   });
 }
