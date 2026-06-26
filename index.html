@@ -798,6 +798,7 @@
             <option value="phone">📱 Phone</option>
             <option value="desktop">🖥 Desktop</option>
             <option value="social">📸 Social</option>
+            <option value="custom">⬜ Custom</option>
             <option value="a5">📄 A5 paper</option>
             <option value="a4">📄 A4 paper</option>
             <option value="a3">📄 A3 paper</option>
@@ -1701,6 +1702,7 @@ const GRID_PRESETS = {
   phone:   { cols: 52, rows: 24 },
   desktop: { cols: 80, rows: 45 }, // exact 16:9, matches desktop wallpaper scale x4 = 3840x2160
   social:  { cols: 36, rows: 45 },
+  custom:  { cols: 45, rows: 45 },
   a5:      { cols: 30, rows: 42, paper: true },
   a4:      { cols: 42, rows: 59, paper: true },
   a3:      { cols: 59, rows: 84, paper: true },
@@ -1783,8 +1785,9 @@ function openFinishModal() {
   document.getElementById('riso-size-badge').textContent = sizeId ? sizeId.toUpperCase() : '';
   _renderRisoSwatches();
   const activeFormat = _currentDigitalFormatId();
+  const allDigitalActive = document.getElementById('preset-select').value === 'custom';
   ['phone', 'desktop', 'instagram'].forEach(fmt => {
-    document.getElementById('wp-card-' + fmt).classList.toggle('disabled', fmt !== activeFormat);
+    document.getElementById('wp-card-' + fmt).classList.toggle('disabled', !allDigitalActive && fmt !== activeFormat);
   });
 }
 function closeFinishModal() { document.getElementById('finish-modal').classList.remove('on'); }
