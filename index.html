@@ -473,7 +473,7 @@
       background: rgba(255,255,255,0.06); border-radius: 5px; color: var(--accent);
       font-size: 10px; font-weight: 600; letter-spacing: 0.06em; padding: 5px 9px;
     }
-    .export-col.disabled { opacity: 0.4; pointer-events: none; }
+    .disabled { opacity: 0.4; pointer-events: none; }
     .riso-thumbs { display: flex; flex-wrap: wrap; gap: 8px; min-height: 65px; }
     .riso-thumb { display: flex; flex-direction: column; align-items: center; gap: 5px; }
     .riso-thumb-frame {
@@ -874,7 +874,7 @@
     <div id="wallpaper-grid">
       <div class="export-col">
         <div class="export-col-label">Digital</div>
-        <div class="wp-card" onclick="downloadWallpaper('phone')">
+        <div class="wp-card" id="wp-card-phone" onclick="downloadWallpaper('phone')">
           <div class="wp-frame wp-frame-portrait"><img class="wp-art" data-format="phone" alt="" /></div>
           <div class="wp-info">
             <div class="wp-name">Phone</div>
@@ -882,7 +882,7 @@
           </div>
           <span class="wp-dl">↓</span>
         </div>
-        <div class="wp-card" onclick="downloadWallpaper('desktop')">
+        <div class="wp-card" id="wp-card-desktop" onclick="downloadWallpaper('desktop')">
           <div class="wp-frame wp-frame-landscape"><img class="wp-art" data-format="desktop" alt="" /></div>
           <div class="wp-info">
             <div class="wp-name">Desktop</div>
@@ -890,7 +890,7 @@
           </div>
           <span class="wp-dl">↓</span>
         </div>
-        <div class="wp-card" onclick="downloadWallpaper('instagram')">
+        <div class="wp-card" id="wp-card-instagram" onclick="downloadWallpaper('instagram')">
           <div class="wp-frame wp-frame-social"><img class="wp-art" data-format="instagram" alt="" /></div>
           <div class="wp-info">
             <div class="wp-name">Instagram</div>
@@ -1770,6 +1770,11 @@ function _currentRisoSizeId() {
   }) || null;
 }
 
+const DIGITAL_FORMAT_BY_PRESET = { phone: 'phone', desktop: 'desktop', social: 'instagram' };
+function _currentDigitalFormatId() {
+  return DIGITAL_FORMAT_BY_PRESET[document.getElementById('preset-select').value] || null;
+}
+
 function openFinishModal() {
   document.getElementById('finish-modal').classList.add('on');
   _renderWallpaperPreviews();
@@ -1777,6 +1782,10 @@ function openFinishModal() {
   document.getElementById('riso-col').classList.toggle('disabled', !sizeId);
   document.getElementById('riso-size-badge').textContent = sizeId ? sizeId.toUpperCase() : '';
   _renderRisoSwatches();
+  const activeFormat = _currentDigitalFormatId();
+  ['phone', 'desktop', 'instagram'].forEach(fmt => {
+    document.getElementById('wp-card-' + fmt).classList.toggle('disabled', fmt !== activeFormat);
+  });
 }
 function closeFinishModal() { document.getElementById('finish-modal').classList.remove('on'); }
 
