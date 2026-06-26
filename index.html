@@ -97,7 +97,7 @@
       font-family: 'Bricolage Grotesque', sans-serif; font-weight: 400;
       letter-spacing: 0.04em; transition: all 0.12s; white-space: nowrap; flex-shrink: 0;
     }
-    .tbtn:hover { background: rgba(255,255,255,0.10); }
+    .tbtn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
     .tbtn.on { background: var(--accent); color: #111; }
     .tool-emoji { font-size: 15px; margin-right: 5px; vertical-align: middle; line-height: 1; }
 
@@ -108,7 +108,7 @@
       color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: all 0.12s;
     }
-    .sym-btn:hover { background: rgba(255,255,255,0.10); color: var(--text); }
+    .sym-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
     .sym-btn.on { background: var(--accent); color: #111; }
     .sym-btn svg { display: block; pointer-events: none; }
     .sym-tip {
@@ -127,8 +127,8 @@
 
     /* eye toggle button */
     .eye-btn { height: 38px; padding: 0 10px; background: rgba(255,255,255,0.06); border: none; border-radius: 4px; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 400; transition: all 0.12s; flex-shrink: 0; box-sizing: border-box; }
-    .eye-btn:hover { background: rgba(255,255,255,0.10); color: var(--text); }
-    .eye-btn.on { color: var(--text); }
+    .eye-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
+    .eye-btn.on { background: var(--accent); color: #111; }
     .eye-btn .tool-emoji { font-size: 15px; margin-right: 4px; vertical-align: middle; }
     .nav-block { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
     .nav-row   { display: flex; gap: 3px; }
@@ -137,7 +137,7 @@
       background: rgba(255,255,255,0.05) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="%23888"/></svg>') no-repeat right 8px center !important;
       border: none !important; appearance: none; -webkit-appearance: none; -moz-appearance: none; cursor: pointer;
     }
-    .preset-select:hover { background-color: rgba(255,255,255,0.10) !important; }
+    .preset-select:hover { background-color: rgba(255,255,255,0.10) !important; color: var(--accent); }
     .preset-select option { background: #181818; color: #eee; }
     .orient-btn {
       flex: 0 0 28px; width: 28px; padding: 0 !important;
@@ -188,7 +188,7 @@
       color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
       font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; transition: background 0.1s; flex-shrink: 0;
     }
-    .icon-btn:hover { background: rgba(255,255,255,0.10); }
+    .icon-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
     .zoom-lbl { font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; color: var(--muted); min-width: 34px; text-align: center; flex-shrink: 0; }
 
     /* toggle */
@@ -210,7 +210,7 @@
       font-family: 'Bricolage Grotesque', sans-serif; font-weight: 400;
       transition: background 0.1s; white-space: nowrap; flex-shrink: 0;
     }
-    .act-btn:hover { background: rgba(255,255,255,0.10); }
+    .act-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
     .act-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
     .act-btn.danger { color: #c46060; }
 
@@ -264,8 +264,8 @@
     .motif-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 10px; }
     .motif-panel-label { font-size: 9px; font-weight: 400; letter-spacing: 0.01em; color: var(--muted); }
     .motif-rot-btn { background: rgba(255,255,255,0.05); border: none; color: var(--muted); font-size: 10px; padding: 3px 8px; cursor: pointer; font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: 0.05em; transition: background 0.12s, color 0.12s; white-space: nowrap; }
-    .motif-rot-btn:hover { background: rgba(255,255,255,0.10); color: var(--text); }
-    .motif-rot-btn.active { background: var(--accent-dim); color: var(--accent); }
+    .motif-rot-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
+    .motif-rot-btn.active { background: var(--accent); color: #111; }
     /* Motif Maker */
     .mm-box { background: #181818; border: 1px solid #2c2c2c; padding: 0; width: 380px; }
     .mm-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #222; }
@@ -278,8 +278,8 @@
     .mm-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 12px 16px 16px; }
     .mm-tools { display: flex; gap: 4px; }
     .mm-btn { background: rgba(255,255,255,0.06); border: none; color: #888; font-size: 10px; font-weight: 400; letter-spacing: 0.01em; font-family: 'Bricolage Grotesque', sans-serif; padding: 5px 10px; cursor: pointer; transition: background 0.12s, color 0.12s; }
-    .mm-btn:hover { background: rgba(255,255,255,0.11); color: #ccc; }
-    .mm-btn.on { background: var(--accent-dim); color: var(--accent); }
+    .mm-btn:hover { background: rgba(255,255,255,0.11); color: var(--accent); }
+    .mm-btn.on { background: var(--accent); color: #111; }
     .mm-save { background: var(--accent); border: none; color: #111; font-size: 10px; font-weight: 400; letter-spacing: 0.01em; font-family: 'Bricolage Grotesque', sans-serif; padding: 5px 14px; cursor: pointer; transition: background 0.12s; }
     .mm-save:hover { background: #F72585; color: #fff; }
     /* Capture Motif mode */
@@ -410,29 +410,38 @@
       font-size: 10px; font-weight: 600; letter-spacing: 0.22em;
       text-transform: uppercase; color: var(--muted);
     }
+    .finish-head-actions { display: flex; align-items: center; gap: 14px; }
+    .btn-feature {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted); text-decoration: none;
+      border: 1px solid #2a2a2a; padding: 6px 10px; transition: color 0.12s, border-color 0.12s;
+    }
+    .btn-feature:hover { color: var(--accent); border-color: var(--accent); }
     .finish-close {
       background: none; border: none; color: var(--muted); cursor: pointer;
       font-size: 18px; line-height: 1; padding: 2px 6px;
       transition: color 0.12s;
     }
-    .finish-close:hover { color: var(--text); }
+    .finish-close:hover { color: var(--accent); }
     #wallpaper-grid {
       display: flex; flex-wrap: wrap; gap: 20px;
       padding: 16px 20px 4px; flex: 1; overflow-y: auto; min-height: 0;
     }
-    .export-col { flex: 1 1 240px; min-width: 220px; display: flex; flex-direction: column; gap: 6px; }
+    .export-col {
+      flex: 1 1 240px; min-width: 220px; display: flex; flex-direction: column; gap: 6px;
+      border: 1px solid #2a2a2a; padding: 14px;
+    }
     .export-col-label {
       font-size: 10px; font-weight: 600; letter-spacing: 0.14em;
       text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
     }
     .wp-card {
-      border: 1px solid #222; padding: 12px 14px;
-      cursor: pointer; transition: border-color 0.12s, background 0.12s;
+      padding: 10px 4px; cursor: pointer; transition: background 0.12s;
       display: flex; align-items: center; gap: 14px;
     }
-    .wp-card:hover { border-color: #555; background: #1a1a1a; }
+    .wp-card:hover { background: rgba(255,255,255,0.05); }
     .wp-frame {
-      background: #0a0a0a; border: 1px solid #222; flex-shrink: 0;
+      background: #0a0a0a; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center; overflow: hidden;
     }
     .wp-frame-portrait  { width: 30px; height: 54px; }
@@ -443,10 +452,12 @@
     .wp-name {
       font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
       text-transform: uppercase; color: var(--text); margin-bottom: 3px;
+      transition: color 0.12s;
     }
+    .wp-card:hover .wp-name { color: var(--accent); }
     .wp-dims { font-size: 9px; color: var(--muted); letter-spacing: 0.06em; }
     .wp-dl { font-size: 17px; color: #444; transition: color 0.12s; flex-shrink: 0; }
-    .wp-card:hover .wp-dl { color: #aaa; }
+    .wp-card:hover .wp-dl { color: var(--accent); }
     .finish-actions {
       display: flex; align-items: center; justify-content: space-between;
       padding: 14px 20px 18px; border-top: 1px solid #1e1e1e; flex-shrink: 0;
@@ -455,9 +466,9 @@
       padding: 8px 16px; background: transparent; border: 1px solid #2a2a2a;
       color: var(--muted); cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
       text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif;
-      transition: border-color 0.12s;
+      transition: border-color 0.12s, color 0.12s;
     }
-    .btn-sec:hover { border-color: #555; color: var(--text); }
+    .btn-sec:hover { border-color: var(--accent); color: var(--accent); }
     .riso-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
     .riso-size-select {
       background: rgba(255,255,255,0.05); border: 1px solid #2a2a2a; color: var(--text);
@@ -467,7 +478,7 @@
     .riso-thumbs { display: flex; flex-wrap: wrap; gap: 8px; min-height: 65px; }
     .riso-thumb { display: flex; flex-direction: column; align-items: center; gap: 5px; }
     .riso-thumb-frame {
-      width: 50px; height: 70px; background: #fff; border: 1px solid #333;
+      width: 50px; height: 70px; background: #fff;
       overflow: hidden; flex-shrink: 0;
     }
     .riso-thumb-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -872,7 +883,10 @@
   <div class="finish-box">
     <div class="finish-head">
       <span class="finish-head-title">Export</span>
-      <button class="finish-close" onclick="closeFinishModal()">✕</button>
+      <div class="finish-head-actions">
+        <a class="btn-feature" href="mailto:4nahat@gmail.com?subject=Pixelkari%20Design%20-%20Feature%20Submission&body=Hi%2C%0A%0AI%27d%20like%20to%20submit%20my%20design%20to%20be%20featured%20on%20Pixelkari.%0A%0A%28Don%27t%20forget%20to%20attach%20your%20exported%20PNG%20or%20PDF%20before%20sending%21%29%0A%0AThanks%21">Submit to be Featured</a>
+        <button class="finish-close" onclick="closeFinishModal()">✕</button>
+      </div>
     </div>
     <div id="wallpaper-grid">
       <div class="export-col">
