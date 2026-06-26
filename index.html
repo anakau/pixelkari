@@ -1993,7 +1993,7 @@ function buildSym() {
   SYMS.forEach(s => {
     const btn = document.createElement('button');
     btn.className = 'sym-btn' + (s.id === S.sym ? ' on' : '');
-    btn.title = s.title;
+    btn.title = 'Mirror Weave';
     btn.innerHTML = s.svg;
     btn.addEventListener('click', () => {
       const wasOn = S.sym === s.id;
