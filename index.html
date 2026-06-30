@@ -148,7 +148,15 @@
 
     .tool-row { display: flex; align-items: center; gap: 3px; }
 
-    .bb-color-col { display: flex; align-items: center; flex-shrink: 0; overflow: visible; }
+    .bb-color-col { display: flex; align-items: center; gap: 8px; flex-shrink: 0; overflow: visible; }
+    .color-wheel-btn {
+      width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.12);
+      background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+      cursor: pointer; flex-shrink: 0; padding: 0; transition: border-color 0.15s, transform 0.15s;
+      align-self: center;
+    }
+    .color-wheel-btn:hover { border-color: rgba(255,255,255,0.5); transform: scale(1.1); }
+    .color-wheel-btn.on { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
     #season-pal {
       display: flex; align-items: flex-start;
       gap: 14px; overflow: visible;
@@ -840,6 +848,8 @@
       <div class="bb-divider"></div>
       <div class="bb-color-col">
         <div id="season-pal"></div>
+        <button class="color-wheel-btn" id="color-wheel-btn" onclick="document.getElementById('custom-color-input').click()" title="Custom colour"></button>
+        <input type="color" id="custom-color-input" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;" value="#ffffff">
       </div>
       <div class="bb-divider"></div>
       <!-- Motifs: flower button + inline library -->
@@ -852,7 +862,7 @@
         <div id="motif-panel">
           <div class="motif-grid" id="motif-pal"></div>
           <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">
-            <button class="motif-rot-btn" id="motif-export-btn" onclick="copyMotifsToClipboard()" title="Copy all motifs as JSON" style="display:none;">⬆ Export</button>
+            <button class="motif-rot-btn" id="motif-export-btn" onclick="copyMotifsToClipboard()" title="Copy all motifs as JSON">⬆ Export</button>
             <button class="motif-rot-btn" id="motif-flip-btn" onclick="toggleMotifFlip()" title="Mirror motif horizontally">↔ Flip</button>
             <button class="motif-rot-btn" id="motif-rot-btn" onclick="cycleMotifRotation()" title="Rotate motif 90° clockwise">↻ <span id="motif-rot-lbl">0°</span></button>
           </div>
@@ -2233,6 +2243,8 @@ async function buildSeasonPal() {
         S.color = hex;
         document.querySelectorAll('#season-pal .thread-spool').forEach(s => s.classList.remove('on'));
         btn.classList.add('on');
+        const cwBtn = document.getElementById('color-wheel-btn');
+        if (cwBtn) cwBtn.classList.remove('on');
         setTool('paint');
       });
       threadRow.appendChild(btn);
@@ -2260,6 +2272,17 @@ async function buildSeasonPal() {
     card.appendChild(baseRow);
 
     el.appendChild(card);
+  });
+}
+
+function initCustomColorPicker() {
+  const input = document.getElementById('custom-color-input');
+  const btn   = document.getElementById('color-wheel-btn');
+  input.addEventListener('input', function() {
+    S.color = input.value;
+    document.querySelectorAll('#season-pal .thread-spool').forEach(s => s.classList.remove('on'));
+    btn.classList.add('on');
+    setTool('paint');
   });
 }
 
@@ -2928,6 +2951,7 @@ buildTools();
 buildSeasonPal();
 buildSym();
 buildMotifPal();
+initCustomColorPicker();
 initCanvas();
 initCursors();
 // Highlight whichever preset matches the current canvas size
