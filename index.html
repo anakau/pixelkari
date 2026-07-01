@@ -321,14 +321,13 @@
     /* hot tip panel — Billo the mascot + her chat bubble */
     .logo-wrap { position: relative; flex-shrink: 0; }
     .billo-wrap {
-      position: fixed; left: 24px; bottom: calc(var(--bar-h) + 12px);
+      position: fixed; left: 24px; top: 76px;
       display: flex; align-items: flex-end; z-index: 300;
     }
     .billo-wrap.hidden { display: none; }
     .logo-tip-avatar-slot {
-      width: 102px; height: 102px; border-radius: 50%;
-      border: none; flex-shrink: 0; overflow: hidden;
-      background: #fff; display: block;
+      width: 102px; height: 102px;
+      flex-shrink: 0; display: block;
       position: relative; z-index: 2; margin-right: -16px;
     }
     .logo-tip-avatar-slot canvas { display: block; width: 100%; height: 100%; }
@@ -939,11 +938,10 @@
         </div>
       </div>
       <div class="bb-divider"></div>
-      <!-- Tool block: left col = Draw/Erase, right col = mirrors / undo+clear -->
+      <!-- Tool block: left col = Erase, right col = mirrors / undo+clear.
+           Weave/Stitch tool-switching now lives on the colour spools. -->
       <div class="tool-block" id="tool-group">
         <div class="tool-col">
-          <button class="tbtn on" data-tool="paint"><span class="tool-emoji">🪡</span>Weave</button>
-          <button class="tbtn" data-tool="stitch"><span class="tool-emoji">🧵</span>Stitch</button>
           <button class="tbtn" data-tool="erase"><span class="tool-emoji">✂️</span>Cut</button>
         </div>
         <div class="tool-col" style="flex:1">
@@ -2395,11 +2393,21 @@ function togglePan() {
   document.querySelectorAll('#tool-group .tbtn').forEach(b => b.classList.toggle('on', b.dataset.tool === S.tool));
 }
 
+// Weave/Stitch spool buttons double as their tool's selector, so they need
+// the same active-state highlight a toolbar button would normally show.
+function syncSpoolActiveState() {
+  const weaveBtn = document.getElementById('weave-spool-btn');
+  const stitchBtn = document.getElementById('stitch-spool-btn');
+  if (weaveBtn) weaveBtn.classList.toggle('on', S.tool === 'paint');
+  if (stitchBtn) stitchBtn.classList.toggle('on', S.tool === 'stitch');
+}
+
 function setTool(id) {
   if (S.activeMotif) { S.activeMotif = null; clearGhost(); }
   if (S.tool === 'stitch' && id !== 'stitch' && S.stitchAnchor) { S.stitchAnchor = null; S.stitchPreview = null; render(); }
   S.tool = id;
   document.querySelectorAll('#tool-group .tbtn').forEach(b => b.classList.toggle('on', b.dataset.tool === id));
+  syncSpoolActiveState();
   const mc = document.getElementById('mc');
   if (mc && !S.spaceDown) mc.style.cursor = toolCursor();
 }
@@ -2436,12 +2444,19 @@ function buildColorSpools() {
   const el = document.getElementById('color-spools');
   el.innerHTML = '';
   ['weave', 'stitch'].forEach(target => {
+    const toolName = target === 'weave' ? 'paint' : 'stitch';
     const wrap = document.createElement('div');
     wrap.className = 'spool-wrap';
     const btn = document.createElement('button');
     btn.className = 'thread-spool';
     btn.id = `${target}-spool-btn`;
-    btn.onclick = (e) => { e.stopPropagation(); toggleCustomColorPicker(target); };
+    // Not the active tool yet → this click just switches to it (same as a
+    // toolbar button would). Already active → open its colour picker.
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      if (S.tool !== toolName) setTool(toolName);
+      else toggleCustomColorPicker(target);
+    };
     const lbl = document.createElement('span');
     lbl.className = 'spool-lbl';
     lbl.textContent = target === 'weave' ? 'Weave' : 'Stitch';
@@ -2450,6 +2465,7 @@ function buildColorSpools() {
     el.appendChild(wrap);
     renderSpool(target);
   });
+  syncSpoolActiveState();
 }
 
 async function buildSeasonPal() {
@@ -2722,12 +2738,14 @@ function initCustomColorPicker() {
   swatch.style.background = hsvToHex(hue, sat, val);
   renderRecentSwatches();
 
+  // Note: doesn't touch spool .on state — that now means "active tool" and
+  // is owned by setTool()/syncSpoolActiveState(), independent of whether
+  // this popup happens to be open.
   window._toggleCPPopup = function(target) {
     const alreadyOpen = popup.classList.contains('on');
     const sameTarget = target === cpTarget;
     if (alreadyOpen && sameTarget) {
       popup.classList.remove('on');
-      document.querySelectorAll('#color-spools .thread-spool').forEach(s => s.classList.remove('on'));
       return;
     }
     cpTarget = target;
@@ -2736,9 +2754,6 @@ function initCustomColorPicker() {
     drawHue(); drawSpectrum();
     const hex = hsvToHex(hue, sat, val);
     swatch.style.background = hex; hexInput.value = hex;
-    document.querySelectorAll('#color-spools .thread-spool').forEach(s => s.classList.remove('on'));
-    const btn = document.getElementById(`${cpTarget}-spool-btn`);
-    if (btn) btn.classList.add('on');
     popup.classList.add('on');
     positionPopup();
     refreshColorLabels();
@@ -3386,8 +3401,7 @@ function _drawMotifThumb(motif, px, bg = '#000000') {
   const tctx = tc.getContext('2d');
   const keys = Object.keys(motif.cells);
   const lines = motif.lines || [];
-  tctx.fillStyle = bg;
-  tctx.fillRect(0, 0, px, px);
+  if (bg) { tctx.fillStyle = bg; tctx.fillRect(0, 0, px, px); }
   if (keys.length || lines.length) {
     const dcs = keys.map(k => +k.split(',')[0]);
     const drs = keys.map(k => +k.split(',')[1]);
@@ -3544,7 +3558,7 @@ function renderBilloAvatar() {
   const motif = MOTIFS.find(m => m.name === BILLO_MOTIF_NAME);
   if (!motif) return;
   const dpr = window.devicePixelRatio || 1;
-  const canvas = _drawMotifThumb(motif, Math.round(102 * dpr), '#ffffff');
+  const canvas = _drawMotifThumb(motif, Math.round(102 * dpr), null);
   slot.innerHTML = '';
   slot.appendChild(canvas);
 }
