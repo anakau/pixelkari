@@ -1233,9 +1233,24 @@ if (localStorage.getItem('pkPresetsLoaded') !== '3') {
   const OLD = new Set(['Phul', 'Kiran', 'Tara', 'Buti']);
   MOTIFS = MOTIFS.filter(m => !OLD.has(m.name));
   MOTIFS = [...PRESET_MOTIFS, ...MOTIFS];
-  try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
   try { localStorage.setItem('pkPresetsLoaded', '3'); } catch(e) {}
 }
+
+// Self-heal duplicate entries — e.g. if the 'pkPresetsLoaded' write above
+// ever silently failed (private browsing, storage quota, file:// origin
+// restrictions), this block reruns on every load and re-prepends presets
+// each time. Collapse exact (name + cells) duplicates rather than by name
+// alone, so two different motifs that happen to share a name survive.
+{
+  const seen = new Set();
+  MOTIFS = MOTIFS.filter(m => {
+    const key = m.name + '::' + JSON.stringify(m.cells);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
 
 // ═══════════════════════════════════════════════════
 // STATE
