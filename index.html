@@ -1323,6 +1323,7 @@ const S = {
   lines:     [],
   stitchAnchor:  null,
   stitchPreview: null,
+  stitchPath:    null,
   history:   [],
   drawing:    false,
   panning:    false,
@@ -1483,9 +1484,8 @@ function _doRender() {
 
   // stitch lines
   for (const line of S.lines) drawLine(line);
-  if (S.stitchAnchor && S.stitchPreview) {
-    const path = kingPath(S.stitchAnchor.col, S.stitchAnchor.row, S.stitchPreview.col, S.stitchPreview.row);
-    drawLine({ points: path, color: S.stitchColor }, ctx, true);
+  if (S.stitchAnchor && S.stitchPath) {
+    drawLine({ points: S.stitchPath, color: S.stitchColor }, ctx, true);
   }
 
   if (S.grid) drawGrid();
@@ -1724,14 +1724,15 @@ canvas.addEventListener('mousedown', e => {
     if (!S.stitchAnchor) {
       S.stitchAnchor = v;
       S.stitchPreview = v;
+      S.stitchPath = [v];
     } else {
-      const path = kingPath(S.stitchAnchor.col, S.stitchAnchor.row, v.col, v.row);
-      if (path.length > 1) {
+      if (S.stitchPath.length > 1) {
         snap();
-        S.lines.push({ points: path, color: S.stitchColor });
+        S.lines.push({ points: S.stitchPath, color: S.stitchColor });
       }
       S.stitchAnchor = null;
       S.stitchPreview = null;
+      S.stitchPath = null;
     }
     render();
     return;
@@ -1780,7 +1781,16 @@ canvas.addEventListener('mousedown', e => {
 canvas.addEventListener('mousemove', e => {
   if (S.tool === 'stitch') {
     if (!S.stitchAnchor) return;
-    S.stitchPreview = nearestVertex(e);
+    const v = nearestVertex(e);
+    const last = S.stitchPath[S.stitchPath.length - 1];
+    if (v.col !== last.col || v.row !== last.row) {
+      // Extends the path to wherever the cursor actually moved, not just
+      // the straight/shortest route from the anchor — each new step is
+      // still snapped via kingPath so it hugs real grid lines, but the
+      // full route follows the true movement between clicks.
+      S.stitchPath.push(...kingPath(last.col, last.row, v.col, v.row).slice(1));
+    }
+    S.stitchPreview = v;
     render();
     return;
   }
@@ -2366,7 +2376,7 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('finish-modal').classList.contains('on')) { closeFinishModal(); return; }
     if (document.getElementById('motif-library-modal').classList.contains('on')) { closeMotifLibrary(); return; }
     if (S.capturingMotif) { stopCaptureMode(); return; }
-    if (S.stitchAnchor) { S.stitchAnchor = null; S.stitchPreview = null; render(); return; }
+    if (S.stitchAnchor) { S.stitchAnchor = null; S.stitchPreview = null; S.stitchPath = null; render(); return; }
     if (S.activeMotif) { S.activeMotif = null; clearGhost(); showHint('Motif cancelled'); } return;
   }
   if (e.key === 'p') setTool('paint');
@@ -2465,7 +2475,7 @@ function syncSpoolActiveState() {
 
 function setTool(id) {
   if (S.activeMotif) { S.activeMotif = null; clearGhost(); }
-  if (S.tool === 'stitch' && id !== 'stitch' && S.stitchAnchor) { S.stitchAnchor = null; S.stitchPreview = null; render(); }
+  if (S.tool === 'stitch' && id !== 'stitch' && S.stitchAnchor) { S.stitchAnchor = null; S.stitchPreview = null; S.stitchPath = null; render(); }
   S.tool = id;
   document.querySelectorAll('.tbtn[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === id));
   syncSpoolActiveState();
