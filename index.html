@@ -310,9 +310,15 @@
       transition: color 0.12s;
     }
     .logo-tip-close:hover { color: #aaa; }
+    .logo-tip-head { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+    .logo-tip-avatar-slot {
+      width: 34px; height: 34px; border-radius: 8px; background: #111;
+      flex-shrink: 0; overflow: hidden; display: block;
+    }
+    .logo-tip-avatar-slot canvas { display: block; width: 100%; height: 100%; }
     .logo-tip-eyebrow {
       font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
-      color: var(--accent); margin-bottom: 8px;
+      color: var(--accent);
     }
     .logo-tip-body {
       font-size: 13px; color: #aaa; line-height: 1.65; margin-bottom: 10px;
@@ -450,7 +456,14 @@
       display: flex; align-items: center; justify-content: center;
       opacity: 0; transition: opacity 0.1s;
     }
-    .lib-thumb:hover .lib-del { opacity: 1; }
+    .lib-thumb .lib-copy {
+      position: absolute; top: 3px; left: 3px; width: 14px; height: 14px;
+      background: rgba(0,0,0,0.7); border: none; color: #aaa; cursor: pointer;
+      font-size: 9px; line-height: 1; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.1s;
+    }
+    .lib-thumb:hover .lib-del, .lib-thumb:hover .lib-copy { opacity: 1; }
     .lib-name {
       font-size: 9px; color: var(--muted); text-align: center; padding: 3px 4px;
       background: #1c1c1c; cursor: text; white-space: nowrap; overflow: hidden;
@@ -799,8 +812,11 @@
       </div>
       <div class="logo-tip" id="logo-tip">
         <button class="logo-tip-close" onclick="document.getElementById('logo-tip').classList.add('hidden')" aria-label="Dismiss">✕</button>
-        <div class="logo-tip-eyebrow">✦ Hot Tip</div>
-        <p class="logo-tip-body">Like anything made by hand, this asks for patience — good work takes time. That's the point: to slow down, to count, to make something deliberately. Craft has always worked that way. So does this.</p>
+        <div class="logo-tip-head">
+          <span class="logo-tip-avatar-slot" id="billo-avatar-slot"></span>
+          <div class="logo-tip-eyebrow">Billo says</div>
+        </div>
+        <p class="logo-tip-body">"Like anything made by hand, this asks for patience — good work takes time. That's the point: to slow down, to count, to make something deliberately. Craft has always worked that way. So does this."</p>
         <div class="logo-tip-hint">
           <span class="logo-tip-hint-icon">💡</span>
           <span>Start zoomed in to build a small motif, then slowly zoom out to see the full pattern come together.</span>
@@ -3242,10 +3258,19 @@ function buildLibraryGrid() {
     const del = document.createElement('button');
     del.className = 'lib-del'; del.textContent = '×';
     del.addEventListener('click', e => { e.stopPropagation(); deleteMotif(idx); buildLibraryGrid(); });
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'lib-copy'; copyBtn.textContent = '⧉'; copyBtn.title = 'Copy this motif\'s JSON';
+    copyBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(JSON.stringify(motif)).then(
+        () => showHint(`Copied "${motif.name}" JSON to clipboard`),
+        () => showHint('Copy failed — clipboard access blocked')
+      );
+    });
     const lbl = document.createElement('div');
     lbl.className = 'lib-name'; lbl.textContent = motif.name; lbl.title = 'Click to rename';
     lbl.addEventListener('click', () => _startRename(lbl, idx));
-    wrap.appendChild(tc); wrap.appendChild(del); wrap.appendChild(lbl);
+    wrap.appendChild(tc); wrap.appendChild(del); wrap.appendChild(copyBtn); wrap.appendChild(lbl);
     el.appendChild(wrap);
   });
 }
@@ -3273,6 +3298,18 @@ function _startRename(lbl, idx) {
   });
 }
 
+// Billo — the hot tip panel's mascot, rendered from her own saved motif
+const BILLO_MOTIF_NAME = 'Motif 48';
+function renderBilloAvatar() {
+  const slot = document.getElementById('billo-avatar-slot');
+  if (!slot) return;
+  const motif = MOTIFS.find(m => m.name === BILLO_MOTIF_NAME);
+  if (!motif) return;
+  const canvas = _drawMotifThumb(motif, 34);
+  slot.innerHTML = '';
+  slot.appendChild(canvas);
+}
+
 // ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
@@ -3280,6 +3317,7 @@ buildTools();
 buildSeasonPal();
 buildSym();
 buildMotifPal();
+renderBilloAvatar();
 initCustomColorPicker();
 initCanvas();
 initCursors();
