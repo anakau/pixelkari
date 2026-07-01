@@ -361,11 +361,14 @@
       font-size: 13px; color: #aaa; line-height: 1.65; margin-bottom: 10px;
     }
     .logo-tip-hint {
-      display: flex; align-items: flex-start; gap: 7px;
+      display: flex; flex-direction: column; gap: 3px;
       background: rgba(255,255,255,0.04); border-radius: 6px;
       padding: 7px 9px; font-size: 13px; color: #ccc; line-height: 1.55;
     }
-    .logo-tip-hint-icon { flex-shrink: 0; font-size: 13px; margin-top: 1px; }
+    .logo-tip-hint-label {
+      color: var(--accent); font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; font-size: 9px;
+    }
 
     /* ── MOTIF PANEL (inline, right of flower button) ── */
     #motif-panel {
@@ -851,10 +854,10 @@
         <span class="logo-tip-avatar-slot" id="billo-avatar-slot"></span>
         <div class="logo-tip" id="logo-tip">
           <button class="logo-tip-close" onclick="document.getElementById('logo-tip').classList.add('hidden')" aria-label="Dismiss">✕</button>
-          <p class="logo-tip-body" id="billo-message">"Like anything made by hand, this asks for patience — good work takes time. That's the point: to slow down, to count, to make something deliberately. Craft has always worked that way. So does this."</p>
+          <p class="logo-tip-body" id="billo-message">Phulkari means "flower work." Its floss-silk thread, called pat, was traditionally dyed in small batches — so no two skeins of the same colour ever quite matched.</p>
           <div class="logo-tip-hint">
-            <span class="logo-tip-hint-icon">💡</span>
-            <span>Start zoomed in to build a small motif, then slowly zoom out to see the full pattern come together.</span>
+            <span class="logo-tip-hint-label">Tool Tip</span>
+            <span id="billo-tip">Click and drag across triangles to fill them with your selected thread colour.</span>
           </div>
         </div>
       </div>
@@ -3804,18 +3807,31 @@ function initBilloEyes() {
   });
 }
 
-// One line of Billo's voice per tool, shown in her chat bubble.
-const BILLO_MESSAGES = {
-  paint:  `"Like anything made by hand, this asks for patience — good work takes time. That's the point: to slow down, to count, to make something deliberately. Craft has always worked that way. So does this."`,
-  stitch: `"A stitch draws a line the fill can't. Snap it to the grid and let it trace where the thread would actually travel."`,
-  erase:  `"Even the best hands unpick a stitch now and then. Cutting away clean is still part of getting it right."`,
-  cloth:  `"Every pattern starts with the cloth underneath it. Pick a base that lets your colours sit well against it."`,
+// Top of Billo's bubble — a historic/cultural fact about Phulkari tied to
+// the active tool. PLACEHOLDER COPY: swap these for the real facts once
+// they're supplied.
+const BILLO_FACTS = {
+  paint:  `Phulkari means "flower work." Its floss-silk thread, called pat, was traditionally dyed in small batches — so no two skeins of the same colour ever quite matched.`,
+  stitch: `Traditional Phulkari uses a single stitch — the darn stitch — worked from the back of the cloth, so the embroiderer builds the whole pattern without ever seeing its front.`,
+  erase:  `A clean unpick was its own skill — pull too fast and you'd drag the coarse khaddar weave out of shape along with the thread.`,
+  cloth:  `The base fabric, khaddar, was hand-spun, hand-woven cotton — its coarse, countable weave is what let the darn stitch stay so precise.`,
+};
+
+// Bottom of the bubble — an actual how-to-use-it tip for this tool in Pixelkari.
+const BILLO_TIPS = {
+  paint:  `Click and drag across triangles to fill them with your selected thread colour.`,
+  stitch: `Click to start a stitch, move the cursor along the path you want, then click again to finish — it follows your movement, not a shortcut to the endpoint.`,
+  erase:  `Click and drag over painted triangles to remove them. The scissors' upper tip is the exact point that cuts.`,
+  cloth:  `Pick your base tone before weaving — it's easier to choose thread colours against a set fabric than to change the fabric after.`,
 };
 
 function setBilloMessage(key) {
-  const el = document.getElementById('billo-message');
-  const msg = BILLO_MESSAGES[key];
-  if (el && msg) el.textContent = msg;
+  const factEl = document.getElementById('billo-message');
+  const tipEl  = document.getElementById('billo-tip');
+  const fact = BILLO_FACTS[key];
+  const tip  = BILLO_TIPS[key];
+  if (factEl && fact) factEl.textContent = fact;
+  if (tipEl && tip) tipEl.textContent = tip;
 }
 
 // ═══════════════════════════════════════════════════
