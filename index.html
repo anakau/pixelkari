@@ -163,21 +163,22 @@
     .color-wheel-btn.on { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
     #cp-popup {
       display: none; position: fixed; z-index: 300;
-      background: #1a1a1a; border: 1px solid #333;
+      background: #000; border: none; border-radius: 12px;
       padding: 10px; flex-direction: column; gap: 8px;
       box-shadow: 0 6px 24px rgba(0,0,0,0.7);
     }
     #cp-popup.on { display: flex; }
-    #cp-spectrum { display: block; cursor: crosshair; width: 180px; height: 120px; }
-    #cp-hue      { display: block; cursor: crosshair; width: 180px; height: 14px; border-radius: 3px; }
+    #cp-spectrum { display: block; cursor: crosshair; width: 180px; height: 120px; border-radius: 6px; }
+    #cp-hue      { display: block; cursor: crosshair; width: 180px; height: 14px; border-radius: 7px; }
     #cp-bottom   { display: flex; align-items: center; gap: 8px; }
-    #cp-swatch   { width: 24px; height: 24px; border-radius: 3px; border: none; flex-shrink: 0; }
+    #cp-swatch   { width: 24px; height: 24px; border-radius: 6px; border: none; flex-shrink: 0; }
     #cp-hex      {
-      flex: 1; background: #111; border: 1px solid #333; color: #ddd;
+      flex: 1; background: #1c1c1c; border: none; border-radius: 6px; color: #ddd;
       font-size: 11px; font-family: 'Bricolage Grotesque', sans-serif;
       padding: 4px 7px; outline: none; letter-spacing: 0.06em;
+      transition: background 0.12s;
     }
-    #cp-hex:focus { border-color: var(--accent); }
+    #cp-hex:focus { background: #2a2a2a; }
     #cp-format-readout {
       font-size: 11px; color: var(--muted); letter-spacing: 0.04em;
       font-family: 'Bricolage Grotesque', sans-serif; text-align: center;
@@ -3622,7 +3623,7 @@ function initBilloEyes() {
     billoEyesClosed = !billoEyesClosed;
     renderBilloAvatar();
     const bubble = document.getElementById('logo-tip');
-    if (bubble) bubble.classList.remove('hidden');
+    if (bubble) bubble.classList.toggle('hidden');
   });
 }
 
