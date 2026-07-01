@@ -820,7 +820,7 @@
         <span class="logo-tip-avatar-slot" id="billo-avatar-slot"></span>
         <div class="logo-tip" id="logo-tip">
           <button class="logo-tip-close" onclick="document.getElementById('billo-wrap').classList.add('hidden')" aria-label="Dismiss">✕</button>
-          <p class="logo-tip-body">"Like anything made by hand, this asks for patience — good work takes time. That's the point: to slow down, to count, to make something deliberately. Craft has always worked that way. So does this."</p>
+          <p class="logo-tip-body" id="billo-message">"Like anything made by hand, this asks for patience — good work takes time. That's the point: to slow down, to count, to make something deliberately. Craft has always worked that way. So does this."</p>
           <div class="logo-tip-hint">
             <span class="logo-tip-hint-icon">💡</span>
             <span>Start zoomed in to build a small motif, then slowly zoom out to see the full pattern come together.</span>
@@ -2410,6 +2410,7 @@ function setTool(id) {
   S.tool = id;
   document.querySelectorAll('.tbtn[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === id));
   syncSpoolActiveState();
+  setBilloMessage(id);
   const mc = document.getElementById('mc');
   if (mc && !S.spaceDown) mc.style.cursor = toolCursor();
 }
@@ -2762,6 +2763,7 @@ function initCustomColorPicker() {
     }
     cpTarget = target;
     window._cpTarget = cpTarget;
+    if (target === 'cloth') setBilloMessage('cloth'); // weave/stitch already set theirs via setTool()
     renderSwatchSection(cpTarget);
     const hsv = hexToHsv(currentHexFor(cpTarget));
     hue = hsv.h; sat = hsv.s; val = hsv.v;
@@ -3561,16 +3563,47 @@ function _startRename(lbl, idx) {
 }
 
 // Billo — the hot tip panel's mascot, rendered from her own saved motif
-const BILLO_MOTIF_NAME = 'Motif 27';
+// NOTE: if you rename either saved motif, update these two to match —
+// the avatar is looked up by name at render time, not baked in.
+const BILLO_EYES_OPEN = 'eyes open';
+const BILLO_EYES_CLOSED = 'eyes close';
+let billoEyesClosed = false;
+
 function renderBilloAvatar() {
   const slot = document.getElementById('billo-avatar-slot');
   if (!slot) return;
-  const motif = MOTIFS.find(m => m.name === BILLO_MOTIF_NAME);
+  const name = billoEyesClosed ? BILLO_EYES_CLOSED : BILLO_EYES_OPEN;
+  const motif = MOTIFS.find(m => m.name === name) || MOTIFS.find(m => m.name === BILLO_EYES_OPEN);
   if (!motif) return;
   const dpr = window.devicePixelRatio || 1;
   const canvas = _drawMotifThumb(motif, Math.round(102 * dpr), null);
   slot.innerHTML = '';
   slot.appendChild(canvas);
+}
+
+// Blink on hover (desktop) or tap (touch, which has no hover) — click also
+// toggles so a tap on a touch device isn't stuck permanently closed.
+function initBilloEyes() {
+  const slot = document.getElementById('billo-avatar-slot');
+  if (!slot) return;
+  slot.style.cursor = 'pointer';
+  slot.addEventListener('mouseenter', () => { billoEyesClosed = true; renderBilloAvatar(); });
+  slot.addEventListener('mouseleave', () => { billoEyesClosed = false; renderBilloAvatar(); });
+  slot.addEventListener('click', () => { billoEyesClosed = !billoEyesClosed; renderBilloAvatar(); });
+}
+
+// One line of Billo's voice per tool, shown in her chat bubble.
+const BILLO_MESSAGES = {
+  paint:  `"Like anything made by hand, this asks for patience — good work takes time. That's the point: to slow down, to count, to make something deliberately. Craft has always worked that way. So does this."`,
+  stitch: `"A stitch draws a line the fill can't. Snap it to the grid and let it trace where the thread would actually travel."`,
+  erase:  `"Even the best hands unpick a stitch now and then. Cutting away clean is still part of getting it right."`,
+  cloth:  `"Every pattern starts with the cloth underneath it. Pick a base that lets your colours sit well against it."`,
+};
+
+function setBilloMessage(key) {
+  const el = document.getElementById('billo-message');
+  const msg = BILLO_MESSAGES[key];
+  if (el && msg) el.textContent = msg;
 }
 
 // ═══════════════════════════════════════════════════
@@ -3580,6 +3613,7 @@ buildToolIcons();
 buildSym();
 buildMotifPal();
 renderBilloAvatar();
+initBilloEyes();
 initCustomColorPicker();
 initCanvas();
 initCursors();
