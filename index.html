@@ -2363,20 +2363,42 @@ let TOOL_CURSORS = {};
 
 async function initCursors() {
   try {
-    const [wText, cText] = await Promise.all([
-      fetch('public/weave.svg').then(r => r.text()),
+    const [needleText, cutText] = await Promise.all([
+      fetch('public/cursor.svg').then(r => r.text()),
       fetch('public/cut.svg').then(r => r.text()),
     ]);
     const make = (raw, w, h, hx, hy) => {
       const svg = raw
+        .replace(/id="[^"]*"/g, '')
         .replace(/width="[^"]*"/, '').replace(/height="[^"]*"/, '')
         .replace('<svg', `<svg width="${w}" height="${h}"`)
         .replace(/<path /g, '<path style="fill:white;fill-rule:evenodd" ');
       return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${hx} ${hy}, crosshair`;
     };
-    TOOL_CURSORS.paint = make(wText, 25, 30, 0, 0);
-    TOOL_CURSORS.stitch = TOOL_CURSORS.paint; // same needle cursor as Weave
-    TOOL_CURSORS.erase = make(cText, 56, 45, 5, 0);
+
+    // Weave/Stitch share the same needle cursor. Hotspot (1.37, 1.35) sits
+    // exactly on the needle's sharp point (verified by rendering the SVG
+    // and locating where its outline tapers to zero width), not some
+    // corner of the icon's bounding box.
+    const needleCursor = make(needleText, 29.46, 32, 1.37, 1.35);
+    TOOL_CURSORS.paint = needleCursor;
+    TOOL_CURSORS.stitch = needleCursor;
+
+    // Cut — same scissors artwork, tilted 45° left. Rotating in place
+    // around the blade pivot (found the same way, by locating the small
+    // enclosed hole where the two blades screw together) means the pivot
+    // keeps the same coordinates after rotation, so the viewBox just needs
+    // widening to fit the now-diagonal bounding box without clipping.
+    // A single CSS cursor can only have one hotspot, so it's set on that
+    // pivot — the one point equidistant from both blade tips' cutting
+    // action, rather than an arbitrary corner.
+    const cutPathMatch = cutText.match(/<path[^>]*\sd="([^"]+)"/);
+    if (cutPathMatch) {
+      const cutSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-18.5 10 78 71" width="52.76" height="48">` +
+        `<g transform="rotate(-45 18.90625 48.03125)"><path d="${cutPathMatch[1]}" style="fill:white;fill-rule:evenodd"/></g></svg>`;
+      TOOL_CURSORS.erase = `url("data:image/svg+xml,${encodeURIComponent(cutSvg)}") 25.30 25.71, crosshair`;
+    }
+
     const mc = document.getElementById('mc');
     if (mc && !S.spaceDown) mc.style.cursor = TOOL_CURSORS[S.tool] || 'crosshair';
   } catch(e) {}
