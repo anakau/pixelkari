@@ -1364,7 +1364,7 @@ function initCanvas() {
 }
 
 function shiftLines(dc, dr) {
-  S.lines = S.lines.map(l => ({ ...l, c1: l.c1 + dc, r1: l.r1 + dr, c2: l.c2 + dc, r2: l.r2 + dr }));
+  S.lines = S.lines.map(l => ({ ...l, points: l.points.map(p => ({ col: p.col + dc, row: p.row + dr })) }));
 }
 
 function resizeCanvas(axis, action, side) {
@@ -1476,21 +1476,26 @@ function _doRender() {
   // stitch lines
   for (const line of S.lines) drawLine(line);
   if (S.stitchAnchor && S.stitchPreview) {
-    drawLine({ c1: S.stitchAnchor.col, r1: S.stitchAnchor.row, c2: S.stitchPreview.col, r2: S.stitchPreview.row, color: S.stitchColor }, ctx, true);
+    const path = kingPath(S.stitchAnchor.col, S.stitchAnchor.row, S.stitchPreview.col, S.stitchPreview.row);
+    drawLine({ points: path, color: S.stitchColor }, ctx, true);
   }
 
   if (S.grid) drawGrid();
 }
 
 function drawLine(line, gctx = ctx, preview = false) {
+  if (!line.points || line.points.length < 2) return;
   gctx.save();
   gctx.strokeStyle = line.color;
   gctx.lineWidth = STITCH_WIDTH;
   gctx.lineCap = 'round';
+  gctx.lineJoin = 'round';
   gctx.globalAlpha = preview ? 0.55 : 1;
   gctx.beginPath();
-  gctx.moveTo(line.c1 * CELL, line.r1 * CELL);
-  gctx.lineTo(line.c2 * CELL, line.r2 * CELL);
+  gctx.moveTo(line.points[0].col * CELL, line.points[0].row * CELL);
+  for (let i = 1; i < line.points.length; i++) {
+    gctx.lineTo(line.points[i].col * CELL, line.points[i].row * CELL);
+  }
   gctx.stroke();
   gctx.restore();
 }
@@ -1597,6 +1602,22 @@ function nearestVertex(e) {
   return { col, row };
 }
 
+// Shortest path from one grid vertex to another using only the lines the
+// grid actually draws (horizontal, vertical, and each cell's two
+// diagonals) — steps diagonally while it can, then straight the rest of
+// the way, so the stitch always hugs real grid lines instead of cutting
+// across cells at an arbitrary angle.
+function kingPath(c0, r0, c1, r1) {
+  const path = [{ col: c0, row: r0 }];
+  let cc = c0, cr = r0;
+  while (cc !== c1 || cr !== r1) {
+    if (cc < c1) cc++; else if (cc > c1) cc--;
+    if (cr < r1) cr++; else if (cr > r1) cr--;
+    path.push({ col: cc, row: cr });
+  }
+  return path;
+}
+
 function drawTriangle(c, r, tri, color, gctx = ctx) {
   const x = c * CELL, y = r * CELL;
   const mx = x + CELL / 2, my = y + CELL / 2;
@@ -1696,8 +1717,11 @@ canvas.addEventListener('mousedown', e => {
       S.stitchAnchor = v;
       S.stitchPreview = v;
     } else {
-      snap();
-      S.lines.push({ c1: S.stitchAnchor.col, r1: S.stitchAnchor.row, c2: v.col, r2: v.row, color: S.stitchColor });
+      const path = kingPath(S.stitchAnchor.col, S.stitchAnchor.row, v.col, v.row);
+      if (path.length > 1) {
+        snap();
+        S.lines.push({ points: path, color: S.stitchColor });
+      }
       S.stitchAnchor = null;
       S.stitchPreview = null;
     }
@@ -2930,11 +2954,10 @@ function showCapturePreview() {
     const c = +p[0], r = +p[1];
     if (c >= minC && c <= maxC && r >= minR && r <= maxR) captured[key] = color;
   }
-  // A line only counts as captured if BOTH its endpoints are inside the
+  // A line only counts as captured if ALL of its points are inside the
   // selection — half-included lines would otherwise get silently clipped.
   const capturedLines = S.lines.filter(l =>
-    l.c1 >= minC && l.c1 <= maxC && l.r1 >= minR && l.r1 <= maxR &&
-    l.c2 >= minC && l.c2 <= maxC && l.r2 >= minR && l.r2 <= maxR
+    l.points.every(p => p.col >= minC && p.col <= maxC && p.row >= minR && p.row <= maxR)
   );
   if (!Object.keys(captured).length && !capturedLines.length) {
     showHint('No painted cells or stitches in selection — try a larger area');
@@ -2955,8 +2978,8 @@ function showCapturePreview() {
 
 function renderCapturePreview(cells, lines = []) {
   const keys = Object.keys(cells);
-  const cs = [...keys.map(k => +k.split(',')[0]), ...lines.flatMap(l => [l.c1, l.c2])];
-  const rs = [...keys.map(k => +k.split(',')[1]), ...lines.flatMap(l => [l.r1, l.r2])];
+  const cs = [...keys.map(k => +k.split(',')[0]), ...lines.flatMap(l => l.points.map(p => p.col))];
+  const rs = [...keys.map(k => +k.split(',')[1]), ...lines.flatMap(l => l.points.map(p => p.row))];
   const minC = Math.min(...cs), maxC = Math.max(...cs);
   const minR = Math.min(...rs), maxR = Math.max(...rs);
   const cols = maxC - minC + 1, rows = maxR - minR + 1;
@@ -2990,9 +3013,10 @@ function renderCapturePreview(cells, lines = []) {
     ctx.strokeStyle = l.color;
     ctx.lineWidth = Math.max(1.5, STITCH_WIDTH * (cs2 / CELL));
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo((l.c1 - minC) * cs2, (l.r1 - minR) * cs2);
-    ctx.lineTo((l.c2 - minC) * cs2, (l.r2 - minR) * cs2);
+    ctx.moveTo((l.points[0].col - minC) * cs2, (l.points[0].row - minR) * cs2);
+    for (let i = 1; i < l.points.length; i++) ctx.lineTo((l.points[i].col - minC) * cs2, (l.points[i].row - minR) * cs2);
     ctx.stroke();
     ctx.restore();
   }
@@ -3000,8 +3024,8 @@ function renderCapturePreview(cells, lines = []) {
 
 function confirmCaptureMotif() {
   const keys = Object.keys(_capturedCells);
-  const cs = [...keys.map(k => +k.split(',')[0]), ..._capturedLines.flatMap(l => [l.c1, l.c2])];
-  const rs = [...keys.map(k => +k.split(',')[1]), ..._capturedLines.flatMap(l => [l.r1, l.r2])];
+  const cs = [...keys.map(k => +k.split(',')[0]), ..._capturedLines.flatMap(l => l.points.map(p => p.col))];
+  const rs = [...keys.map(k => +k.split(',')[1]), ..._capturedLines.flatMap(l => l.points.map(p => p.row))];
   const cx = (Math.min(...cs) + Math.max(...cs)) / 2;
   const cy = (Math.min(...rs) + Math.max(...rs)) / 2;
   const cells = {};
@@ -3012,7 +3036,7 @@ function confirmCaptureMotif() {
   const name = `Motif ${MOTIFS.length + 1}`;
   const motif = { name, cells };
   if (_capturedLines.length) {
-    motif.lines = _capturedLines.map(l => ({ c1: l.c1 - cx, r1: l.r1 - cy, c2: l.c2 - cx, r2: l.r2 - cy, color: l.color }));
+    motif.lines = _capturedLines.map(l => ({ points: l.points.map(p => ({ col: p.col - cx, row: p.row - cy })), color: l.color }));
   }
   MOTIFS.push(motif);
   try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
@@ -3191,11 +3215,11 @@ function saveAsMotif() {
   const innerKeys = Object.keys(S.cells).filter(k => {
     const p = k.split(','); return isInner(+p[0], +p[1]);
   });
-  const innerLines = S.lines.filter(l => isInner(l.c1, l.r1) && isInner(l.c2, l.r2));
+  const innerLines = S.lines.filter(l => l.points.every(p => isInner(p.col, p.row)));
   if (!innerKeys.length && !innerLines.length) { showHint('Draw something in the inner zone first'); return; }
 
-  const cs = [...innerKeys.map(k => +k.split(',')[0]), ...innerLines.flatMap(l => [l.c1, l.c2])];
-  const rs = [...innerKeys.map(k => +k.split(',')[1]), ...innerLines.flatMap(l => [l.r1, l.r2])];
+  const cs = [...innerKeys.map(k => +k.split(',')[0]), ...innerLines.flatMap(l => l.points.map(p => p.col))];
+  const rs = [...innerKeys.map(k => +k.split(',')[1]), ...innerLines.flatMap(l => l.points.map(p => p.row))];
   const cx = (Math.min(...cs) + Math.max(...cs)) / 2;
   const cy = (Math.min(...rs) + Math.max(...rs)) / 2;
 
@@ -3209,7 +3233,7 @@ function saveAsMotif() {
   const name = `Motif ${MOTIFS.length + 1}`;
   const motif = { name, cells };
   if (innerLines.length) {
-    motif.lines = innerLines.map(l => ({ c1: l.c1 - cx, r1: l.r1 - cy, c2: l.c2 - cx, r2: l.r2 - cy, color: l.color }));
+    motif.lines = innerLines.map(l => ({ points: l.points.map(p => ({ col: p.col - cx, row: p.row - cy })), color: l.color }));
   }
   MOTIFS.push(motif);
   try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
@@ -3405,8 +3429,8 @@ function _drawMotifThumb(motif, px, bg = '#000000') {
   if (keys.length || lines.length) {
     const dcs = keys.map(k => +k.split(',')[0]);
     const drs = keys.map(k => +k.split(',')[1]);
-    const lcs = lines.flatMap(l => [l.c1, l.c2]);
-    const lrs = lines.flatMap(l => [l.r1, l.r2]);
+    const lcs = lines.flatMap(l => l.points.map(p => p.col));
+    const lrs = lines.flatMap(l => l.points.map(p => p.row));
     // Cell dc,dr is a cell's top-left corner (occupies [dc, dc+1]); line
     // coords are already points, so only the cell side needs the +1.
     const left   = Math.min(...dcs, ...lcs);
@@ -3434,9 +3458,10 @@ function _drawMotifThumb(motif, px, bg = '#000000') {
       tctx.strokeStyle = l.color;
       tctx.lineWidth = Math.max(1, STITCH_WIDTH * (tCell / CELL));
       tctx.lineCap = 'round';
+      tctx.lineJoin = 'round';
       tctx.beginPath();
-      tctx.moveTo(offX + (l.c1 - left) * tCell, offY + (l.r1 - top) * tCell);
-      tctx.lineTo(offX + (l.c2 - left) * tCell, offY + (l.r2 - top) * tCell);
+      tctx.moveTo(offX + (l.points[0].col - left) * tCell, offY + (l.points[0].row - top) * tCell);
+      for (let i = 1; i < l.points.length; i++) tctx.lineTo(offX + (l.points[i].col - left) * tCell, offY + (l.points[i].row - top) * tCell);
       tctx.stroke();
       tctx.restore();
     }
