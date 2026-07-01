@@ -2423,17 +2423,16 @@ async function initCursors() {
     // the blade pivot (the small enclosed hole where the blades screw
     // together) so the viewBox only needs widening, not re-centering, to
     // fit the now-diagonal bounding box without clipping.
-    // The hotspot is NOT the pivot — that sits halfway down the tool, far
-    // from where the blades actually meet paper, which made clicks land
-    // nowhere near what the cursor appeared to touch. It's set instead to
-    // the midpoint between both blade tips (found by scanning the rotated
-    // render for its two topmost/leftmost points), which is where cutting
-    // actually happens.
+    // The hotspot sits exactly on the upper blade's tip (found by scanning
+    // the rotated render for its topmost point) rather than between both
+    // tips or at the pivot — with two blades it wasn't clear which one was
+    // "doing" the cut, so only the upper tip is live; that's the one point
+    // users should aim with.
     const cutPathMatch = cutText.match(/<path[^>]*\sd="([^"]+)"/);
     if (cutPathMatch) {
       const cutSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-18.5 10 78 71" width="52.76" height="48">` +
         `<g transform="rotate(-45 18.90625 48.03125)"><path d="${cutPathMatch[1]}" style="fill:white;fill-rule:evenodd"/></g></svg>`;
-      TOOL_CURSORS.erase = `url("data:image/svg+xml,${encodeURIComponent(cutSvg)}") 4.06 5.23, crosshair`;
+      TOOL_CURSORS.erase = `url("data:image/svg+xml,${encodeURIComponent(cutSvg)}") 7.07 1, crosshair`;
     }
 
     const mc = document.getElementById('mc');
