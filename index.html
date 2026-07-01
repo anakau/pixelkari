@@ -190,10 +190,11 @@
     .cp-eyedrop-btn {
       display: flex; align-items: center; justify-content: center; gap: 6px;
       background: rgba(255,255,255,0.06); border: none; border-radius: 6px;
-      color: var(--muted); font-size: 10px; font-family: 'Bricolage Grotesque', sans-serif;
+      color: #fff; font-size: 10px; font-family: 'Bricolage Grotesque', sans-serif;
       padding: 6px 0; cursor: pointer; transition: background 0.12s, color 0.12s; flex-shrink: 0;
     }
-    .cp-eyedrop-btn:hover { background: rgba(255,255,255,0.10); color: var(--text); }
+    .cp-eyedrop-btn:hover { background: rgba(255,255,255,0.10); }
+    .cp-eyedrop-btn.on { color: var(--accent); }
     .cp-eyedrop-btn:disabled { opacity: 0.3; cursor: default; }
     .cp-eyedrop-btn svg { flex-shrink: 0; }
     .cp-values { display: flex; flex-direction: column; gap: 4px; }
@@ -2921,10 +2922,12 @@ function initCustomColorPicker() {
   // Eyedropper — native browser API, feature-detected above
   eyedropBtn.addEventListener('click', async () => {
     if (!('EyeDropper' in window)) return;
+    eyedropBtn.classList.add('on');
     try {
       const result = await new EyeDropper().open();
       selectColor(result.sRGBHex);
     } catch (e) { /* user cancelled the pick — nothing to do */ }
+    finally { eyedropBtn.classList.remove('on'); }
   });
 
   // Close on outside click (Cut has no popup, so it's not in this list —
