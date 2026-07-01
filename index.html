@@ -176,7 +176,7 @@
     #cp-hex:focus { border-color: var(--accent); }
     #season-pal {
       display: flex; align-items: flex-start;
-      gap: 14px; overflow: visible;
+      gap: 0; overflow: visible;
     }
     .season-card { display: flex; flex-direction: column; align-items: stretch; gap: 4px; overflow: visible; }
     .season-label { font-size: 8px; letter-spacing: 0.02em; white-space: nowrap; }
@@ -2286,15 +2286,27 @@ async function buildSeasonPal() {
 
     el.appendChild(card);
 
-    if (i === 1) {
-      const cwBtn = document.createElement('button');
-      cwBtn.className = 'color-wheel-btn';
-      cwBtn.id = 'color-wheel-btn';
-      cwBtn.title = 'Custom colour';
-      cwBtn.onclick = (e) => { e.stopPropagation(); toggleCustomColorPicker(); };
-      el.appendChild(cwBtn);
-    }
   });
+
+  // ── Rainbow spool — colour picker trigger, at the end ──
+  const rainbowBtn = document.createElement('button');
+  rainbowBtn.className = 'thread-spool';
+  rainbowBtn.id = 'color-wheel-btn';
+  rainbowBtn.title = 'Custom colour';
+  rainbowBtn.style.marginLeft = '16px';
+  rainbowBtn.onclick = (e) => { e.stopPropagation(); toggleCustomColorPicker(); };
+
+  const GRAD = `<defs><linearGradient id="rsg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF0040"/><stop offset="20%" stop-color="#FF8C00"/><stop offset="40%" stop-color="#FFE400"/><stop offset="60%" stop-color="#00CC55"/><stop offset="80%" stop-color="#0099FF"/><stop offset="100%" stop-color="#9900FF"/></linearGradient></defs>`;
+
+  if (svgTemplate) {
+    let svgStr = svgTemplate.replace('<svg', `<svg fill="url(#rsg)" width="24"`);
+    svgStr = svgStr.replace(/(<svg[^>]*>)/, `$1${GRAD}`);
+    rainbowBtn.innerHTML = svgStr;
+  } else {
+    rainbowBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38.1 78.9" width="24">${GRAD}<path fill="url(#rsg)" d="${THREAD_PATH}"/></svg>`;
+  }
+
+  el.appendChild(rainbowBtn);
 }
 
 function initCustomColorPicker() {
