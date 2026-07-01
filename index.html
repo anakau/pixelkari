@@ -289,11 +289,15 @@
       position: absolute; top: calc(100% + 10px); left: 0;
       width: 272px; background: #161616; border: 1px solid #2a2a2a;
       padding: 13px 15px 14px; z-index: 300;
-      opacity: 0; pointer-events: none;
-      transform: translateY(-4px);
-      transition: opacity 0.2s ease, transform 0.2s ease;
     }
-    .logo-wrap:hover .logo-tip { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .logo-tip.hidden { display: none; }
+    .logo-tip-close {
+      position: absolute; top: 8px; right: 8px;
+      background: none; border: none; color: #444; cursor: pointer;
+      font-size: 14px; line-height: 1; padding: 2px 5px;
+      transition: color 0.12s;
+    }
+    .logo-tip-close:hover { color: #aaa; }
     .logo-tip-eyebrow {
       font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
       color: var(--accent); margin-bottom: 8px;
@@ -781,7 +785,8 @@
       <div id="bar-logo" onclick="showStoryPage()" title="About Pixelkari" style="cursor:pointer;">
         <div class="logo-title">Pixelkari</div>
       </div>
-      <div class="logo-tip">
+      <div class="logo-tip" id="logo-tip">
+        <button class="logo-tip-close" onclick="document.getElementById('logo-tip').classList.add('hidden')" aria-label="Dismiss">✕</button>
         <div class="logo-tip-eyebrow">✦ Hot Tip</div>
         <p class="logo-tip-body">Like anything made by hand, this asks for patience — good work takes time. That's the point: to slow down, to count, to make something deliberately. Craft has always worked that way. So does this.</p>
         <div class="logo-tip-hint">
