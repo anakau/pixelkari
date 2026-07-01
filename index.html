@@ -853,7 +853,7 @@
       <div class="billo-wrap" id="billo-wrap">
         <span class="logo-tip-avatar-slot" id="billo-avatar-slot"></span>
         <div class="logo-tip" id="logo-tip">
-          <button class="logo-tip-close" onclick="document.getElementById('logo-tip').classList.add('hidden')" aria-label="Dismiss">✕</button>
+          <button class="logo-tip-close" onclick="setBubbleHidden(true)" aria-label="Dismiss">✕</button>
           <p class="logo-tip-body" id="billo-message">Phulkari means "flower work." Its floss-silk thread, called pat, was traditionally dyed in small batches — so no two skeins of the same colour ever quite matched.</p>
           <div class="logo-tip-hint">
             <span class="logo-tip-hint-label">Tool Tip</span>
@@ -3791,6 +3791,20 @@ function renderBilloAvatar() {
   slot.appendChild(canvas);
 }
 
+// Whether Billo's chat bubble is dismissed persists across reloads — closing
+// it (dismiss button or clicking the mascot) should stay closed on refresh,
+// and stay open if it was left open.
+function setBubbleHidden(hidden) {
+  const bubble = document.getElementById('logo-tip');
+  if (bubble) bubble.classList.toggle('hidden', hidden);
+  try { localStorage.setItem('pkBubbleHidden', hidden ? '1' : '0'); } catch(e) {}
+}
+function initBubbleVisibility() {
+  let hidden = false;
+  try { hidden = localStorage.getItem('pkBubbleHidden') === '1'; } catch(e) {}
+  setBubbleHidden(hidden);
+}
+
 // Blink on hover (desktop) or tap (touch, which has no hover) — click also
 // toggles so a tap on a touch device isn't stuck permanently closed.
 function initBilloEyes() {
@@ -3803,7 +3817,7 @@ function initBilloEyes() {
     billoEyesClosed = !billoEyesClosed;
     renderBilloAvatar();
     const bubble = document.getElementById('logo-tip');
-    if (bubble) bubble.classList.toggle('hidden');
+    setBubbleHidden(bubble ? !bubble.classList.contains('hidden') : false);
   });
 }
 
@@ -3842,6 +3856,7 @@ buildSym();
 buildMotifPal();
 renderBilloAvatar();
 initBilloEyes();
+initBubbleVisibility();
 initCustomColorPicker();
 initCanvas();
 initCursors();
