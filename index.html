@@ -2375,6 +2375,7 @@ async function initCursors() {
       return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${hx} ${hy}, crosshair`;
     };
     TOOL_CURSORS.paint = make(wText, 25, 30, 0, 0);
+    TOOL_CURSORS.stitch = TOOL_CURSORS.paint; // same needle cursor as Weave
     TOOL_CURSORS.erase = make(cText, 56, 45, 5, 0);
     const mc = document.getElementById('mc');
     if (mc && !S.spaceDown) mc.style.cursor = TOOL_CURSORS[S.tool] || 'crosshair';
@@ -2463,10 +2464,10 @@ async function buildToolIcons() {
   const el = document.getElementById('color-spools');
   el.innerHTML = '';
   const defs = [
-    { key: 'weave',  label: 'Weave',  tool: 'paint',  hasColor: true },
-    { key: 'stitch', label: 'Stitch', tool: 'stitch', hasColor: true },
     { key: 'cloth',  label: 'Cloth',  tool: null,     hasColor: true },
     { key: 'cut',    label: 'Cut',    tool: 'erase',  hasColor: false },
+    { key: 'weave',  label: 'Weave',  tool: 'paint',  hasColor: true },
+    { key: 'stitch', label: 'Stitch', tool: 'stitch', hasColor: true },
   ];
   defs.forEach(({ key, label, tool, hasColor }) => {
     const wrap = document.createElement('div');
@@ -2735,9 +2736,15 @@ function initCustomColorPicker() {
 
   // Close on outside click (Cut has no popup, so it's not in this list —
   // clicking it should just close whatever popup happens to be open).
+  // Uses .contains() rather than direct equality since a click on the icon
+  // actually lands on the <svg>/<path> inside the button, not the button
+  // itself — reference equality was missing that and closing the popup
+  // here first, which made the button's own re-open logic fire right after
+  // (net effect: clicking the icon again looked like it did nothing).
   document.addEventListener('mousedown', e => {
-    const iconBtns = ['weave', 'stitch', 'cloth'].map(k => document.getElementById(`${k}-icon-btn`));
-    if (popup.classList.contains('on') && !popup.contains(e.target) && !iconBtns.includes(e.target)) {
+    const iconBtns = ['weave', 'stitch', 'cloth'].map(k => document.getElementById(`${k}-icon-btn`)).filter(Boolean);
+    const onIcon = iconBtns.some(btn => btn.contains(e.target));
+    if (popup.classList.contains('on') && !popup.contains(e.target) && !onIcon) {
       popup.classList.remove('on');
     }
   }, true);
