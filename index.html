@@ -283,6 +283,31 @@
     .logo-title { font-size: 28px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #ffffff; line-height: 1; }
     .logo-sub   { font-size: 28px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; line-height: 1; margin-top: 3px; }
 
+    /* hot tip panel */
+    .logo-wrap { position: relative; flex-shrink: 0; }
+    .logo-tip {
+      position: absolute; top: calc(100% + 10px); left: 0;
+      width: 272px; background: #161616; border: 1px solid #2a2a2a;
+      padding: 13px 15px 14px; z-index: 300;
+      opacity: 0; pointer-events: none;
+      transform: translateY(-4px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .logo-wrap:hover .logo-tip { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .logo-tip-eyebrow {
+      font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 8px;
+    }
+    .logo-tip-body {
+      font-size: 11px; color: #aaa; line-height: 1.65; margin-bottom: 10px;
+    }
+    .logo-tip-hint {
+      display: flex; align-items: flex-start; gap: 7px;
+      background: rgba(255,255,255,0.04); border-left: 2px solid var(--accent);
+      padding: 7px 9px; font-size: 11px; color: #ccc; line-height: 1.55;
+    }
+    .logo-tip-hint-icon { flex-shrink: 0; font-size: 12px; margin-top: 1px; }
+
     /* ── MOTIF PANEL (inline, right of flower button) ── */
     #motif-panel {
       display: flex; flex-direction: row; align-items: center; gap: 6px;
@@ -752,8 +777,18 @@
 
   <!-- TOOL PAGE HEADER -->
   <div class="page-header">
-    <div id="bar-logo" onclick="showStoryPage()" title="About Pixelkari" style="cursor:pointer;">
-      <div class="logo-title">Pixelkari</div>
+    <div class="logo-wrap">
+      <div id="bar-logo" onclick="showStoryPage()" title="About Pixelkari" style="cursor:pointer;">
+        <div class="logo-title">Pixelkari</div>
+      </div>
+      <div class="logo-tip">
+        <div class="logo-tip-eyebrow">✦ Hot Tip</div>
+        <p class="logo-tip-body">Like anything made by hand, this asks for patience — good work takes time. That's the point: to slow down, to count, to make something deliberately. Craft has always worked that way. So does this.</p>
+        <div class="logo-tip-hint">
+          <span class="logo-tip-hint-icon">💡</span>
+          <span>Start zoomed in to build a small motif, then slowly zoom out to see the full pattern come together.</span>
+        </div>
+      </div>
     </div>
     <div class="header-actions">
       <div class="feedback-group">
