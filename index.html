@@ -312,7 +312,7 @@
     .logo-tip-close:hover { color: #aaa; }
     .logo-tip-head { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
     .logo-tip-avatar-slot {
-      width: 34px; height: 34px; border-radius: 8px; background: #111;
+      width: 34px; height: 34px; border-radius: 8px; background: #3a3a3a;
       flex-shrink: 0; overflow: hidden; display: block;
     }
     .logo-tip-avatar-slot canvas { display: block; width: 100%; height: 100%; }
@@ -3160,12 +3160,12 @@ function copyMotifData() {
     .catch(() => showHint('Copy failed — open console and type: JSON.stringify(MOTIFS)'));
 }
 
-function _drawMotifThumb(motif, px) {
+function _drawMotifThumb(motif, px, bg = '#000000') {
   const tc = document.createElement('canvas');
   tc.width = px; tc.height = px;
   const tctx = tc.getContext('2d');
   const keys = Object.keys(motif.cells);
-  tctx.fillStyle = '#000000';
+  tctx.fillStyle = bg;
   tctx.fillRect(0, 0, px, px);
   if (keys.length) {
     const dcs = keys.map(k => +k.split(',')[0]);
@@ -3305,7 +3305,7 @@ function renderBilloAvatar() {
   if (!slot) return;
   const motif = MOTIFS.find(m => m.name === BILLO_MOTIF_NAME);
   if (!motif) return;
-  const canvas = _drawMotifThumb(motif, 34);
+  const canvas = _drawMotifThumb(motif, 34, '#3a3a3a');
   slot.innerHTML = '';
   slot.appendChild(canvas);
 }
