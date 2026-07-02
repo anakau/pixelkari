@@ -2504,6 +2504,7 @@ function setTool(id) {
   document.querySelectorAll('.tbtn[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === id));
   syncSpoolActiveState();
   setBilloMessage(id);
+  updateSymTips();
   const mc = document.getElementById('mc');
   if (mc && !S.spaceDown) mc.style.cursor = toolCursor();
 }
@@ -3088,12 +3089,24 @@ function setBase(hex) {
   render();
 }
 
+// The mirror/symmetry tooltip names whichever action is actually being
+// mirrored — weaving, stitching, or cutting — rather than always saying
+// "weaving" regardless of the active tool.
+function symTipLabel() {
+  if (S.tool === 'stitch') return 'Mirror stitching';
+  if (S.tool === 'erase')  return 'Mirror cutting';
+  return 'Mirror weaving';
+}
+function updateSymTips() {
+  document.querySelectorAll('.sym-tip').forEach(el => { el.textContent = symTipLabel(); });
+}
+
 function buildSym() {
   const el = document.getElementById('sym-group');
   SYMS.forEach(s => {
     const btn = document.createElement('button');
     btn.className = 'sym-btn' + (s.id === S.sym ? ' on' : '');
-    btn.innerHTML = s.svg + '<span class="sym-tip">Mirror weaving</span>';
+    btn.innerHTML = s.svg + `<span class="sym-tip">${symTipLabel()}</span>`;
     btn.addEventListener('click', () => {
       const wasOn = S.sym === s.id;
       S.sym = wasOn ? null : s.id;
