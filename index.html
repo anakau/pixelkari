@@ -3662,11 +3662,35 @@ function mirrorMotifCells(cells) {
   return next;
 }
 
+// Same transforms as rotateMotifCells/mirrorMotifCells, but for a saved
+// motif's stitch lines — points have no triangle orientation to remap, so
+// this is just the coordinate transform on its own.
+function rotateMotifLines(lines, deg) {
+  const steps = ((deg / 90) % 4 + 4) % 4;
+  if (!steps || !lines) return lines || [];
+  let cur = lines;
+  for (let s = 0; s < steps; s++) {
+    cur = cur.map(l => ({ ...l, points: l.points.map(p => ({ col: -p.row, row: p.col })) }));
+  }
+  return cur;
+}
+function mirrorMotifLines(lines) {
+  if (!lines) return [];
+  return lines.map(l => ({ ...l, points: l.points.map(p => ({ col: -p.col, row: p.row })) }));
+}
+
 function getActiveCells() {
   if (!S.activeMotif) return {};
   let cells = rotateMotifCells(S.activeMotif.cells, S.motifRotation);
   if (S.motifFlipH) cells = mirrorMotifCells(cells);
   return cells;
+}
+
+function getActiveLines() {
+  if (!S.activeMotif) return [];
+  let lines = rotateMotifLines(S.activeMotif.lines, S.motifRotation);
+  if (S.motifFlipH) lines = mirrorMotifLines(lines);
+  return lines;
 }
 
 function toggleMotifFlip() {
@@ -3701,10 +3725,10 @@ function cycleMotifRotation() {
 
 function clampMotifPos(col, row) {
   if (!S.activeMotif) return { col, row };
-  const cells = getActiveCells();
-  const keys = Object.keys(cells);
-  const dcs  = keys.map(k => +k.split(',')[0]);
-  const drs  = keys.map(k => +k.split(',')[1]);
+  const keys = Object.keys(getActiveCells());
+  const lines = getActiveLines();
+  const dcs = [...keys.map(k => +k.split(',')[0]), ...lines.flatMap(l => l.points.map(p => p.col))];
+  const drs = [...keys.map(k => +k.split(',')[1]), ...lines.flatMap(l => l.points.map(p => p.row))];
   col = Math.max(-Math.min(...dcs), Math.min(col, S.cols - 1 - Math.max(...dcs)));
   row = Math.max(-Math.min(...drs), Math.min(row, S.rows - 1 - Math.max(...drs)));
   return { col, row };
@@ -3731,11 +3755,15 @@ function selectMotif(motif) {
 function getMotifBounds() {
   if (!S.activeMotif) return { w: 1, h: 1 };
   const keys = Object.keys(getActiveCells());
+  const lines = getActiveLines();
   const dcs = keys.map(k => +k.split(',')[0]);
   const drs = keys.map(k => +k.split(',')[1]);
+  const lcs = lines.flatMap(l => l.points.map(p => p.col));
+  const lrs = lines.flatMap(l => l.points.map(p => p.row));
+  const allCs = [...dcs, ...lcs], allRs = [...drs, ...lrs];
   return {
-    w: Math.max(...dcs) - Math.min(...dcs) + 1,
-    h: Math.max(...drs) - Math.min(...drs) + 1,
+    w: Math.max(...allCs) - Math.min(...allCs) + 1,
+    h: Math.max(...allRs) - Math.min(...allRs) + 1,
   };
 }
 
@@ -3747,6 +3775,12 @@ function placeMotif(col, row) {
     const r = Math.round(row + +p[1]);
     if (c < 0 || c >= S.cols || r < 0 || r >= S.rows) continue;
     S.cells[`${c},${r},${p[2]}`] = color;
+  }
+  for (const line of getActiveLines()) {
+    const points = line.points.map(p => ({ col: Math.round(col + p.col), row: Math.round(row + p.row) }));
+    if (points.every(p => p.col >= 0 && p.col <= S.cols && p.row >= 0 && p.row <= S.rows)) {
+      S.lines.push({ points, color: line.color });
+    }
   }
 }
 
@@ -3792,6 +3826,19 @@ function drawGhost(col, row) {
     else if (tri==='b') { ctx.moveTo(x+CELL,y+CELL); ctx.lineTo(x,y+CELL);        ctx.lineTo(mx,my); }
     else                { ctx.moveTo(x,y+CELL);      ctx.lineTo(x,y);             ctx.lineTo(mx,my); }
     ctx.closePath(); ctx.fill();
+  }
+  for (const line of getActiveLines()) {
+    if (!line.points || line.points.length < 2) continue;
+    ctx.strokeStyle = line.color;
+    ctx.lineWidth = STITCH_WIDTH;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo((col + line.points[0].col) * CELL, (row + line.points[0].row) * CELL);
+    for (let i = 1; i < line.points.length; i++) {
+      ctx.lineTo((col + line.points[i].col) * CELL, (row + line.points[i].row) * CELL);
+    }
+    ctx.stroke();
   }
   ctx.globalAlpha = 1;
 }
