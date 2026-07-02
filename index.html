@@ -226,9 +226,7 @@
     .cp-value-row {
       display: flex; align-items: center; gap: 6px;
       background: #1c1c1c; border-radius: 6px; padding: 5px 7px;
-      transition: opacity 0.15s;
     }
-    .cp-value-row.dim { opacity: 0.32; pointer-events: none; }
     .cp-value-dot { width: 13px; height: 13px; border-radius: 4px; flex-shrink: 0; }
     .cp-value-lbl {
       font-size: 8px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
@@ -2977,15 +2975,15 @@ function initCustomColorPicker() {
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
   }
 
-  // Hex + RGB are always editable and always shown, but dimmed and
-  // inert on whichever pair the current canvas can't actually use —
-  // screen colours don't survive a print run, and Riso/CMYK values only
-  // mean something once you're printing.
+  // Hex + RGB only make sense on a screen canvas — screen colours don't
+  // survive a print run — and CMYK/Riso only mean something once you're
+  // printing, so each pair is swapped out entirely rather than shown
+  // dimmed and inert.
   function updateFormatAvailability() {
-    hexRow.classList.toggle('dim', S.paper);
-    rgbRow.classList.toggle('dim', S.paper);
-    cmykRow.classList.toggle('dim', !S.paper);
-    risoRow.classList.toggle('dim', !S.paper);
+    hexRow.style.display = S.paper ? 'none' : '';
+    rgbRow.style.display = S.paper ? 'none' : '';
+    cmykRow.style.display = S.paper ? '' : 'none';
+    risoRow.style.display = S.paper ? '' : 'none';
   }
 
   function updateValueDisplays(hex) {
