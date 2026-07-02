@@ -399,12 +399,12 @@
       letter-spacing: 0.08em; font-size: 9px; margin-bottom: 6px;
     }
     .logo-tip-body {
-      font-size: 13px; color: #E91E8C; line-height: 1.65; margin: 0;
+      font-size: 13px; color: var(--accent); line-height: 1.65; margin: 0;
     }
     .logo-tip-hint {
       display: flex; flex-direction: column; gap: 3px;
       background: #000; border: none; border-radius: 12px;
-      padding: 14px 16px 15px; font-size: 13px; color: #E91E8C; line-height: 1.55;
+      padding: 14px 16px 15px; font-size: 13px; color: #fff; line-height: 1.55;
     }
     .logo-tip-hint-label {
       color: #E91E8C; font-weight: 700; text-transform: uppercase;
@@ -1847,6 +1847,37 @@ function paint(col, row, tri) {
 // CANVAS EVENTS
 // ═══════════════════════════════════════════════════
 canvas.addEventListener('mousedown', e => {
+  // Capturing a region or stamping/erasing a selected motif always takes
+  // priority over a stale Stitch anchor — otherwise, if Stitch was the last
+  // tool used before selecting a motif, the click would set a new stitch
+  // anchor instead of placing the motif, and you'd have to switch tools
+  // first just to make stamping work again.
+  if (S.capturingMotif) {
+    e.preventDefault();
+    const {col, row} = triAt(e);
+    S.captureStart = {col, row};
+    S.captureEnd = {col, row};
+    S.captureDrawing = true;
+    drawCaptureOverlay();
+    return;
+  }
+  if (S.activeMotif) {
+    e.preventDefault();
+    let {col, row} = triAt(e);
+    ({ col, row } = clampMotifPos(col, row));
+    snap();
+    S.motifDrawing    = true;
+    S.stampOriginCol  = col;
+    S.stampOriginRow  = row;
+    S.motifBounds     = getMotifBounds();
+    S.stampedPositions = new Set([`${col},${row}`]);
+    S.lastStampI      = 0;
+    S.lastStampJ      = 0;
+    if (S.tool === 'erase') { eraseMotif(col, row); } else { placeMotif(col, row); }
+    render();
+    drawGhost(col, row);
+    return;
+  }
   if (S.tool === 'stitch') {
     e.preventDefault();
     const v = nearestVertex(e);
@@ -1879,32 +1910,6 @@ canvas.addEventListener('mousedown', e => {
     render();
     return;
   }
-  if (S.capturingMotif) {
-    e.preventDefault();
-    const {col, row} = triAt(e);
-    S.captureStart = {col, row};
-    S.captureEnd = {col, row};
-    S.captureDrawing = true;
-    drawCaptureOverlay();
-    return;
-  }
-  if (S.activeMotif) {
-    e.preventDefault();
-    let {col, row} = triAt(e);
-    ({ col, row } = clampMotifPos(col, row));
-    snap();
-    S.motifDrawing    = true;
-    S.stampOriginCol  = col;
-    S.stampOriginRow  = row;
-    S.motifBounds     = getMotifBounds();
-    S.stampedPositions = new Set([`${col},${row}`]);
-    S.lastStampI      = 0;
-    S.lastStampJ      = 0;
-    if (S.tool === 'erase') { eraseMotif(col, row); } else { placeMotif(col, row); }
-    render();
-    drawGhost(col, row);
-    return;
-  }
   if (S.spaceDown || e.button === 1 || S.tool === 'pan') {
     e.preventDefault();
     S.panning  = true;
@@ -1925,43 +1930,8 @@ canvas.addEventListener('mousedown', e => {
 });
 
 canvas.addEventListener('mousemove', e => {
-  if (S.tool === 'stitch') {
-    if (!S.stitchAnchor) return;
-    // A real hand's mouse movement is never a perfectly straight line — even
-    // along an intended diagonal, it wobbles sub-cell amounts constantly.
-    // Reacting to every mousemove tick turned that wobble into its own
-    // zigzag/backtrack step (diagonals in particular felt impossible to
-    // draw cleanly). Only sampling once the cursor has actually travelled a
-    // real distance since the last sample filters that out while still
-    // following genuine curves and corners.
-    const rect = canvas.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / S.zoom;
-    const py = (e.clientY - rect.top) / S.zoom;
-    if (S._stitchLastPx != null) {
-      const moved = Math.hypot(px - S._stitchLastPx, py - S._stitchLastPy);
-      if (moved < CELL * 0.9) return;
-    }
-    S._stitchLastPx = px; S._stitchLastPy = py;
-    const v = nearestVertex(e);
-    const last = S.stitchPath[S.stitchPath.length - 1];
-    const prev = S.stitchPath[S.stitchPath.length - 2];
-    if (v.col === last.col && v.row === last.row) {
-      // no movement to a new vertex — nothing to do
-    } else if (prev && v.col === prev.col && v.row === prev.row) {
-      // Snapping straight back to the vertex just visited is an overshoot,
-      // not a new segment — undo the last step instead of recording it.
-      S.stitchPath.pop();
-    } else {
-      // Extends the path to wherever the cursor actually moved, not just
-      // the straight/shortest route from the anchor — each new step is
-      // still snapped via kingPath so it hugs real grid lines, but the
-      // full route follows the true movement between clicks.
-      S.stitchPath.push(...kingPath(last.col, last.row, v.col, v.row).slice(1));
-    }
-    S.stitchPreview = v;
-    render();
-    return;
-  }
+  // Same priority order as mousedown — capture/motif-stamping always wins
+  // over a stale Stitch anchor.
   if (S.capturingMotif) {
     if (!S.captureDrawing) return;
     const {col, row} = triAt(e);
@@ -2003,6 +1973,43 @@ canvas.addEventListener('mousemove', e => {
       S.ghostCol = col; S.ghostRow = row;
       drawGhost(col, row);
     }
+    return;
+  }
+  if (S.tool === 'stitch') {
+    if (!S.stitchAnchor) return;
+    // A real hand's mouse movement is never a perfectly straight line — even
+    // along an intended diagonal, it wobbles sub-cell amounts constantly.
+    // Reacting to every mousemove tick turned that wobble into its own
+    // zigzag/backtrack step (diagonals in particular felt impossible to
+    // draw cleanly). Only sampling once the cursor has actually travelled a
+    // real distance since the last sample filters that out while still
+    // following genuine curves and corners.
+    const rect = canvas.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / S.zoom;
+    const py = (e.clientY - rect.top) / S.zoom;
+    if (S._stitchLastPx != null) {
+      const moved = Math.hypot(px - S._stitchLastPx, py - S._stitchLastPy);
+      if (moved < CELL * 0.9) return;
+    }
+    S._stitchLastPx = px; S._stitchLastPy = py;
+    const v = nearestVertex(e);
+    const last = S.stitchPath[S.stitchPath.length - 1];
+    const prev = S.stitchPath[S.stitchPath.length - 2];
+    if (v.col === last.col && v.row === last.row) {
+      // no movement to a new vertex — nothing to do
+    } else if (prev && v.col === prev.col && v.row === prev.row) {
+      // Snapping straight back to the vertex just visited is an overshoot,
+      // not a new segment — undo the last step instead of recording it.
+      S.stitchPath.pop();
+    } else {
+      // Extends the path to wherever the cursor actually moved, not just
+      // the straight/shortest route from the anchor — each new step is
+      // still snapped via kingPath so it hugs real grid lines, but the
+      // full route follows the true movement between clicks.
+      S.stitchPath.push(...kingPath(last.col, last.row, v.col, v.row).slice(1));
+    }
+    S.stitchPreview = v;
+    render();
     return;
   }
   if (!S.drawing) return;
@@ -4078,12 +4085,15 @@ function spawnBilloConfetti() {
     const burstDy = Math.sin(angle) * burstDist;
     const landDx = burstDx + (Math.random() - 0.5) * 30; // slight drift while falling
     const rot = (Math.random() - 0.5) * 500;
-    const duration = 1500 + Math.random() * 600;
+    const duration = 1700 + Math.random() * 600;
+    // Lands by the midpoint, then holds — fully opaque and motionless — for
+    // a full third of the animation before it even starts to fade, so the
+    // fade is unmistakably a separate, later beat from touching down.
     const anim = piece.animate([
       { transform: 'translate(-50%,-50%) translate(0,0) rotate(0deg) scale(0.6)', opacity: 1, offset: 0, easing: 'ease-out' },
-      { transform: `translate(-50%,-50%) translate(${burstDx.toFixed(1)}px, ${burstDy.toFixed(1)}px) rotate(${(rot*0.4).toFixed(0)}deg) scale(1)`, opacity: 1, offset: 0.25, easing: 'cubic-bezier(.55,0,1,.45)' },
-      { transform: `translate(-50%,-50%) translate(${landDx.toFixed(1)}px, ${groundDy.toFixed(1)}px) rotate(${rot.toFixed(0)}deg) scale(0.9)`, opacity: 1, offset: 0.7, easing: 'ease-out' },
-      { transform: `translate(-50%,-50%) translate(${landDx.toFixed(1)}px, ${groundDy.toFixed(1)}px) rotate(${rot.toFixed(0)}deg) scale(0.85)`, opacity: 1, offset: 0.82 },
+      { transform: `translate(-50%,-50%) translate(${burstDx.toFixed(1)}px, ${burstDy.toFixed(1)}px) rotate(${(rot*0.4).toFixed(0)}deg) scale(1)`, opacity: 1, offset: 0.22, easing: 'cubic-bezier(.55,0,1,.45)' },
+      { transform: `translate(-50%,-50%) translate(${landDx.toFixed(1)}px, ${groundDy.toFixed(1)}px) rotate(${rot.toFixed(0)}deg) scale(0.9)`, opacity: 1, offset: 0.45, easing: 'linear' },
+      { transform: `translate(-50%,-50%) translate(${landDx.toFixed(1)}px, ${groundDy.toFixed(1)}px) rotate(${rot.toFixed(0)}deg) scale(0.88)`, opacity: 1, offset: 0.78, easing: 'ease-in' },
       { transform: `translate(-50%,-50%) translate(${landDx.toFixed(1)}px, ${groundDy.toFixed(1)}px) rotate(${rot.toFixed(0)}deg) scale(0.8)`, opacity: 0, offset: 1 },
     ], { duration });
     anim.onfinish = () => piece.remove();
