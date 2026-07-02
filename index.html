@@ -201,6 +201,13 @@
       width: 344px;
     }
     #cp-popup.on { display: flex; }
+    .cp-close {
+      position: absolute; top: 8px; right: 10px;
+      background: none; border: none; color: #444; cursor: pointer;
+      font-size: 14px; line-height: 1; padding: 2px 5px;
+      transition: color 0.12s;
+    }
+    .cp-close:hover { color: #aaa; }
     .cp-left  { display: flex; flex-direction: column; gap: 8px; width: 148px; flex-shrink: 0; }
     .cp-right { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
     #cp-spectrum { display: block; cursor: crosshair; width: 100%; height: 152px; border-radius: 6px; }
@@ -2759,6 +2766,13 @@ function initCustomColorPicker() {
   // spectrum picker on the right (see .cp-left / .cp-right in the CSS).
   const popup = document.createElement('div');
   popup.id = 'cp-popup';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'cp-close';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.textContent = '✕';
+  closeBtn.addEventListener('click', () => popup.classList.remove('on'));
+  popup.appendChild(closeBtn);
 
   const left = document.createElement('div');
   left.className = 'cp-left';
