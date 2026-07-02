@@ -412,8 +412,8 @@
     .motif-rot-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
     .motif-rot-btn.active { background: var(--accent); color: #111; }
     /* Motif Maker */
-    .mm-box { background: #181818; border: 1px solid #2c2c2c; padding: 0; width: 380px; }
-    .mm-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #222; }
+    .mm-box { background: #000; border: none; border-radius: 12px; padding: 0; width: 380px; overflow: hidden; }
+    .mm-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
     .mm-title { font-size: 11px; font-weight: 400; letter-spacing: 0.01em; color: #aaa; }
     .mm-canvas-wrap { padding: 16px 16px 0; display: flex; justify-content: center; }
     #mm-canvas { display: block; cursor: crosshair; }
@@ -439,8 +439,8 @@
     }
     body.capture-mode .capture-banner { display: block; }
     /* Capture preview */
-    .cp-box { background: #181818; border: 1px solid #2c2c2c; padding: 0; min-width: 260px; }
-    .cp-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #222; }
+    .cp-box { background: #000; border: none; border-radius: 12px; padding: 0; min-width: 260px; overflow: hidden; }
+    .cp-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
     .cp-title { font-size: 11px; font-weight: 400; letter-spacing: 0.01em; color: #aaa; }
     .cp-preview { padding: 20px; display: flex; justify-content: center; align-items: center; background: #111; min-height: 120px; }
     #capture-preview-canvas { display: block; image-rendering: pixelated; }
@@ -498,7 +498,7 @@
     .view-all-tile:hover .va-count { color: #aaa; }
     /* ── MOTIF LIBRARY MODAL ── */
     .lib-box {
-      background: #141414; border: 1px solid #2a2a2a;
+      background: #000; border: none; border-radius: 12px;
       width: min(680px, 92vw); max-height: 86vh;
       display: flex; flex-direction: column; overflow: hidden;
     }
