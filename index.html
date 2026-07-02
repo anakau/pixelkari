@@ -1749,7 +1749,16 @@ canvas.addEventListener('mousedown', e => {
       S.stitchAnchor = v;
       S.stitchPreview = v;
       S.stitchPath = [v];
+      S._stitchLastPx = null;
     } else {
+      // The drag's distance-based sampling (see mousemove) can leave the
+      // last recorded point short of the actual click position, if the
+      // final movement before clicking didn't cross the sample threshold —
+      // extend to the exact click point now so the endpoint is never off.
+      const lastPt = S.stitchPath[S.stitchPath.length - 1];
+      if (v.col !== lastPt.col || v.row !== lastPt.row) {
+        S.stitchPath.push(...kingPath(lastPt.col, lastPt.row, v.col, v.row).slice(1));
+      }
       if (S.stitchPath.length > 1) {
         snap();
         S.lines.push({ points: S.stitchPath, color: S.stitchColor });
@@ -1805,9 +1814,31 @@ canvas.addEventListener('mousedown', e => {
 canvas.addEventListener('mousemove', e => {
   if (S.tool === 'stitch') {
     if (!S.stitchAnchor) return;
+    // A real hand's mouse movement is never a perfectly straight line — even
+    // along an intended diagonal, it wobbles sub-cell amounts constantly.
+    // Reacting to every mousemove tick turned that wobble into its own
+    // zigzag/backtrack step (diagonals in particular felt impossible to
+    // draw cleanly). Only sampling once the cursor has actually travelled a
+    // real distance since the last sample filters that out while still
+    // following genuine curves and corners.
+    const rect = canvas.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / S.zoom;
+    const py = (e.clientY - rect.top) / S.zoom;
+    if (S._stitchLastPx != null) {
+      const moved = Math.hypot(px - S._stitchLastPx, py - S._stitchLastPy);
+      if (moved < CELL * 0.9) return;
+    }
+    S._stitchLastPx = px; S._stitchLastPy = py;
     const v = nearestVertex(e);
     const last = S.stitchPath[S.stitchPath.length - 1];
-    if (v.col !== last.col || v.row !== last.row) {
+    const prev = S.stitchPath[S.stitchPath.length - 2];
+    if (v.col === last.col && v.row === last.row) {
+      // no movement to a new vertex — nothing to do
+    } else if (prev && v.col === prev.col && v.row === prev.row) {
+      // Snapping straight back to the vertex just visited is an overshoot,
+      // not a new segment — undo the last step instead of recording it.
+      S.stitchPath.pop();
+    } else {
       // Extends the path to wherever the cursor actually moved, not just
       // the straight/shortest route from the anchor — each new step is
       // still snapped via kingPath so it hugs real grid lines, but the
