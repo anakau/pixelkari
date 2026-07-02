@@ -2704,7 +2704,7 @@ function _iconSvg(key, hex) {
   // since the source .cls-1 { fill-rule: evenodd } style block gets
   // stripped above — without it, any cutout shapes in the icon would
   // render filled solid instead of as a hole.
-  const outline = _isTooDarkForBar(hex) ? ' stroke="rgba(255,255,255,0.4)" stroke-width="1.5"' : '';
+  const outline = _isTooDarkForBar(hex) ? ' stroke="rgba(255,255,255,0.4)" stroke-width="0.75"' : '';
   return tpl
     .replace('<svg', `<svg fill="${hex}" height="${TOOL_ICON_HEIGHT}"`)
     .replace('<path', `<path fill-rule="evenodd"${outline}`);
