@@ -261,13 +261,23 @@
       white-space: nowrap; pointer-events: none;
     }
 
-    /* big tool icons — weave / stitch / cloth / cut */
+    /* big tool icons — weave / stitch / cloth / cut. Cut/Weave/Stitch sit at
+       a resting tilt (like tools scattered on a table); Cloth stays upright
+       since it's a colour launcher, not a tool. Hovering nudges the tilt
+       further to read as interactive; selecting lifts the icon the same
+       way it already did, keeping its resting tilt while raised. */
     .tool-icon-btn {
+      --tilt: 0deg; --tilt-hover: -10deg;
       background: none; border: none; padding: 0; line-height: 0; cursor: pointer;
+      transform: rotate(var(--tilt));
       transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), filter 0.15s;
     }
-    .tool-icon-btn:hover { transform: translateY(-4px); }
-    .tool-icon-btn.on { transform: translateY(-6px); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7)); }
+    #weave-icon-btn  { --tilt: -6deg; }
+    #stitch-icon-btn { --tilt: 6deg; }
+    #cut-icon-btn    { --tilt: -5deg; }
+    .tool-icon-btn:hover { transform: rotate(calc(var(--tilt) + var(--tilt-hover))) translateY(-4px); }
+    .tool-icon-btn.on { transform: rotate(var(--tilt)) translateY(-6px); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7)); }
+    .tool-icon-btn.on:hover { transform: rotate(calc(var(--tilt) + var(--tilt-hover))) translateY(-6px); }
     .tool-icon-btn svg { display: block; }
 
     /* Cloth's popup swatches keep the season grouping (unlike the flat
@@ -2642,7 +2652,7 @@ function setTool(id) {
 
 // ── Big tool icons: weave / stitch / cloth / cut ──
 const TOOL_ICON_FILES = { weave: 'weave.svg', stitch: 'stitch.svg', cloth: 'cloth.svg', cut: 'cut.svg' };
-const TOOL_ICON_HEIGHT = 56; // "nice big icons" — width scales per each SVG's own aspect ratio
+const TOOL_ICON_HEIGHT = 68; // "nice big icons" — width scales per each SVG's own aspect ratio
 let TOOL_ICON_SVG = {};
 
 async function loadToolIcons() {
