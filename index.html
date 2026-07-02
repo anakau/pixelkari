@@ -976,7 +976,7 @@
       <div class="nav-block">
         <!-- Top row: canvas presets -->
         <div class="nav-row">
-          <div class="tip-host" style="flex:1 1 0; min-width:0;">
+          <div class="tip-host" id="canvas-size-host" style="flex:1 1 0; min-width:0;">
             <select class="tbtn preset-select" id="preset-select" onchange="newGridPreset(this.value)">
               <option value="custom">⬜ Custom</option>
               <option value="phone">📱 Phone</option>
@@ -2680,6 +2680,15 @@ async function loadToolIcons() {
   });
 }
 
+// A colour close to the toolbar's own near-black background (e.g. Barsat's
+// #1A1A1A cloth base, right next to --bar's #181818) makes a solid-filled
+// icon disappear entirely. Below this luminance, add a faint outline so the
+// silhouette still reads against the bar.
+function _isTooDarkForBar(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return (0.299*r + 0.587*g + 0.114*b) < 40;
+}
+
 function _iconSvg(key, hex) {
   const tpl = TOOL_ICON_SVG[key];
   if (!tpl) return '';
@@ -2688,9 +2697,10 @@ function _iconSvg(key, hex) {
   // since the source .cls-1 { fill-rule: evenodd } style block gets
   // stripped above — without it, any cutout shapes in the icon would
   // render filled solid instead of as a hole.
+  const outline = _isTooDarkForBar(hex) ? ' stroke="rgba(255,255,255,0.4)" stroke-width="1.5"' : '';
   return tpl
     .replace('<svg', `<svg fill="${hex}" height="${TOOL_ICON_HEIGHT}"`)
-    .replace('<path', '<path fill-rule="evenodd"');
+    .replace('<path', `<path fill-rule="evenodd"${outline}`);
 }
 
 // Refresh a tool icon to show its current live colour (Cut has none, so
@@ -3879,6 +3889,7 @@ function buildMotifPal() {
   tile.className = 'view-all-tile';
   tile.title = 'View all motifs';
   tile.onclick = showMotifLibrary;
+  tile.addEventListener('mouseenter', () => setBilloMessage('motifLibrary'));
   const extra = MOTIFS.length > 2 ? `+${MOTIFS.length - 2}` : '';
   tile.innerHTML = `
     <div class="va-frame">
@@ -4073,16 +4084,42 @@ function pickBilloFact() {
 // Bottom of the bubble — an actual how-to-use-it tip for this tool in
 // Pixelkari. Stays tied to the active tool, unlike the fact above.
 const BILLO_TIPS = {
-  paint:  `Click and drag across triangles to fill them with your selected thread colour.`,
-  stitch: `Click to start a stitch, move the cursor along the path you want, then click again to finish — it follows your movement, not a shortcut to the endpoint.`,
-  erase:  `Click and drag over painted triangles to remove them. The scissors' upper tip is the exact point that cuts.`,
-  cloth:  `Pick your base tone before weaving — it's easier to choose thread colours against a set fabric than to change the fabric after.`,
+  paint:  `The main tool — fills the grid to build your motifs. Click or drag to fill triangles with your selected thread colour.`,
+  stitch: `Use stitch for outlines or finer details the fill can't capture. Click to start, then just move your cursor — no need to drag — and click again to finish.`,
+  erase:  `Click and drag over painted triangles to remove them — aim with the upper blade of the scissors, the exact point that cuts.`,
+  cloth:  `Base colours are grouped by season, each pairing a fabric tone with the threads that suit it. Pick one to set the mood for the whole piece.`,
+  canvas: `Choose your canvas size first — it can't be changed later. Pixelkari supports both digital designs and print, with riso colour separations included at export.`,
+  border: `Traditional phulkaris often framed their pattern with a bordering motif. Keep that format, or turn it off and let your design run edge to edge.`,
+  mirror: `Phulkaris were rarely perfectly symmetrical by hand — the mirror tool makes it easy to build even, uniform patterns when that's what you want.`,
+  motifCreate:  `Paint a design on the canvas, then click Create Motif to save it. Pick it from the library to stamp it anywhere — click to place, drag to tile.`,
+  motifLibrary: `Motifs you create are saved right in your browser — no account needed. Just know that clearing your browser data will clear them too.`,
+  zoom: `It's easier to start zoomed in — build a small motif first, then zoom out to watch the full pattern come together.`,
 };
 
 function setBilloMessage(key) {
   const tipEl = document.getElementById('billo-tip');
   const tip = BILLO_TIPS[key];
   if (tipEl && tip) tipEl.textContent = tip;
+}
+
+// Beyond the 4 drawing tools (wired via setTool), a handful of other
+// controls get their own Tool Tip on hover — canvas size, border, mirror,
+// Create Motif, and zoom are all static markup so this only needs to run
+// once. The "view all motifs" tile is rebuilt every buildMotifPal() call,
+// so it's wired at creation time there instead (see buildMotifPal).
+function wireBilloContextTips() {
+  const hoverMap = [
+    ['canvas-size-host', 'canvas'],
+    ['tog-border',       'border'],
+    ['sym-group',        'mirror'],
+    ['motif-btn',         'motifCreate'],
+  ];
+  hoverMap.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('mouseenter', () => setBilloMessage(key));
+  });
+  const zoomRow = document.querySelector('.page-zoom-row');
+  if (zoomRow) zoomRow.addEventListener('mouseenter', () => setBilloMessage('zoom'));
 }
 
 // ═══════════════════════════════════════════════════
@@ -4094,6 +4131,7 @@ buildMotifPal();
 renderBilloAvatar();
 initBilloEyes();
 pickBilloFact();
+wireBilloContextTips();
 initBubbleVisibility();
 initCustomColorPicker();
 initCanvas();
