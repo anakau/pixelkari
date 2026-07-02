@@ -1509,7 +1509,9 @@ function _doRender() {
   // stitch lines
   for (const line of S.lines) drawLine(line);
   if (S.stitchAnchor && S.stitchPath) {
-    drawLine({ points: S.stitchPath, color: S.stitchColor }, ctx, true);
+    symPaths(S.stitchPath).forEach(pts => {
+      drawLine({ points: pts, color: S.stitchColor }, ctx, true);
+    });
   }
 
   if (S.grid) drawGrid();
@@ -1650,6 +1652,81 @@ function kingPath(c0, r0, c1, r1) {
   return path;
 }
 
+// Mirrors a whole stitch path through the active symmetry, same as symTris()
+// does per-triangle for Weave/Cut — but grid VERTICES span 0..S.cols /
+// 0..S.rows (one more than cell indices), so the mirror centre is S.cols/2,
+// not symTris' (S.cols-1)/2. Returns an array of point-arrays (the original
+// path plus one per mirrored copy); a copy is skipped if any of its points
+// would land outside the canvas.
+function symPaths(points) {
+  const cx = S.cols / 2, cy = S.rows / 2;
+  const inBounds = (c, r) => c >= 0 && c <= S.cols && r >= 0 && r <= S.rows;
+  const variants = [points];
+  const addVariant = fn => {
+    const mapped = points.map(p => fn(p.col, p.row));
+    if (mapped.every(p => inBounds(p.col, p.row))) variants.push(mapped);
+  };
+  if (S.sym === 'h' || S.sym === '4' || S.sym === '8') addVariant((c, r) => ({ col: 2*cx - c, row: r }));
+  if (S.sym === 'v' || S.sym === '4' || S.sym === '8') addVariant((c, r) => ({ col: c, row: 2*cy - r }));
+  if (S.sym === '4' || S.sym === '8')                  addVariant((c, r) => ({ col: 2*cx - c, row: 2*cy - r }));
+  if (S.sym === '8') {
+    addVariant((c, r) => ({ col: cx + (r-cy), row: cy + (c-cx) }));
+    addVariant((c, r) => ({ col: cx - (r-cy), row: cy + (c-cx) }));
+    addVariant((c, r) => ({ col: cx + (r-cy), row: cy - (c-cx) }));
+    addVariant((c, r) => ({ col: cx - (r-cy), row: cy - (c-cx) }));
+  }
+  return variants;
+}
+
+// Same mirroring, but for a single raw pixel position rather than a whole
+// vertex path — used to hit-test Cut against a stitch line's mirrored
+// copies too, without needing to snap the cursor to a grid vertex first.
+function symPixelPositions(px, py) {
+  const cx = (S.cols * CELL) / 2, cy = (S.rows * CELL) / 2;
+  const dx = px - cx, dy = py - cy;
+  const res = [{ x: px, y: py }];
+  if (S.sym === 'h' || S.sym === '4' || S.sym === '8') res.push({ x: cx-dx, y: py });
+  if (S.sym === 'v' || S.sym === '4' || S.sym === '8') res.push({ x: px, y: cy-dy });
+  if (S.sym === '4' || S.sym === '8')                  res.push({ x: cx-dx, y: cy-dy });
+  if (S.sym === '8') {
+    res.push({ x: cx+dy, y: cy+dx });
+    res.push({ x: cx-dy, y: cy+dx });
+    res.push({ x: cx+dy, y: cy-dx });
+    res.push({ x: cx-dy, y: cy-dx });
+  }
+  return res;
+}
+
+function distToSegment(px, py, x1, y1, x2, y2) {
+  const dx = x2-x1, dy = y2-y1;
+  const lenSq = dx*dx + dy*dy;
+  let t = lenSq === 0 ? 0 : ((px-x1)*dx + (py-y1)*dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t*dx), py - (y1 + t*dy));
+}
+
+// Cut erasing a stitch: removes any line passing within a few px of the
+// cursor (or, under mirror symmetry, within a few px of any of its
+// mirrored positions) — same reach as the stitch line's own drawn width.
+const STITCH_ERASE_RADIUS = 6;
+function eraseStitchesNear(px, py) {
+  const positions = symPixelPositions(px, py);
+  let erased = false;
+  for (let i = S.lines.length - 1; i >= 0; i--) {
+    const pts = S.lines[i].points;
+    const hit = positions.some(({x, y}) => {
+      for (let j = 0; j < pts.length - 1; j++) {
+        const x1 = pts[j].col*CELL, y1 = pts[j].row*CELL;
+        const x2 = pts[j+1].col*CELL, y2 = pts[j+1].row*CELL;
+        if (distToSegment(x, y, x1, y1, x2, y2) <= STITCH_ERASE_RADIUS) return true;
+      }
+      return false;
+    });
+    if (hit) { S.lines.splice(i, 1); erased = true; }
+  }
+  return erased;
+}
+
 function drawTriangle(c, r, tri, color, gctx = ctx) {
   const x = c * CELL, y = r * CELL;
   const mx = x + CELL / 2, my = y + CELL / 2;
@@ -1761,7 +1838,11 @@ canvas.addEventListener('mousedown', e => {
       }
       if (S.stitchPath.length > 1) {
         snap();
-        S.lines.push({ points: S.stitchPath, color: S.stitchColor });
+        // Mirrors the stitch the same way symTris() mirrors a Weave/Cut
+        // stroke — one line per active symmetry copy, same colour.
+        symPaths(S.stitchPath).forEach(pts => {
+          S.lines.push({ points: pts, color: S.stitchColor });
+        });
       }
       S.stitchAnchor = null;
       S.stitchPreview = null;
@@ -1808,6 +1889,10 @@ canvas.addEventListener('mousedown', e => {
   const {col, row, tri} = triAt(e);
   S.lastCell = {col, row, tri};
   paint(col, row, tri);
+  if (S.tool === 'erase') {
+    const rect = canvas.getBoundingClientRect();
+    eraseStitchesNear((e.clientX - rect.left) / S.zoom, (e.clientY - rect.top) / S.zoom);
+  }
   render();
 });
 
@@ -1893,6 +1978,13 @@ canvas.addEventListener('mousemove', e => {
     return;
   }
   if (!S.drawing) return;
+  if (S.tool === 'erase') {
+    // Checked on every move (not just when the triangle cell changes) since
+    // a stitch line can pass through a cell without the drag ever landing
+    // exactly on one of its triangles.
+    const rect = canvas.getBoundingClientRect();
+    if (eraseStitchesNear((e.clientX - rect.left) / S.zoom, (e.clientY - rect.top) / S.zoom)) render();
+  }
   const {col, row, tri} = triAt(e);
   if (S.lastCell?.col === col && S.lastCell?.row === row && S.lastCell?.tri === tri) return;
   S.lastCell = {col, row, tri};
