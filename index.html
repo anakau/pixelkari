@@ -885,7 +885,7 @@
         <span class="logo-tip-avatar-slot" id="billo-avatar-slot"></span>
         <div class="logo-tip" id="logo-tip">
           <button class="logo-tip-close" onclick="setBubbleHidden(true)" aria-label="Dismiss">✕</button>
-          <p class="logo-tip-body" id="billo-message">Phulkari means "flower work." Its floss-silk thread, called pat, was traditionally dyed in small batches — so no two skeins of the same colour ever quite matched.</p>
+          <p class="logo-tip-body" id="billo-message">Phulkari is stitched onto khaddar, a rough, hand-spun cotton cloth. The weave is loose enough that a woman could count individual threads from the back of the fabric and build her pattern without ever sketching it or seeing the front until she was done.</p>
           <div class="logo-tip-hint">
             <span class="logo-tip-hint-label">Tool Tip</span>
             <span id="billo-tip">Click and drag across triangles to fill them with your selected thread colour.</span>
@@ -3992,22 +3992,41 @@ function initBilloEyes() {
   slot.addEventListener('click', () => {
     billoEyesClosed = !billoEyesClosed;
     renderBilloAvatar();
+    pickBilloFact();
     const bubble = document.getElementById('logo-tip');
     setBubbleHidden(bubble ? !bubble.classList.contains('hidden') : false);
   });
 }
 
-// Top of Billo's bubble — a historic/cultural fact about Phulkari tied to
-// the active tool. PLACEHOLDER COPY: swap these for the real facts once
-// they're supplied.
-const BILLO_FACTS = {
-  paint:  `Phulkari means "flower work." Its floss-silk thread, called pat, was traditionally dyed in small batches — so no two skeins of the same colour ever quite matched.`,
-  stitch: `Traditional Phulkari uses a single stitch — the darn stitch — worked from the back of the cloth, so the embroiderer builds the whole pattern without ever seeing its front.`,
-  erase:  `A clean unpick was its own skill — pull too fast and you'd drag the coarse khaddar weave out of shape along with the thread.`,
-  cloth:  `The base fabric, khaddar, was hand-spun, hand-woven cotton — its coarse, countable weave is what let the darn stitch stay so precise.`,
-};
+// Top of Billo's bubble — a historic/cultural fact about Phulkari. Not tied
+// to the active tool at all: it's a flat pool, and clicking Billo (see
+// initBilloEyes) picks a new one at random each time.
+const BILLO_FACTS = [
+  `Phulkari is stitched onto khaddar, a rough, hand-spun cotton cloth. The weave is loose enough that a woman could count individual threads from the back of the fabric and build her pattern without ever sketching it or seeing the front until she was done.`,
+  `When the embroidery gets dense enough to cover the entire cloth, leaving no bare fabric visible, it's no longer called Phulkari — it gets a new name: Bagh, meaning garden.`,
+  `Phulkari was never made to sell. A mother would start stitching the day her daughter was born, and the piece wasn't finished until that daughter's wedding, sometimes twenty years later. Decades of one woman's life went into a single cloth.`,
+  `Large Phulkari pieces were often stitched by more than one woman, each working her own section from memory, with no way to check her count against anyone else's. The small mismatches in the final pattern weren't mistakes — they were proof more than one pair of hands made it.`,
+  `In Punjabi tradition, a maternal grandmother would begin stitching a cloth the moment her granddaughter was born. She'd finish it and hand it over herself, decades later, at the girl's final ritual bath before her wedding — one woman skipping a generation to reach another.`,
+  `Under British colonial rule in Punjab, women embroidered scenes from daily life onto their cloth — farming, festivals, but also trains and British officers on horseback. The same railways that were displacing people and reshaping the local economy ended up stitched into family heirlooms.`,
+  `The word Phulkari breaks into two parts: phul, meaning flower, and kari, meaning work. Flower work — that's the entire meaning of the name.`,
+  `Punjab once had more than fifty distinct named styles of Phulkari embroidery. Today, only a handful are still practiced. The craft is now legally protected under a Geographical Indication, meaning the government had to step in to define what's allowed to be called authentic Phulkari.`,
+  `The silk thread traditionally used in Phulkari, called pat, wasn't sourced locally. It was imported from China, Bengal, or Afghanistan for its shine — even this quintessentially regional craft depended on imported material.`,
+  `Women didn't draw from any external design source — no pattern books, no trade influence. They stitched what was directly in front of them: vegetables from their kitchen, crops from their fields, objects from their own household.`,
+  `Nothing was ever sketched onto the cloth beforehand. A woman held the entire finished pattern in her head, then stitched it from the back of the fabric, counting threads one by one, building a flower she wouldn't actually see until the piece was turned over and complete.`,
+  `Most Phulkari motifs came from daily domestic life: food (bitter gourd, cauliflower, chilli), animals (peacocks, elephants, even rats), household objects (rolling pins, brass pitchers, jewellery stitched in yellow thread to imitate gold). One category broke from this entirely — a style called Sainchi, which stitched trains and colonial officers instead of flowers, effectively a visual record of what was actually happening in the village at the time.`,
+];
+let _billoFactIdx = -1;
+function pickBilloFact() {
+  const el = document.getElementById('billo-message');
+  if (!el || !BILLO_FACTS.length) return;
+  let i;
+  do { i = Math.floor(Math.random() * BILLO_FACTS.length); } while (BILLO_FACTS.length > 1 && i === _billoFactIdx);
+  _billoFactIdx = i;
+  el.textContent = BILLO_FACTS[i];
+}
 
-// Bottom of the bubble — an actual how-to-use-it tip for this tool in Pixelkari.
+// Bottom of the bubble — an actual how-to-use-it tip for this tool in
+// Pixelkari. Stays tied to the active tool, unlike the fact above.
 const BILLO_TIPS = {
   paint:  `Click and drag across triangles to fill them with your selected thread colour.`,
   stitch: `Click to start a stitch, move the cursor along the path you want, then click again to finish — it follows your movement, not a shortcut to the endpoint.`,
@@ -4016,11 +4035,8 @@ const BILLO_TIPS = {
 };
 
 function setBilloMessage(key) {
-  const factEl = document.getElementById('billo-message');
-  const tipEl  = document.getElementById('billo-tip');
-  const fact = BILLO_FACTS[key];
-  const tip  = BILLO_TIPS[key];
-  if (factEl && fact) factEl.textContent = fact;
+  const tipEl = document.getElementById('billo-tip');
+  const tip = BILLO_TIPS[key];
   if (tipEl && tip) tipEl.textContent = tip;
 }
 
@@ -4032,6 +4048,7 @@ buildSym();
 buildMotifPal();
 renderBilloAvatar();
 initBilloEyes();
+pickBilloFact();
 initBubbleVisibility();
 initCustomColorPicker();
 initCanvas();
