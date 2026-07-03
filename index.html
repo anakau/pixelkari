@@ -2077,9 +2077,20 @@ document.getElementById('canvas-wrap').addEventListener('wheel', e => {
   e.preventDefault();
   const delta = e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.001);
   const step = Math.max(-0.5, Math.min(0.5, delta * 2));
-  S.zoom = Math.max(0.25, Math.min(4, +(S.zoom + step).toFixed(2)));
-  applyTransform(false);
-  document.getElementById('zoom-lbl').textContent = Math.round(S.zoom * 100) + '%';
+  const oldZoom = S.zoom;
+  const newZoom = Math.max(0.25, Math.min(4, +(S.zoom + step).toFixed(2)));
+  if (newZoom !== oldZoom) {
+    const wrap = document.getElementById('canvas-wrap');
+    const rect = wrap.getBoundingClientRect();
+    const originX = rect.left + rect.width / 2;
+    const originY = rect.top + rect.height / 2;
+    const scaleRatio = newZoom / oldZoom;
+    S.panX -= (e.clientX - originX) * (scaleRatio - 1);
+    S.panY -= (e.clientY - originY) * (scaleRatio - 1);
+    S.zoom = newZoom;
+    applyTransform(false);
+    document.getElementById('zoom-lbl').textContent = Math.round(S.zoom * 100) + '%';
+  }
 }, { passive: false });
 function fitZoom() {
   const area = document.getElementById('canvas-area');
