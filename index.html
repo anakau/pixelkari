@@ -418,7 +418,7 @@
       display: flex; flex-direction: row; align-items: center; gap: 6px;
       padding: 0 8px;
     }
-    .motif-create-btn {
+    .motif-create-btn, .project-create-btn {
       width: 60px !important; height: auto; padding: 0 !important;
       flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 5px;
@@ -463,9 +463,9 @@
     .cp-preview { padding: 20px; display: flex; justify-content: center; align-items: center; background: #111; min-height: 120px; }
     #capture-preview-canvas { display: block; image-rendering: pixelated; }
     .cp-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 16px; }
-    /* Create Motif tooltip */
-    .motif-create-btn { position: relative; }
-    .motif-create-btn .mcb-tip {
+    /* Create Motif / Save Phulkari tooltip */
+    .motif-create-btn, .project-create-btn { position: relative; }
+    .motif-create-btn .mcb-tip, .project-create-btn .mcb-tip {
       position: absolute; bottom: calc(100% + 10px); left: 50%;
       transform: translateX(-50%); width: 190px;
       background: #000; border: none; border-radius: 6px;
@@ -476,7 +476,7 @@
       text-align: left; z-index: 200;
       letter-spacing: 0.01em; text-transform: none;
     }
-    .motif-create-btn:hover .mcb-tip { opacity: 1; }
+    .motif-create-btn:hover .mcb-tip, .project-create-btn:hover .mcb-tip { opacity: 1; }
 
     .motif-grid { display: flex; flex-direction: row; gap: 6px; overflow-x: auto; align-items: flex-start; flex: 1; }
     .motif-thumb { flex-shrink: 0; width: 60px; }
@@ -1038,6 +1038,18 @@
           </div>
         </div>
       </div>
+      <div class="bb-divider"></div>
+      <!-- Saved Phulkaris: save button + inline recent thumbnail -->
+      <div style="display:flex;align-items:stretch;gap:3px;flex-shrink:0;">
+        <button class="tbtn project-create-btn" id="project-btn" onclick="saveProject()">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M12 8v8M8 12h8"/></svg>
+          <span style="line-height:1.3;text-align:center;">Save<br>Phulkari</span>
+          <div class="mcb-tip">Your Phulkari is saved right in this browser — no account needed. Clearing your browser data will erase it, so export a copy if you want to keep it long-term.</div>
+        </button>
+        <div id="project-panel" style="display:flex;align-items:center;gap:6px;padding:0 8px;">
+          <div class="motif-grid" id="project-pal"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1139,6 +1151,17 @@
       <button class="finish-close" onclick="closeMotifLibrary()">✕</button>
     </div>
     <div class="library-grid" id="library-grid"></div>
+  </div>
+</div>
+
+<!-- PROJECT LIBRARY MODAL -->
+<div class="overlay" id="project-library-modal">
+  <div class="lib-box">
+    <div class="finish-head">
+      <span class="finish-head-title">Saved Phulkaris</span>
+      <button class="finish-close" onclick="closeProjectLibrary()">✕</button>
+    </div>
+    <div class="library-grid" id="project-library-grid"></div>
   </div>
 </div>
 
@@ -1352,6 +1375,13 @@ if (localStorage.getItem('pkPresetsLoaded') !== '3') {
   });
 }
 try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
+
+// ═══════════════════════════════════════════════════
+// SAVED PHULKARIS — full-canvas drafts (persisted to localStorage,
+// separate from MOTIFS above, which only ever store cropped snippets)
+// ═══════════════════════════════════════════════════
+let PROJECTS = [];
+try { const d = localStorage.getItem('pkProjects'); if (d) PROJECTS = JSON.parse(d); } catch(e) {}
 
 // ═══════════════════════════════════════════════════
 // STATE
@@ -4038,6 +4068,191 @@ function _startRename(lbl, idx) {
   });
 }
 
+// ═══════════════════════════════════════════════════
+// SAVED PHULKARIS — save/load/delete the whole canvas as a named draft
+// ═══════════════════════════════════════════════════
+function _drawProjectThumb(project, px) {
+  const tc = document.createElement('canvas');
+  tc.width = px; tc.height = px;
+  const tctx = tc.getContext('2d');
+  const cols = project.cols, rows = project.rows;
+  const tCell = Math.max(1, Math.floor(px / Math.max(cols, rows)));
+  const spanW = cols * tCell, spanH = rows * tCell;
+  const offX = (px - spanW) / 2, offY = (px - spanH) / 2;
+  tctx.fillStyle = '#000000'; tctx.fillRect(0, 0, px, px);
+  tctx.fillStyle = project.base;
+  tctx.fillRect(offX, offY, spanW, spanH);
+  for (const [key, color] of Object.entries(project.cells)) {
+    const p = key.split(',');
+    const c = +p[0], r = +p[1], tri = p[2];
+    const x = offX + c * tCell, y = offY + r * tCell;
+    const mx = x + tCell / 2, my = y + tCell / 2;
+    tctx.fillStyle = color;
+    tctx.beginPath();
+    if      (tri==='t') { tctx.moveTo(x,y);             tctx.lineTo(x+tCell,y);       tctx.lineTo(mx,my); }
+    else if (tri==='r') { tctx.moveTo(x+tCell,y);        tctx.lineTo(x+tCell,y+tCell); tctx.lineTo(mx,my); }
+    else if (tri==='b') { tctx.moveTo(x+tCell,y+tCell);  tctx.lineTo(x,y+tCell);       tctx.lineTo(mx,my); }
+    else                { tctx.moveTo(x,y+tCell);        tctx.lineTo(x,y);             tctx.lineTo(mx,my); }
+    tctx.closePath(); tctx.fill();
+  }
+  for (const l of (project.lines || [])) {
+    tctx.save();
+    tctx.strokeStyle = l.color;
+    tctx.lineWidth = Math.max(1, STITCH_WIDTH * (tCell / CELL));
+    tctx.lineCap = 'round';
+    tctx.lineJoin = 'round';
+    tctx.beginPath();
+    tctx.moveTo(offX + l.points[0].col * tCell, offY + l.points[0].row * tCell);
+    for (let i = 1; i < l.points.length; i++) tctx.lineTo(offX + l.points[i].col * tCell, offY + l.points[i].row * tCell);
+    tctx.stroke();
+    tctx.restore();
+  }
+  return tc;
+}
+
+function saveProject() {
+  if (!Object.keys(S.cells).length && !S.lines.length) {
+    showHint('Nothing to save yet — paint something first');
+    return;
+  }
+  const name = `Phulkari ${PROJECTS.length + 1}`;
+  const project = {
+    name,
+    cells: { ...S.cells },
+    lines: S.lines.map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color })),
+    base: S.base,
+    cols: S.cols,
+    rows: S.rows,
+    paper: S.paper,
+    showBorder: S.showBorder,
+    savedAt: Date.now(),
+  };
+  PROJECTS.push(project);
+  try { localStorage.setItem('pkProjects', JSON.stringify(PROJECTS)); } catch(e) {}
+  buildProjectPal();
+  showHint(`Saved as "${name}"`);
+}
+
+function loadProject(idx) {
+  const project = PROJECTS[idx];
+  if (!project) return;
+  snap();
+  S.cells = { ...project.cells };
+  S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color }));
+  S.cols = project.cols;
+  S.rows = project.rows;
+  S.paper = !!project.paper;
+  S.showBorder = project.showBorder !== false;
+  document.body.classList.toggle('paper-mode', S.paper);
+  document.getElementById('tog-border').classList.toggle('on', S.showBorder);
+  initCanvas();
+  fitZoom();
+  _updatePresetBtns(null);
+  _updateOrientBtns();
+  setBase(project.base);
+  closeProjectLibrary();
+  showHint(`Loaded "${project.name}"`);
+}
+
+function deleteProject(idx) {
+  PROJECTS.splice(idx, 1);
+  try { localStorage.setItem('pkProjects', JSON.stringify(PROJECTS)); } catch(e) {}
+  buildProjectPal();
+}
+
+function buildProjectPal() {
+  const el = document.getElementById('project-pal');
+  el.innerHTML = '';
+  if (!PROJECTS.length) return;
+  const idx = PROJECTS.length - 1;
+  const project = PROJECTS[idx];
+  const wrap = document.createElement('div');
+  wrap.className = 'motif-thumb';
+  const tc = _drawProjectThumb(project, 60);
+  tc.addEventListener('click', () => loadProject(idx));
+  tc.title = `Load "${project.name}"`;
+  const del = document.createElement('button');
+  del.className = 'm-del'; del.textContent = '×';
+  del.addEventListener('click', e => { e.stopPropagation(); deleteProject(idx); });
+  const lbl = document.createElement('div');
+  lbl.className = 'm-lbl'; lbl.textContent = project.name;
+  wrap.appendChild(tc); wrap.appendChild(del); wrap.appendChild(lbl);
+  el.appendChild(wrap);
+
+  const tile = document.createElement('div');
+  tile.className = 'view-all-tile';
+  tile.title = 'View all saved Phulkaris';
+  tile.onclick = showProjectLibrary;
+  const extra = PROJECTS.length > 1 ? `+${PROJECTS.length - 1}` : '';
+  tile.innerHTML = `
+    <div class="va-frame">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+        <rect x="1" y="1" width="6" height="6"/><rect x="9" y="1" width="6" height="6"/>
+        <rect x="1" y="9" width="6" height="6"/><rect x="9" y="9" width="6" height="6"/>
+      </svg>
+      ${extra ? `<span class="va-count">${extra}</span>` : ''}
+    </div>
+    <div class="m-lbl">All Phulkaris</div>`;
+  el.appendChild(tile);
+}
+
+function showProjectLibrary() {
+  buildProjectLibraryGrid();
+  document.getElementById('project-library-modal').classList.add('on');
+}
+function closeProjectLibrary() {
+  document.getElementById('project-library-modal').classList.remove('on');
+}
+function buildProjectLibraryGrid() {
+  const el = document.getElementById('project-library-grid');
+  el.innerHTML = '';
+  if (!PROJECTS.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:11px;padding:8px 0;grid-column:1/-1;">No saved Phulkaris yet — click Save Phulkari to save your current design.</p>';
+    return;
+  }
+  PROJECTS.forEach((project, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'lib-thumb';
+    const tc = _drawProjectThumb(project, 88);
+    tc.addEventListener('click', () => loadProject(idx));
+    tc.title = `Load "${project.name}"`;
+    const del = document.createElement('button');
+    del.className = 'lib-del'; del.textContent = '×';
+    del.addEventListener('click', e => { e.stopPropagation(); deleteProject(idx); buildProjectLibraryGrid(); });
+    const lbl = document.createElement('div');
+    lbl.className = 'lib-name'; lbl.textContent = project.name; lbl.title = 'Click to rename';
+    lbl.addEventListener('click', () => _startRenameProject(lbl, idx));
+    wrap.appendChild(tc); wrap.appendChild(del); wrap.appendChild(lbl);
+    el.appendChild(wrap);
+  });
+}
+function _startRenameProject(lbl, idx) {
+  const inp = document.createElement('input');
+  inp.className = 'lib-name-input';
+  inp.value = PROJECTS[idx].name;
+  inp.maxLength = 32;
+  lbl.replaceWith(inp);
+  inp.focus(); inp.select();
+  let committed = false;
+  const commit = () => {
+    if (committed) return;
+    committed = true;
+    const name = inp.value.trim() || PROJECTS[idx].name;
+    PROJECTS[idx].name = name;
+    try { localStorage.setItem('pkProjects', JSON.stringify(PROJECTS)); } catch(e) {}
+    buildProjectPal();
+    const newLbl = document.createElement('div');
+    newLbl.className = 'lib-name'; newLbl.textContent = name; newLbl.title = 'Click to rename';
+    newLbl.addEventListener('click', () => _startRenameProject(newLbl, idx));
+    inp.replaceWith(newLbl);
+  };
+  inp.addEventListener('blur', commit);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') inp.blur();
+    if (e.key === 'Escape') { inp.value = PROJECTS[idx].name; inp.blur(); }
+  });
+}
+
 // Billo — the hot tip panel's mascot, rendered from her own saved motif
 // NOTE: if you rename either saved motif, update these two to match —
 // the avatar is looked up by name at render time, not baked in.
@@ -4204,6 +4419,7 @@ function wireBilloContextTips() {
 buildToolIcons();
 buildSym();
 buildMotifPal();
+buildProjectPal();
 renderBilloAvatar();
 initBilloEyes();
 pickBilloFact();
