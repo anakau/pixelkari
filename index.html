@@ -81,7 +81,9 @@
     /* ── BOTTOM BAR ── */
     #bottombar {
       height: var(--bar-h); background: var(--bar);
-      border-top: none;
+      border-top: none; border-radius: 20px;
+      margin: 0 20px 20px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
       display: flex; flex-direction: row; align-items: center;
       padding: 0 20px 22px; flex-shrink: 0; overflow: visible;
       position: relative; z-index: 100;
@@ -291,11 +293,11 @@
 
     /* icon buttons */
     .icon-btn {
-      width: 30px; height: 30px; background: rgba(255,255,255,0.06); border: none; border-radius: 4px;
+      width: 30px; height: 30px; background: #000; border: none; border-radius: 4px;
       color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
       font-size: 13px; font-family: 'Bricolage Grotesque', sans-serif; transition: background 0.1s; flex-shrink: 0;
     }
-    .icon-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
+    .icon-btn:hover { background: #1a1a1a; color: var(--accent); }
     .fit-btn {
       height: 30px; padding: 0 10px; background: rgba(255,255,255,0.06); border: none; border-radius: 4px;
       color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -4127,7 +4129,7 @@ const BILLO_FACTS = [
   `Large Phulkari pieces were often stitched by more than one woman, each working her own section from memory, with no way to check her count against anyone else's. The small mismatches in the final pattern weren't mistakes — they were proof more than one pair of hands made it.`,
   `In Punjabi tradition, a maternal grandmother would begin stitching a cloth the moment her granddaughter was born. She'd finish it and hand it over herself, decades later, at the girl's final ritual bath before her wedding — one woman skipping a generation to reach another.`,
   `Under British colonial rule in Punjab, women embroidered scenes from daily life onto their cloth — farming, festivals, but also trains and British officers on horseback. The same railways that were displacing people and reshaping the local economy ended up stitched into family heirlooms.`,
-  `The word Phulkari breaks into two parts: phul, meaning flower, and kari, meaning work. Flower work — that's the entire meaning of the name.`,
+  `The word Phulkari breaks into two parts: phul, meaning flower, and kari, meaning work — flower work. Pixelkari plays on that same structure: pixel work. That's the whole meaning behind the name.`,
   `Punjab once had more than fifty distinct named styles of Phulkari embroidery. Today, only a handful are still practiced. The craft is now legally protected under a Geographical Indication, meaning the government had to step in to define what's allowed to be called authentic Phulkari.`,
   `The silk thread traditionally used in Phulkari, called pat, wasn't sourced locally. It was imported from China, Bengal, or Afghanistan for its shine — even this quintessentially regional craft depended on imported material.`,
   `Women didn't draw from any external design source — no pattern books, no trade influence. They stitched what was directly in front of them: vegetables from their kitchen, crops from their fields, objects from their own household.`,
