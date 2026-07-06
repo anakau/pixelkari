@@ -665,6 +665,13 @@
       font-weight: 700; transition: background 0.12s, color 0.12s;
     }
     .btn-pri:hover { background: #F72585; color: #fff; }
+    .btn-sec {
+      padding: 8px 20px; background: rgba(255,255,255,0.06); border: none; border-radius: 6px;
+      color: #ccc; cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
+      text-transform: uppercase; font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700; transition: background 0.12s, color 0.12s;
+    }
+    .btn-sec:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
 
     /* ── STORY PAGE ── */
     #story-page {
@@ -1116,7 +1123,10 @@
           <span class="riso-size-badge" id="riso-size-badge"></span>
         </div>
         <div class="riso-thumbs" id="riso-swatches"></div>
-        <button class="btn-pri" id="riso-download-btn" onclick="downloadRisoPack()" style="width:100%;margin-top:auto;">Download Colour Separations (ZIP)</button>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto;">
+          <button class="btn-sec" id="pdf-download-btn" onclick="downloadPrintPDF()" style="width:100%;">Download Print PDF</button>
+          <button class="btn-pri" id="riso-download-btn" onclick="downloadRisoPack()" style="width:100%;">Download Colour Separations (ZIP)</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2414,6 +2424,31 @@ function _buildSeparationCanvas(color, EW, EH) {
   return exp;
 }
 
+// Same centered scale-to-fit as _buildSeparationCanvas, but full colour and
+// unmasked — a plain print-ready page rather than a per-ink stencil.
+function _buildFullColorCanvas(EW, EH) {
+  const logW = S.cols * CELL, logH = S.rows * CELL;
+  const scale = Math.min(EW / logW, EH / logH);
+  const dw = Math.round(logW * scale), dh = Math.round(logH * scale);
+  const dx = Math.round((EW - dw) / 2), dy = Math.round((EH - dh) / 2);
+
+  const exp = document.createElement('canvas');
+  exp.width = EW; exp.height = EH;
+  const ec = exp.getContext('2d');
+  ec.fillStyle = '#fff';
+  ec.fillRect(0, 0, EW, EH);
+  ec.translate(dx, dy);
+  ec.scale(scale, scale);
+  ec.fillStyle = S.base;
+  ec.fillRect(0, 0, logW, logH);
+  for (const [key, c] of Object.entries(S.cells)) {
+    const parts = key.split(',');
+    drawTriangle(+parts[0], +parts[1], parts[2], c, ec);
+  }
+  for (const l of S.lines) drawLine(l, ec);
+  return exp;
+}
+
 function _renderRisoSwatches() {
   const el = document.getElementById('riso-swatches');
   el.innerHTML = '';
@@ -2479,6 +2514,32 @@ async function downloadRisoPack() {
     a.href = URL.createObjectURL(blob);
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+}
+
+async function downloadPrintPDF() {
+  const sizeId = _currentRisoSizeId();
+  if (!sizeId) { showHint('Switch to an A5/A4/A3 paper canvas to export a print PDF'); return; }
+  if (!Object.keys(S.cells).length && !S.lines.length) { showHint('Paint something before exporting a PDF'); return; }
+  if (typeof jspdf === 'undefined') {
+    showHint('PDF export tools still loading — try again in a moment');
+    return;
+  }
+  const btn = document.getElementById('pdf-download-btn');
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  try {
+    const preset = RISO_PRESETS[sizeId];
+    const [mmW, mmH] = _matchOrientation(preset.mmW, preset.mmH);
+    const [EW, EH] = _matchOrientation(preset.w, preset.h);
+    const canvas2 = _buildFullColorCanvas(EW, EH);
+    const pdf = new jspdf.jsPDF({ orientation: mmW > mmH ? 'landscape' : 'portrait', unit: 'mm', format: [mmW, mmH] });
+    pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, mmW, mmH, undefined, 'MEDIUM');
+    pdf.save(`pixelkari-${sizeId}-print.pdf`);
   } finally {
     btn.disabled = false;
     btn.textContent = label;
