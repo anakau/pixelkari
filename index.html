@@ -3716,6 +3716,12 @@ function saveAsMotif() {
   showHint(`Saved as "${name}"`);
 }
 
+// A cell's stored col/row is the corner of a unit SPAN [col,col+1] — unlike
+// a line vertex (an exact point), reflecting/rotating that span around an
+// axis moves its anchor corner to what was the FAR corner, which needs a
+// -1 correction the point-based line transforms don't need. Without it,
+// cells and lines in the same motif drift a full cell-width apart on
+// rotate/flip even though they started perfectly aligned.
 function rotateMotifCells(cells, deg) {
   const steps = ((deg / 90) % 4 + 4) % 4;
   if (!steps) return cells;
@@ -3725,7 +3731,7 @@ function rotateMotifCells(cells, deg) {
     const next = {};
     for (const [key, color] of Object.entries(cur)) {
       const p = key.split(',');
-      next[`${-(+p[1])},${+(p[0])},${TRI_CW[p[2]]}`] = color;
+      next[`${-(+p[1]) - 1},${+(p[0])},${TRI_CW[p[2]]}`] = color;
     }
     cur = next;
   }
@@ -3737,7 +3743,7 @@ function mirrorMotifCells(cells) {
   const next = {};
   for (const [key, color] of Object.entries(cells)) {
     const p = key.split(',');
-    next[`${-(+p[0])},${+(p[1])},${TRI_H[p[2]]}`] = color;
+    next[`${-(+p[0]) - 1},${+(p[1])},${TRI_H[p[2]]}`] = color;
   }
   return next;
 }
