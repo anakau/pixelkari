@@ -902,20 +902,6 @@
         <div class="logo-title">Pixelkari</div>
         <span class="hover-tip hover-tip-below">About Pixelkari</span>
       </div>
-      <div class="billo-wrap" id="billo-wrap">
-        <span class="logo-tip-avatar-slot" id="billo-avatar-slot"></span>
-        <div class="logo-tip" id="logo-tip">
-          <div class="logo-tip-fact">
-            <button class="logo-tip-close" onclick="setBubbleHidden(true)" aria-label="Dismiss">✕</button>
-            <span class="logo-tip-fact-label">Did You Know?</span>
-            <p class="logo-tip-body" id="billo-message">Phulkari is stitched onto khaddar, a rough, hand-spun cotton cloth. The weave is loose enough that a woman could count individual threads from the back of the fabric and build her pattern without ever sketching it or seeing the front until she was done.</p>
-          </div>
-          <div class="logo-tip-hint">
-            <span class="logo-tip-hint-label">Tool Tip</span>
-            <span id="billo-tip">Click and drag across triangles to fill them with your selected thread colour.</span>
-          </div>
-        </div>
-      </div>
     </div>
     <div class="page-zoom-row">
       <button class="fit-btn tip-host" onclick="fitZoom()">Fit<span class="hover-tip hover-tip-below">Fit to screen</span></button>
@@ -951,6 +937,23 @@
         </a>
       </div>
       <button class="export-btn" onclick="openFinishModal()" style="line-height:1;">Finish ✦</button>
+    </div>
+  </div>
+
+  <!-- Billo lives outside .page-header so its own position:fixed resolves
+       against the true viewport, not the header's backdrop-filter containing block -->
+  <div class="billo-wrap" id="billo-wrap">
+    <span class="logo-tip-avatar-slot" id="billo-avatar-slot"></span>
+    <div class="logo-tip" id="logo-tip">
+      <div class="logo-tip-fact">
+        <button class="logo-tip-close" onclick="setBubbleHidden(true)" aria-label="Dismiss">✕</button>
+        <span class="logo-tip-fact-label">Did You Know?</span>
+        <p class="logo-tip-body" id="billo-message">Phulkari is stitched onto khaddar, a rough, hand-spun cotton cloth. The weave is loose enough that a woman could count individual threads from the back of the fabric and build her pattern without ever sketching it or seeing the front until she was done.</p>
+      </div>
+      <div class="logo-tip-hint">
+        <span class="logo-tip-hint-label">Tool Tip</span>
+        <span id="billo-tip">Click and drag across triangles to fill them with your selected thread colour.</span>
+      </div>
     </div>
   </div>
 
