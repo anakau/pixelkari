@@ -1038,6 +1038,7 @@
           <div id="sym-group"></div>
           <div class="tool-row">
             <button class="act-btn tip-host" id="undo-btn" onclick="undo()" disabled style="flex:1">↩ Undo<span class="hover-tip">Undo (⌘Z)</span></button>
+            <button class="act-btn tip-host" id="redo-btn" onclick="redo()" disabled style="flex:1">↪ Redo<span class="hover-tip">Redo (⌘⇧Z)</span></button>
             <button class="act-btn danger tip-host" onclick="clearCanvas()" style="flex:1">✕ Clear<span class="hover-tip">Clear the whole canvas</span></button>
           </div>
         </div>
@@ -1437,11 +1438,13 @@ const S = {
   stitchPreview: null,
   stitchPath:    null,
   history:   [],
+  redoHistory: [],
   drawing:    false,
   panning:    false,
   spaceDown:  false,
   panStart:   null,
   lastCell:   null,
+  activeProjectIdx: null,
   activeMotif: null,
   motifRotation: 0,
   ghostCol:   null,
@@ -1665,15 +1668,33 @@ function drawGrid() {
 function snap() {
   S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines }));
   if (S.history.length > MAX_H) S.history.shift();
+  // A fresh edit invalidates whatever branch redo would have restored.
+  S.redoHistory = [];
   document.getElementById('undo-btn').disabled = false;
+  document.getElementById('redo-btn').disabled = true;
 }
 
 function undo() {
   if (!S.history.length) return;
+  S.redoHistory.push(JSON.stringify({ cells: S.cells, lines: S.lines }));
+  if (S.redoHistory.length > MAX_H) S.redoHistory.shift();
   const snapshot = JSON.parse(S.history.pop());
   S.cells = snapshot.cells;
   S.lines = snapshot.lines || [];
   document.getElementById('undo-btn').disabled = S.history.length === 0;
+  document.getElementById('redo-btn').disabled = false;
+  render();
+}
+
+function redo() {
+  if (!S.redoHistory.length) return;
+  S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines }));
+  if (S.history.length > MAX_H) S.history.shift();
+  const snapshot = JSON.parse(S.redoHistory.pop());
+  S.cells = snapshot.cells;
+  S.lines = snapshot.lines || [];
+  document.getElementById('undo-btn').disabled = false;
+  document.getElementById('redo-btn').disabled = S.redoHistory.length === 0;
   render();
 }
 
@@ -2236,6 +2257,7 @@ function newGridPreset(preset) {
   S.cols = cols;
   S.rows = rows;
   S.paper = !!paper;
+  S.activeProjectIdx = null;
   document.body.classList.toggle('paper-mode', S.paper);
   initCanvas();
   fitZoom();
@@ -2678,7 +2700,8 @@ document.addEventListener('keydown', e => {
     if (!S.spaceDown) { S.spaceDown = true; canvas.style.cursor = 'grab'; }
     return;
   }
-  if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); return; }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
   if (e.key === 'Escape') {
     if (document.getElementById('story-page').classList.contains('on')) { closeStoryPage(); return; }
     if (document.getElementById('capture-preview-modal').classList.contains('on')) { cancelCapture(); return; }
@@ -4212,7 +4235,8 @@ function saveProject() {
     showHint('Nothing to save yet — paint something first');
     return;
   }
-  const name = `Phulkari ${PROJECTS.length + 1}`;
+  const existing = S.activeProjectIdx !== null ? PROJECTS[S.activeProjectIdx] : null;
+  const name = existing ? existing.name : `Phulkari ${PROJECTS.length + 1}`;
   const project = {
     name,
     cells: { ...S.cells },
@@ -4224,10 +4248,15 @@ function saveProject() {
     showBorder: S.showBorder,
     savedAt: Date.now(),
   };
-  PROJECTS.push(project);
+  if (existing) {
+    PROJECTS[S.activeProjectIdx] = project;
+  } else {
+    PROJECTS.push(project);
+    S.activeProjectIdx = PROJECTS.length - 1;
+  }
   try { localStorage.setItem('pkProjects', JSON.stringify(PROJECTS)); } catch(e) {}
   buildProjectPal();
-  showHint(`Saved as "${name}"`);
+  showHint(existing ? `Updated "${name}"` : `Saved as "${name}"`);
 }
 
 function loadProject(idx) {
@@ -4240,6 +4269,7 @@ function loadProject(idx) {
   S.rows = project.rows;
   S.paper = !!project.paper;
   S.showBorder = project.showBorder !== false;
+  S.activeProjectIdx = idx;
   document.body.classList.toggle('paper-mode', S.paper);
   document.getElementById('tog-border').classList.toggle('on', S.showBorder);
   initCanvas();
@@ -4253,6 +4283,8 @@ function loadProject(idx) {
 
 function deleteProject(idx) {
   PROJECTS.splice(idx, 1);
+  if (S.activeProjectIdx === idx) S.activeProjectIdx = null;
+  else if (S.activeProjectIdx !== null && S.activeProjectIdx > idx) S.activeProjectIdx--;
   try { localStorage.setItem('pkProjects', JSON.stringify(PROJECTS)); } catch(e) {}
   buildProjectPal();
 }
@@ -4261,7 +4293,9 @@ function buildProjectPal() {
   const el = document.getElementById('project-pal');
   el.innerHTML = '';
   if (!PROJECTS.length) return;
-  const idx = PROJECTS.length - 1;
+  // Most recently saved/updated, not just last in array order — an in-place
+  // update to an existing project doesn't move it to the end of PROJECTS.
+  const idx = PROJECTS.reduce((best, p, i) => (p.savedAt > PROJECTS[best].savedAt ? i : best), 0);
   const project = PROJECTS[idx];
   const wrap = document.createElement('div');
   wrap.className = 'motif-thumb';
