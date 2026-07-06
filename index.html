@@ -27,11 +27,15 @@
 
     #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
 
-    /* ── PAGE HEADER (shared, transparent) ── */
+    /* ── PAGE HEADER (floating, matches #bottombar) ── */
     .page-header {
-      position: relative;
+      position: fixed; top: 20px; left: 20px; right: 20px; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px; height: 64px; flex-shrink: 0;
+      padding: 0 24px; height: 64px;
+      background: rgba(24,24,24,0.72);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-radius: 20px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
     }
     .page-zoom-row {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -46,6 +50,8 @@
     #canvas-area {
       flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
       overflow: auto; background: #0d0d0d; position: relative;
+      padding-top: calc(64px + 20px);
+      padding-bottom: calc(var(--bar-h) + 20px);
     }
     #canvas-wrap { position: relative; transform-origin: center center; transition: transform 0.15s; }
     #canvas-wrap canvas { display: block; cursor: crosshair; }
@@ -68,7 +74,7 @@
       font-size: 15px; font-weight: 300; line-height: 1; cursor: pointer;
       display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0;
     }
-    .edge-btn:hover { background: #1a1a1a; color: #fff; }
+    .edge-btn:hover, .edge-btn:active { background: var(--accent); color: #111; }
 
     #hint {
       position: absolute; bottom: calc(var(--bar-h) + 36px); left: 50%; transform: translateX(-50%);
@@ -453,7 +459,7 @@
     body.capture-mode .page-header,
     body.capture-mode #bottombar { opacity: 0.15; pointer-events: none; transition: opacity 0.2s; }
     .capture-banner {
-      display: none; position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+      display: none; position: absolute; top: calc(64px + 20px + 16px); left: 50%; transform: translateX(-50%);
       background: #000; border: none; border-radius: 6px; color: var(--accent);
       font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
       padding: 7px 16px; pointer-events: none; z-index: 50; white-space: nowrap;
@@ -2129,8 +2135,13 @@ document.getElementById('canvas-wrap').addEventListener('wheel', e => {
 function fitZoom() {
   const area = document.getElementById('canvas-area');
   const PAD = 48;
+  // canvas-area now spans the full viewport (both bars float above it via
+  // position:fixed), so its own footprint has to be subtracted explicitly
+  // instead of relying on clientHeight already excluding them.
+  const headerFootprint = 64 + 20;
+  const barFootprint = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar-h')) + 20;
   const availW = Math.max(50, area.clientWidth - PAD * 2);
-  const availH = Math.max(50, area.clientHeight - PAD * 2);
+  const availH = Math.max(50, area.clientHeight - headerFootprint - barFootprint - PAD * 2);
   const logW = S.cols * CELL, logH = S.rows * CELL;
   S.zoom = Math.min(1, availW / logW, availH / logH);
   S.panX = 0; S.panY = 0;
