@@ -213,6 +213,10 @@
       width: 344px;
     }
     #cp-popup.on { display: flex; }
+    .cp-popup-title {
+      position: absolute; top: 10px; left: 12px;
+      font-size: 11px; font-weight: 400; letter-spacing: 0.01em; color: #aaa;
+    }
     .cp-close {
       position: absolute; top: 8px; right: 10px;
       background: none; border: none; color: #444; cursor: pointer;
@@ -2865,6 +2869,11 @@ function initCustomColorPicker() {
   const popup = document.createElement('div');
   popup.id = 'cp-popup';
 
+  const title = document.createElement('span');
+  title.className = 'cp-popup-title';
+  title.textContent = 'Select Color';
+  popup.appendChild(title);
+
   const closeBtn = document.createElement('button');
   closeBtn.className = 'cp-close';
   closeBtn.setAttribute('aria-label', 'Close');
@@ -2927,10 +2936,6 @@ function initCustomColorPicker() {
   const { row: cmykRow, field: cmykOut }  = makeValueRow('cmyk', 'CMYK', false);
   const { row: risoRow, field: risoOut }  = makeValueRow('riso', 'RISO', false);
   // (appended to .cp-right, under the spectrum + hue — see below)
-
-  const swatchLabel = document.createElement('div');
-  swatchLabel.className = 'cp-section-label'; swatchLabel.textContent = 'Swatches';
-  left.appendChild(swatchLabel);
 
   // Populated by renderSwatchSection() — flat thread grid for Weave/Stitch,
   // season-grouped base pairs for Cloth, or the Riso ink drums on a paper
