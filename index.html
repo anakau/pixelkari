@@ -3050,6 +3050,12 @@ function initCustomColorPicker() {
   }
 
   function drawSpectrum() {
+    // The canvas is displayed at width:100% (whatever .cp-right actually
+    // measures), which doesn't match a hardcoded internal buffer width —
+    // that mismatch stretches the selection dot into an oval. Sync the
+    // buffer to the real rendered width so a circle stays a circle.
+    const renderedWidth = Math.round(specCanvas.getBoundingClientRect().width);
+    if (renderedWidth > 0 && specCanvas.width !== renderedWidth) specCanvas.width = renderedWidth;
     const ctx = specCanvas.getContext('2d');
     const w = specCanvas.width, h = specCanvas.height;
     if (S.paper) {
@@ -3230,10 +3236,10 @@ function initCustomColorPicker() {
     const hex = currentHexFor(cpTarget);
     const hsv = hexToHsv(hex);
     hue = hsv.h; sat = hsv.s; val = hsv.v;
+    popup.classList.add('on');
     drawHue(); drawSpectrum();
     updateValueDisplays(hex);
     updateFormatAvailability();
-    popup.classList.add('on');
     positionPopup();
     refreshColorLabels();
   };
