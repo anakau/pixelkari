@@ -95,7 +95,10 @@
       overflow: visible;
     }
     .bb-divider { width: 1px; height: 26px; background: rgba(255,255,255,0.07); flex-shrink: 0; margin: 0 14px; }
-    .bb-divider-tall { height: 73px; }
+    /* #motif-panel already contributes 8px of its own right padding before
+       this divider, so trim the divider's left margin by that much to keep
+       the gap on both sides equal to the other dividers' plain 14px. */
+    .bb-divider-flush-left { margin-left: 6px; }
     .bb-group   { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .bb-label   { font-size: 10px; font-weight: 400; letter-spacing: 0.01em; color: var(--muted); margin-right: 6px; white-space: nowrap; }
 
@@ -1039,7 +1042,7 @@
           </div>
         </div>
       </div>
-      <div class="bb-divider bb-divider-tall"></div>
+      <div class="bb-divider bb-divider-flush-left"></div>
       <!-- Saved Phulkaris: save button + inline recent thumbnail -->
       <div style="display:flex;align-items:stretch;gap:3px;flex-shrink:0;">
         <button class="tbtn project-create-btn" id="project-btn" onclick="saveProject()">
