@@ -293,7 +293,8 @@
     #stitch-icon-btn { --tilt: 6deg; }
     #cut-icon-btn    { --tilt: -5deg; }
     .tool-icon-btn:hover { transform: rotate(calc(var(--tilt) + var(--tilt-hover))) translateY(-4px); }
-    .tool-icon-btn.on { transform: rotate(var(--tilt)) translateY(-6px); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 16px rgba(245,197,24,0.65)); }
+    .tool-icon-btn.on { transform: rotate(var(--tilt)) translateY(-6px); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7)); }
+    .tool-icon-btn.on + .spool-lbl { color: #fff; }
     .tool-icon-btn.on:hover { transform: rotate(calc(var(--tilt) + var(--tilt-hover))) translateY(-6px); }
     .tool-icon-btn svg { display: block; }
 
