@@ -339,7 +339,8 @@
       height: 38px; padding: 0 11px; background: rgba(255,255,255,0.06); border: none; border-radius: 4px;
       color: var(--text); cursor: pointer; font-size: 12px; box-sizing: border-box;
       font-family: 'Bricolage Grotesque', sans-serif; font-weight: 400;
-      transition: background 0.1s; white-space: nowrap; flex-shrink: 0;
+      transition: background 0.1s; white-space: nowrap; min-width: 0;
+      display: flex; align-items: center; justify-content: center;
     }
     .act-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
     .act-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
