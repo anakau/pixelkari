@@ -947,11 +947,16 @@
       }
       #bb-tools::-webkit-scrollbar { display: none; }
       .logo-title, .logo-sub { font-size: 15px; }
-      /* Billo's speech-bubble panel floats above the bottom bar and, in the
-         width this bar already needs for horizontal scrolling, has nowhere
-         left to sit without overlapping the toolbar or the canvas. */
+      /* Billo's speech-bubble panel floats above the bottom bar and, in
+         portrait at this width, has nowhere to sit without overlapping the
+         toolbar or the canvas — hidden here, restored below for landscape
+         (iPad landscape has the horizontal room, even where the toolbar
+         itself still needs to scroll). */
       .billo-wrap { display: none; }
       .mm-box, #cp-popup { max-width: 92vw; }
+    }
+    @media (max-width: 1400px) and (orientation: landscape) {
+      .billo-wrap { display: flex; }
     }
     @media (max-width: 560px) {
       .page-header { height: 50px; padding: 0 10px; }
