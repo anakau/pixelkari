@@ -445,7 +445,15 @@
       padding: 0 8px;
     }
     .motif-create-btn, .project-create-btn {
-      width: 60px !important; height: 73px; padding: 0 !important;
+      /* !important on height for the same reason it's already on width:
+         these also carry the plain .tbtn class for its shared button look,
+         and .tbtn's height gets overridden at each responsive breakpoint
+         below — without !important that later, equal-specificity rule wins
+         and shrinks these down to a flat toolbar-button height, well short
+         of the color-spools group next to them (which stays ~72px at every
+         width, unshrunk, since it's sized off the icon art rather than
+         .tbtn). */
+      width: 60px !important; height: 73px !important; padding: 0 !important;
       flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 5px;
     }
