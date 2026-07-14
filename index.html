@@ -1000,7 +1000,17 @@
       .mm-box, #cp-popup { max-width: 92vw; }
     }
     @media (max-width: 1400px) and (orientation: landscape) {
-      .billo-wrap { display: flex; }
+      /* At full size (272px, driven by the speech-bubble panel) Billo can't
+         fit anywhere near the bar's left corner — the toolbar's first
+         control (the canvas-size dropdown) starts just 14px past the bar's
+         own edge, nowhere close to enough room, which is why she used to
+         sit directly on top of it. Shrunk to just the avatar (bubble
+         hidden) and nudged left so she perches on the bar's corner instead
+         of its content — the same "standing at the edge" spot, just sized
+         to actually fit there. */
+      .billo-wrap { display: flex; left: -6px; }
+      .logo-tip-avatar-slot { width: 28px; height: 28px; }
+      .logo-tip { display: none; }
     }
     @media (max-width: 560px) {
       .page-header { height: 50px; padding: 0 10px; }
