@@ -158,6 +158,7 @@
     /* tool block */
     .tool-block { display: flex; gap: 3px; flex-shrink: 0; }
     .tool-col   { display: flex; flex-direction: column; gap: 3px; }
+    .brush-col  { flex-shrink: 0; justify-content: center; width: 62px; }
     #sym-group  { display: flex !important; gap: 3px; }
     #sym-group .sym-btn { flex: 1; width: auto; }
 
@@ -931,12 +932,15 @@
       .page-header { left: 10px; right: 10px; padding: 0 14px; height: 56px; }
       .page-zoom-row { gap: 4px; }
       .header-actions { gap: 8px; }
-      #bottombar { left: 10px; right: 10px; }
+      /* overflow:hidden here (base rule leaves it visible, so hover tooltips
+         can pop up above the bar) keeps everything clipped to the bar's own
+         rounded pill — nothing paints past its edges even if a row inside
+         runs long. Safe at this breakpoint specifically since hover tips
+         never show on a touch device anyway. */
+      #bottombar { left: 10px; right: 10px; overflow: hidden; }
       #bb-tools {
         justify-content: flex-start; overflow-x: auto; overflow-y: hidden;
         -webkit-overflow-scrolling: touch; scrollbar-width: none;
-        mask-image: linear-gradient(to right, transparent, #000 14px, #000 calc(100% - 14px), transparent);
-        -webkit-mask-image: linear-gradient(to right, transparent, #000 14px, #000 calc(100% - 14px), transparent);
       }
       #bb-tools::-webkit-scrollbar { display: none; }
       .logo-title, .logo-sub { font-size: 15px; }
@@ -1098,19 +1102,23 @@
       <div class="tool-block" id="tool-group">
         <div class="tool-col" style="flex:1">
           <div id="sym-group"></div>
-          <!-- Brush size otherwise only had a [ / ] keyboard shortcut, with
-               no on-screen control at all — unreachable on a device with no
-               keyboard. -->
-          <div class="tool-row">
-            <span class="bb-label" style="margin-right:4px;">Brush</span>
-            <button class="icon-btn tip-host" onclick="setBrushSize(-1)">−<span class="hover-tip">Smaller brush ([)</span></button>
-            <span class="zoom-lbl" id="brush-lbl" style="min-width:18px;">1×</span>
-            <button class="icon-btn tip-host" onclick="setBrushSize(1)">+<span class="hover-tip">Bigger brush (])</span></button>
-          </div>
           <div class="tool-row">
             <button class="act-btn tip-host" id="undo-btn" onclick="undo()" disabled style="flex:1">↩ Undo<span class="hover-tip">Undo (⌘Z)</span></button>
             <button class="act-btn tip-host" id="redo-btn" onclick="redo()" disabled style="flex:1">↪ Redo<span class="hover-tip">Redo (⌘⇧Z)</span></button>
             <button class="act-btn danger tip-host" onclick="clearCanvas()" style="flex:1">✕ Clear<span class="hover-tip">Clear the whole canvas</span></button>
+          </div>
+        </div>
+        <!-- Brush size otherwise only had a [ / ] keyboard shortcut, with no
+             on-screen control at all — unreachable on a device with no
+             keyboard. Its own column (not a 3rd stacked row) so it doesn't
+             push tool-block taller than the bar has room for at the
+             tablet/phone bar heights. -->
+        <div class="tool-col brush-col">
+          <span class="bb-label" style="text-align:center;">Brush</span>
+          <div class="tool-row">
+            <button class="icon-btn tip-host" onclick="setBrushSize(-1)">−<span class="hover-tip">Smaller brush ([)</span></button>
+            <span class="zoom-lbl" id="brush-lbl" style="min-width:16px;">1×</span>
+            <button class="icon-btn tip-host" onclick="setBrushSize(1)">+<span class="hover-tip">Bigger brush (])</span></button>
           </div>
         </div>
       </div>
