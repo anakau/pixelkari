@@ -158,7 +158,6 @@
     /* tool block */
     .tool-block { display: flex; gap: 3px; flex-shrink: 0; }
     .tool-col   { display: flex; flex-direction: column; gap: 3px; }
-    .brush-col  { flex-shrink: 0; justify-content: center; width: 62px; }
     #sym-group  { display: flex !important; gap: 3px; }
     #sym-group .sym-btn { flex: 1; width: auto; }
 
@@ -215,6 +214,29 @@
       width: 344px;
     }
     #cp-popup.on { display: flex; }
+    /* Erase has no colour to pick, so it gets its own small popup (same
+       visual language as #cp-popup — dark rounded box, title, close button)
+       rather than sharing the colour one. */
+    #brush-popup {
+      display: none; position: fixed; z-index: 300;
+      background: #000; border: none; border-radius: 12px;
+      padding: 30px 14px 14px; flex-direction: column; gap: 10px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+      width: 188px;
+    }
+    #brush-popup.on { display: flex; }
+    .brush-size-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .brush-size-opt {
+      flex: 1; height: 52px; background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+      cursor: pointer; transition: background 0.12s; padding: 0;
+    }
+    .brush-size-opt:hover { background: rgba(255,255,255,0.10); }
+    .brush-size-opt.on { background: var(--accent); }
+    .brush-size-opt .dot { border-radius: 50%; background: #ddd; flex-shrink: 0; }
+    .brush-size-opt.on .dot { background: #111; }
+    .brush-size-lbl { font-size: 8px; color: var(--muted); letter-spacing: 0.04em; }
+    .brush-size-opt.on .brush-size-lbl { color: #111; }
     .cp-popup-title {
       position: absolute; top: 10px; left: 12px;
       font-size: 10px; font-weight: 600; letter-spacing: 0.22em;
@@ -262,6 +284,13 @@
       transition: background 0.12s;
     }
     .cp-brush-btn:hover { background: rgba(255,255,255,0.16); }
+    .cp-dash-btn {
+      background: rgba(255,255,255,0.08); border: none; border-radius: 4px; color: #999;
+      font-size: 9px; padding: 4px 8px; cursor: pointer; font-family: 'Bricolage Grotesque', sans-serif;
+      transition: background 0.12s, color 0.12s;
+    }
+    .cp-dash-btn:hover { background: rgba(255,255,255,0.16); }
+    .cp-dash-btn.on { background: var(--accent); color: #111; }
     .cp-value-readout { color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cp-section-label {
       font-size: 8px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
@@ -1131,19 +1160,6 @@
             <button class="act-btn danger tip-host" onclick="clearCanvas()" style="flex:1">✕ Clear<span class="hover-tip">Clear the whole canvas</span></button>
           </div>
         </div>
-        <!-- Brush size otherwise only had a [ / ] keyboard shortcut, with no
-             on-screen control at all — unreachable on a device with no
-             keyboard. Its own column (not a 3rd stacked row) so it doesn't
-             push tool-block taller than the bar has room for at the
-             tablet/phone bar heights. -->
-        <div class="tool-col brush-col">
-          <span class="bb-label" style="text-align:center;">Brush</span>
-          <div class="tool-row">
-            <button class="icon-btn tip-host" onclick="setBrushSize(-1)">−<span class="hover-tip">Smaller brush ([)</span></button>
-            <span class="zoom-lbl" id="brush-lbl" style="min-width:16px;">1×</span>
-            <button class="icon-btn tip-host" onclick="setBrushSize(1)">+<span class="hover-tip">Bigger brush (])</span></button>
-          </div>
-        </div>
       </div>
       <div class="bb-divider"></div>
       <div class="bb-color-col">
@@ -1529,6 +1545,7 @@ const S = {
   paper:     false,
   sym:       null,
   brushSize: 1,
+  stitchDashed: false, // applies to new stitch lines only — existing ones keep whatever they were drawn with
   grid:      true,
   showBorder: true,
   zoom:      1,
@@ -1705,11 +1722,20 @@ function _doRender() {
   for (const line of S.lines) drawLine(line);
   if (S.stitchAnchor && S.stitchPath) {
     symPaths(S.stitchPath).forEach(pts => {
-      drawLine({ points: pts, color: S.stitchColor }, ctx, true);
+      drawLine({ points: pts, color: S.stitchColor, dashed: S.stitchDashed }, ctx, true);
     });
   }
 
   if (S.grid) drawGrid();
+}
+
+// Dash length scales with the actual stroke width in use (thumbnails/
+// exports draw stitches at other scales than the live canvas), so a dashed
+// line still reads as evenly-dashed at any size rather than a fixed pixel
+// pattern that looks wrong once stretched.
+function stitchDashPattern(lineWidth) {
+  const scale = lineWidth / STITCH_WIDTH;
+  return [5 * scale, 4 * scale];
 }
 
 function drawLine(line, gctx = ctx, preview = false) {
@@ -1720,6 +1746,7 @@ function drawLine(line, gctx = ctx, preview = false) {
   gctx.lineCap = 'round';
   gctx.lineJoin = 'round';
   gctx.globalAlpha = preview ? 0.55 : 1;
+  gctx.setLineDash(line.dashed ? stitchDashPattern(STITCH_WIDTH) : []);
   gctx.beginPath();
   gctx.moveTo(line.points[0].col * CELL, line.points[0].row * CELL);
   for (let i = 1; i < line.points.length; i++) {
@@ -2105,6 +2132,15 @@ function endTouchPoint(e) {
 canvasArea.addEventListener('pointerup', endTouchPoint, true);
 canvasArea.addEventListener('pointercancel', endTouchPoint, true);
 
+// setPointerCapture throws if the pointer is no longer active by the time
+// it's called (e.g. already released) — a real but narrow race, and there's
+// nothing to recover: if it fails, the pointer's already gone and the
+// drag/stroke about to start will just end on its own next event instead of
+// via capture.
+function safeSetPointerCapture(pointerId) {
+  try { canvas.setPointerCapture(pointerId); } catch (e) {}
+}
+
 canvas.addEventListener('pointerdown', e => {
   // A pinch already in progress (see above) owns every finger until all of
   // them lift — otherwise the finger that started the pinch would resume
@@ -2117,7 +2153,7 @@ canvas.addEventListener('pointerdown', e => {
   // first just to make stamping work again.
   if (S.capturingMotif) {
     e.preventDefault();
-    canvas.setPointerCapture(e.pointerId);
+    safeSetPointerCapture(e.pointerId);
     const {col, row} = triAt(e);
     S.captureStart = {col, row};
     S.captureEnd = {col, row};
@@ -2127,7 +2163,7 @@ canvas.addEventListener('pointerdown', e => {
   }
   if (S.activeMotif) {
     e.preventDefault();
-    canvas.setPointerCapture(e.pointerId);
+    safeSetPointerCapture(e.pointerId);
     let {col, row} = triAt(e);
     ({ col, row } = clampMotifPos(col, row));
     snap();
@@ -2145,7 +2181,7 @@ canvas.addEventListener('pointerdown', e => {
   }
   if (S.tool === 'stitch') {
     e.preventDefault();
-    canvas.setPointerCapture(e.pointerId);
+    safeSetPointerCapture(e.pointerId);
     const v = nearestVertex(e);
     if (!S.stitchAnchor) {
       S.stitchAnchor = v;
@@ -2168,13 +2204,13 @@ canvas.addEventListener('pointerdown', e => {
   }
   if (S.spaceDown || e.button === 1 || S.tool === 'pan') {
     e.preventDefault();
-    canvas.setPointerCapture(e.pointerId);
+    safeSetPointerCapture(e.pointerId);
     S.panning  = true;
     S.panStart = { x: e.clientX - S.panX, y: e.clientY - S.panY };
     canvas.style.cursor = 'grabbing';
     return;
   }
-  canvas.setPointerCapture(e.pointerId);
+  safeSetPointerCapture(e.pointerId);
   snap();
   S.drawing = true;
   const {col, row, tri} = triAt(e);
@@ -2194,7 +2230,7 @@ function commitStitchPath() {
   if (S.stitchPath.length > 1) {
     snap();
     symPaths(S.stitchPath).forEach(pts => {
-      S.lines.push({ points: pts, color: S.stitchColor });
+      S.lines.push({ points: pts, color: S.stitchColor, dashed: S.stitchDashed });
     });
   }
   S.stitchAnchor = null;
@@ -2944,16 +2980,31 @@ document.addEventListener('keydown', e => {
   if (e.key === '[') setBrushSize(-1);
 });
 
-function setBrushSize(delta) {
-  S.brushSize = Math.max(1, Math.min(4, S.brushSize + delta));
-  // Two on-screen copies of this control exist (toolbar + Weave's colour
-  // popup) since they're reachable from different places — keep both in
-  // sync regardless of which one was clicked.
-  const lbl = document.getElementById('brush-lbl');
-  if (lbl) lbl.textContent = S.brushSize + '×';
+// Brush size has two on-screen homes — a +/- stepper in Weave's colour
+// popup, and a tap-to-pick size row in Erase's popup (see
+// initBrushSizePopup) — since they're reachable from different places, both
+// funnel through here so either one stays in sync regardless of which was
+// used, along with the [ / ] keyboard shortcut.
+function selectBrushSize(n) {
+  S.brushSize = Math.max(1, Math.min(4, n));
   const cpLbl = document.getElementById('cp-brush-lbl');
   if (cpLbl) cpLbl.textContent = S.brushSize + '×';
+  document.querySelectorAll('.brush-size-opt').forEach(b => {
+    b.classList.toggle('on', +b.dataset.size === S.brushSize);
+  });
   showHint(S.brushSize === 1 ? 'Brush: single' : `Brush: ${S.brushSize}× — ${(S.brushSize*2-1)}×${(S.brushSize*2-1)} cells`);
+}
+function setBrushSize(delta) { selectBrushSize(S.brushSize + delta); }
+
+// Only changes the style new stitch lines are drawn with — see
+// commitStitchPath, which reads S.stitchDashed at the moment a line is
+// pushed. Existing lines carry their own `dashed` flag so they aren't
+// affected retroactively, same as how stitch colour already works.
+function setStitchDashed(dashed) {
+  S.stitchDashed = dashed;
+  document.querySelectorAll('.cp-dash-btn').forEach(b => {
+    b.classList.toggle('on', (b.dataset.dashed === '1') === dashed);
+  });
 }
 document.addEventListener('keyup', e => {
   if (e.key === ' ') {
@@ -3116,14 +3167,15 @@ async function buildToolIcons() {
     btn.className = 'tool-icon-btn';
     btn.id = `${key}-icon-btn`;
     if (tool) btn.dataset.tool = tool;
-    // A click always selects the tool (if it has one) AND opens/updates the
-    // colour popup (if it has a colour) in one go; clicking the same icon
-    // again while its popup is open closes it — toggleCustomColorPicker
-    // already implements that toggle.
+    // A click always selects the tool (if it has one) AND opens/updates its
+    // popup (colour for the other three, brush size for Cut) in one go;
+    // clicking the same icon again while its popup is open closes it —
+    // toggleCustomColorPicker/toggleBrushSizePopup already implement that.
     btn.onclick = (e) => {
       e.stopPropagation();
       if (tool) setTool(tool);
       if (hasColor) toggleCustomColorPicker(key);
+      if (key === 'cut') toggleBrushSizePopup();
     };
     const lbl = document.createElement('span');
     lbl.className = 'spool-lbl';
@@ -3215,9 +3267,8 @@ function initCustomColorPicker() {
   // for Stitch's line tool or Cloth's base colour), so this row only shows
   // up when the popup was opened for Weave — see window._toggleCPPopup
   // below, which toggles its display alongside the rest of the per-target
-  // swap. A second, always-visible copy stays in the toolbar (see
-  // .brush-col) so Erase — which has no colour popup of its own — still has
-  // an on-screen way to change it.
+  // swap. Erase has its own equivalent popup (see initBrushSizePopup) since
+  // it has no colour to pick and so never opens this one.
   const brushRow = document.createElement('div');
   brushRow.className = 'cp-value-row cp-brush-row';
   brushRow.innerHTML = `
@@ -3229,6 +3280,19 @@ function initCustomColorPicker() {
     </div>
   `;
   left.appendChild(brushRow);
+
+  // Line style is Stitch-only — mirrors brushRow's per-target show/hide.
+  const dashRow = document.createElement('div');
+  dashRow.className = 'cp-value-row cp-dash-row';
+  dashRow.style.display = 'none';
+  dashRow.innerHTML = `
+    <span class="cp-value-lbl" style="width:auto;">Line</span>
+    <div style="display:flex;gap:4px;margin-left:auto;">
+      <button type="button" class="cp-dash-btn${S.stitchDashed ? '' : ' on'}" data-dashed="0" onclick="setStitchDashed(false)">Solid</button>
+      <button type="button" class="cp-dash-btn${S.stitchDashed ? ' on' : ''}" data-dashed="1" onclick="setStitchDashed(true)">Dashed</button>
+    </div>
+  `;
+  left.appendChild(dashRow);
 
   const values = document.createElement('div');
   values.className = 'cp-values';
@@ -3557,6 +3621,8 @@ function initCustomColorPicker() {
   // Note: doesn't touch icon .on state — that means "active tool" (Cut
   // included) and is owned by setTool()/syncSpoolActiveState(), independent
   // of whether this popup happens to be open.
+  window._closeCPPopup = () => popup.classList.remove('on');
+
   window._toggleCPPopup = function(target) {
     const alreadyOpen = popup.classList.contains('on');
     const sameTarget = target === cpTarget;
@@ -3564,9 +3630,11 @@ function initCustomColorPicker() {
       popup.classList.remove('on');
       return;
     }
+    if (window._closeBrushPopup) window._closeBrushPopup(); // mutually exclusive with Erase's popup
     cpTarget = target;
     window._cpTarget = cpTarget;
     brushRow.style.display = target === 'weave' ? 'flex' : 'none';
+    dashRow.style.display = target === 'stitch' ? 'flex' : 'none';
     if (target === 'cloth') setBilloMessage('cloth'); // weave/stitch already set theirs via setTool()
     renderSwatchSection(cpTarget);
     const hex = currentHexFor(cpTarget);
@@ -3583,6 +3651,83 @@ function initCustomColorPicker() {
 
 function toggleCustomColorPicker(target) {
   if (window._toggleCPPopup) window._toggleCPPopup(target);
+}
+
+// Erase's brush-size popup — same visual language as #cp-popup (dark
+// rounded box, title, close button, positioned above the icon that opened
+// it) but standalone, since Erase has no colour to pick and so never opens
+// that one.
+function initBrushSizePopup() {
+  const popup = document.createElement('div');
+  popup.id = 'brush-popup';
+
+  const title = document.createElement('span');
+  title.className = 'cp-popup-title';
+  title.textContent = 'Brush Size';
+  popup.appendChild(title);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'cp-close';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.textContent = '✕';
+  closeBtn.addEventListener('click', () => popup.classList.remove('on'));
+  popup.appendChild(closeBtn);
+
+  const row = document.createElement('div');
+  row.className = 'brush-size-row';
+  // Dot diameters scale with brush size (a plain 1-4 label wouldn't convey
+  // how much bigger each step actually paints) — same 1/2/3/4x scale
+  // paint() itself uses.
+  [6, 10, 14, 18].forEach((dot, i) => {
+    const n = i + 1;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'brush-size-opt' + (S.brushSize === n ? ' on' : '');
+    btn.dataset.size = n;
+    btn.setAttribute('aria-label', `Brush size ${n}`);
+    btn.innerHTML = `<span class="dot" style="width:${dot}px;height:${dot}px;"></span><span class="brush-size-lbl">${n}×</span>`;
+    btn.addEventListener('click', () => selectBrushSize(n));
+    row.appendChild(btn);
+  });
+  popup.appendChild(row);
+
+  document.body.appendChild(popup);
+
+  function positionPopup() {
+    const btn = document.getElementById('cut-icon-btn');
+    if (!btn) return;
+    const r = btn.getBoundingClientRect();
+    const pw = popup.offsetWidth || 188, ph = popup.offsetHeight || 110;
+    let left = r.left + r.width / 2 - pw / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+    popup.style.left = left + 'px';
+    popup.style.top  = (r.top - ph - 10) + 'px';
+  }
+
+  window._closeBrushPopup = () => popup.classList.remove('on');
+
+  window._toggleBrushPopup = function() {
+    if (popup.classList.contains('on')) {
+      popup.classList.remove('on');
+      return;
+    }
+    if (window._closeCPPopup) window._closeCPPopup(); // mutually exclusive with the colour popup
+    popup.classList.add('on');
+    positionPopup();
+  };
+
+  // Close on outside click — mirrors the colour popup's own listener.
+  document.addEventListener('pointerdown', e => {
+    const cutBtn = document.getElementById('cut-icon-btn');
+    const onIcon = cutBtn && cutBtn.contains(e.target);
+    if (popup.classList.contains('on') && !popup.contains(e.target) && !onIcon) {
+      popup.classList.remove('on');
+    }
+  }, true);
+}
+
+function toggleBrushSizePopup() {
+  if (window._toggleBrushPopup) window._toggleBrushPopup();
 }
 
 // ── Colour format display (hex / rgb / cmyk / riso) ──
@@ -3824,6 +3969,7 @@ function renderCapturePreview(cells, lines = []) {
     ctx.lineWidth = Math.max(1.5, STITCH_WIDTH * (cs2 / CELL));
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    ctx.setLineDash(l.dashed ? stitchDashPattern(ctx.lineWidth) : []);
     ctx.beginPath();
     ctx.moveTo((l.points[0].col - minC) * cs2, (l.points[0].row - minR) * cs2);
     for (let i = 1; i < l.points.length; i++) ctx.lineTo((l.points[i].col - minC) * cs2, (l.points[i].row - minR) * cs2);
@@ -3846,7 +3992,7 @@ function confirmCaptureMotif() {
   const name = `Motif ${MOTIFS.length + 1}`;
   const motif = { name, cells };
   if (_capturedLines.length) {
-    motif.lines = _capturedLines.map(l => ({ points: l.points.map(p => ({ col: p.col - cx, row: p.row - cy })), color: l.color }));
+    motif.lines = _capturedLines.map(l => ({ points: l.points.map(p => ({ col: p.col - cx, row: p.row - cy })), color: l.color, dashed: l.dashed }));
   }
   MOTIFS.push(motif);
   try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
@@ -4045,7 +4191,7 @@ function saveAsMotif() {
   const name = `Motif ${MOTIFS.length + 1}`;
   const motif = { name, cells };
   if (innerLines.length) {
-    motif.lines = innerLines.map(l => ({ points: l.points.map(p => ({ col: p.col - cx, row: p.row - cy })), color: l.color }));
+    motif.lines = innerLines.map(l => ({ points: l.points.map(p => ({ col: p.col - cx, row: p.row - cy })), color: l.color, dashed: l.dashed }));
   }
   MOTIFS.push(motif);
   try { localStorage.setItem('pkMotifs', JSON.stringify(MOTIFS)); } catch(e) {}
@@ -4202,7 +4348,7 @@ function placeMotif(col, row) {
   for (const line of getActiveLines()) {
     const points = line.points.map(p => ({ col: Math.round(col + p.col), row: Math.round(row + p.row) }));
     if (points.every(p => p.col >= 0 && p.col <= S.cols && p.row >= 0 && p.row <= S.rows)) {
-      S.lines.push({ points, color: line.color });
+      S.lines.push({ points, color: line.color, dashed: line.dashed });
     }
   }
 }
@@ -4256,6 +4402,7 @@ function drawGhost(col, row) {
     ctx.lineWidth = STITCH_WIDTH;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    ctx.setLineDash(line.dashed ? stitchDashPattern(STITCH_WIDTH) : []);
     ctx.beginPath();
     ctx.moveTo((col + line.points[0].col) * CELL, (row + line.points[0].row) * CELL);
     for (let i = 1; i < line.points.length; i++) {
@@ -4264,6 +4411,7 @@ function drawGhost(col, row) {
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
+  ctx.setLineDash([]); // this context isn't wrapped in save/restore, and is shared with drawCaptureOverlay() below — reset so a dashed stitch preview can't leak into its selection-rectangle stroke
 }
 
 function clearGhost() {
@@ -4324,6 +4472,7 @@ function _drawMotifThumb(motif, px, bg = '#000000') {
       tctx.lineWidth = Math.max(1, STITCH_WIDTH * (tCell / CELL));
       tctx.lineCap = 'round';
       tctx.lineJoin = 'round';
+      tctx.setLineDash(l.dashed ? stitchDashPattern(tctx.lineWidth) : []);
       tctx.beginPath();
       tctx.moveTo(offX + (l.points[0].col - left) * tCell, offY + (l.points[0].row - top) * tCell);
       for (let i = 1; i < l.points.length; i++) tctx.lineTo(offX + (l.points[i].col - left) * tCell, offY + (l.points[i].row - top) * tCell);
@@ -4474,6 +4623,7 @@ function _drawProjectThumb(project, px) {
     tctx.lineWidth = Math.max(1, STITCH_WIDTH * (tCell / CELL));
     tctx.lineCap = 'round';
     tctx.lineJoin = 'round';
+    tctx.setLineDash(l.dashed ? stitchDashPattern(tctx.lineWidth) : []);
     tctx.beginPath();
     tctx.moveTo(offX + l.points[0].col * tCell, offY + l.points[0].row * tCell);
     for (let i = 1; i < l.points.length; i++) tctx.lineTo(offX + l.points[i].col * tCell, offY + l.points[i].row * tCell);
@@ -4493,7 +4643,7 @@ function saveProject() {
   const project = {
     name,
     cells: { ...S.cells },
-    lines: S.lines.map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color })),
+    lines: S.lines.map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed })),
     base: S.base,
     cols: S.cols,
     rows: S.rows,
@@ -4517,7 +4667,7 @@ function loadProject(idx) {
   if (!project) return;
   snap();
   S.cells = { ...project.cells };
-  S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color }));
+  S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed }));
   S.cols = project.cols;
   S.rows = project.rows;
   S.paper = !!project.paper;
@@ -4810,6 +4960,7 @@ pickBilloFact();
 wireBilloContextTips();
 initBubbleVisibility();
 initCustomColorPicker();
+initBrushSizePopup();
 initCanvas();
 fitZoom();
 initCursors();
