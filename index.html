@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Pixelkari</title>
   <link rel="icon" type="image/png" href="public/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,8 +21,8 @@
       --accent: #D4A827; --accent-dim: rgba(212,168,39,0.10);
       --bar-h: 144px;
     }
-    html, body { width: 100%; height: 100%; background: var(--bg); overflow: hidden; }
-    body { font-family: 'Bricolage Grotesque', sans-serif; color: var(--text); font-size: 14px; }
+    html, body { width: 100%; height: 100%; background: var(--bg); overflow: hidden; overscroll-behavior: none; }
+    body { font-family: 'Bricolage Grotesque', sans-serif; color: var(--text); font-size: 14px; -webkit-tap-highlight-color: transparent; }
     ::selection { background: #D4A827; color: #0d0d0d; }
 
     #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
@@ -52,9 +52,10 @@
       overflow: auto; background: #0d0d0d; position: relative;
       padding-top: calc(64px + 20px);
       padding-bottom: calc(var(--bar-h) + 20px);
+      touch-action: none;
     }
     #canvas-wrap { position: relative; transform-origin: center center; transition: transform 0.15s; }
-    #canvas-wrap canvas { display: block; cursor: crosshair; image-rendering: pixelated; }
+    #canvas-wrap canvas { display: block; cursor: crosshair; image-rendering: pixelated; touch-action: none; }
     #ghost-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
     .edge-ctrl {
       position: absolute; display: flex; align-items: center; justify-content: center;
@@ -227,8 +228,8 @@
     .cp-close:hover { color: #aaa; }
     .cp-left  { display: flex; flex-direction: column; gap: 8px; width: 148px; flex-shrink: 0; }
     .cp-right { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
-    #cp-spectrum { display: block; cursor: crosshair; width: 100%; height: 152px; border-radius: 6px; }
-    #cp-hue      { display: block; cursor: crosshair; width: 100%; height: 14px; border-radius: 7px; }
+    #cp-spectrum { display: block; cursor: crosshair; width: 100%; height: 152px; border-radius: 6px; touch-action: none; }
+    #cp-hue      { display: block; cursor: crosshair; width: 100%; height: 14px; border-radius: 7px; touch-action: none; }
     .cp-eyedrop-btn {
       display: flex; align-items: center; justify-content: center; gap: 6px;
       background: rgba(255,255,255,0.06); border: none; border-radius: 6px;
@@ -451,7 +452,7 @@
     .mm-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
     .mm-title { font-size: 10px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
     .mm-canvas-wrap { padding: 16px 16px 0; display: flex; justify-content: center; }
-    #mm-canvas { display: block; cursor: crosshair; }
+    #mm-canvas { display: block; cursor: crosshair; touch-action: none; }
     .mm-palette { display: flex; flex-wrap: wrap; gap: 4px; padding: 12px 16px 0; }
     .mm-swatch { width: 18px; height: 18px; cursor: pointer; border: 2px solid transparent; flex-shrink: 0; transition: border-color 0.1s; }
     .mm-swatch.on { border-color: #fff; }
@@ -469,10 +470,23 @@
       display: none; position: absolute; top: calc(64px + 20px + 16px); left: 50%; transform: translateX(-50%);
       background: #000; border: none; border-radius: 6px; color: var(--accent);
       font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
-      padding: 7px 16px; pointer-events: none; z-index: 50; white-space: nowrap;
+      padding: 7px 10px 7px 16px; z-index: 50; white-space: nowrap;
       font-family: 'Bricolage Grotesque', sans-serif;
+      align-items: center; gap: 12px;
     }
-    body.capture-mode .capture-banner { display: block; }
+    /* The header/bottombar are dimmed + pointer-events:none while capturing
+       (so accidental clicks there don't fight the drag-select), but the
+       banner itself sits outside both of those and stays fully interactive
+       — otherwise there'd be no way to back out of capture mode on a device
+       with no Esc key. */
+    body.capture-mode .capture-banner { display: flex; pointer-events: auto; }
+    .capture-cancel-btn {
+      background: rgba(255,255,255,0.12); border: none; border-radius: 4px; color: var(--text);
+      font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 5px 9px; cursor: pointer; flex-shrink: 0;
+      font-family: 'Bricolage Grotesque', sans-serif; transition: background 0.12s;
+    }
+    .capture-cancel-btn:hover { background: rgba(255,255,255,0.22); }
     /* Capture preview */
     .cp-box { background: #000; border: none; border-radius: 12px; padding: 0; min-width: 260px; overflow: hidden; }
     .cp-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
@@ -905,6 +919,55 @@
       .export-btn { height: 27px; padding: 0 8px; font-size: 9px; letter-spacing: 0.04em; }
       .motif-create-btn { width: 60px !important; }
     }
+
+    /* ── TABLET / PHONE ── the bar above only shrinks controls down to a
+       1024px-wide desktop window; below that (iPad portrait and narrower)
+       there just isn't room for every group (nav / tools / colours / motifs
+       / save) on one line at any legible size. Rather than keep shrinking
+       text into unreadable/untappable territory, #bb-tools becomes its own
+       horizontally-scrollable strip so every control stays reachable (swipe)
+       at a tap-friendly size, instead of trying to cram or wrap it. */
+    @media (max-width: 900px) {
+      .page-header { left: 10px; right: 10px; padding: 0 14px; height: 56px; }
+      .page-zoom-row { gap: 4px; }
+      .header-actions { gap: 8px; }
+      #bottombar { left: 10px; right: 10px; }
+      #bb-tools {
+        justify-content: flex-start; overflow-x: auto; overflow-y: hidden;
+        -webkit-overflow-scrolling: touch; scrollbar-width: none;
+        mask-image: linear-gradient(to right, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+        -webkit-mask-image: linear-gradient(to right, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+      }
+      #bb-tools::-webkit-scrollbar { display: none; }
+      .logo-title, .logo-sub { font-size: 15px; }
+      /* Billo's speech-bubble panel floats above the bottom bar and, in the
+         width this bar already needs for horizontal scrolling, has nowhere
+         left to sit without overlapping the toolbar or the canvas. */
+      .billo-wrap { display: none; }
+      .mm-box, #cp-popup { max-width: 92vw; }
+    }
+    @media (max-width: 560px) {
+      .page-header { height: 50px; padding: 0 10px; }
+      .logo-title, .logo-sub { font-size: 14px; }
+      .fit-btn span:not(.hover-tip), .page-zoom-row .fit-btn { font-size: 11px; padding: 0 7px; }
+      #pan-btn svg { margin-right: 2px; }
+      .export-btn { padding: 0 10px; font-size: 10px; }
+      .feedback-btn { padding: 6px; }
+    }
+
+    /* ── TOUCH FALLBACKS ── controls that only reveal themselves on :hover
+       (delete/copy buttons on thumbnails, the canvas edge add/remove-row
+       controls) are otherwise permanently invisible on a device with no
+       hover state — show them all the time instead, and give the smallest
+       ones a bigger hit target since a fingertip is far less precise than
+       a cursor. */
+    @media (hover: none) {
+      .edge-ctrl { opacity: 1; }
+      .motif-thumb .m-del, .lib-thumb .lib-del, .lib-thumb .lib-copy { opacity: 1; }
+      .motif-thumb .m-del { width: 18px; height: 18px; font-size: 12px; }
+      .lib-thumb .lib-del, .lib-thumb .lib-copy { width: 20px; height: 20px; font-size: 12px; }
+      .edge-btn { width: 26px; height: 26px; font-size: 17px; }
+    }
   </style>
 </head>
 <body>
@@ -967,7 +1030,10 @@
 
   <!-- CANVAS -->
   <div id="canvas-area">
-    <div class="capture-banner">Drag to select your motif — make sure stitch line endpoints are included &nbsp;·&nbsp; Esc to cancel</div>
+    <div class="capture-banner">
+      <span>Drag to select your motif — make sure stitch line endpoints are included</span>
+      <button class="capture-cancel-btn" onclick="stopCaptureMode()">✕ Cancel</button>
+    </div>
     <div id="canvas-wrap">
       <canvas id="mc"></canvas>
       <canvas id="ghost-canvas"></canvas>
@@ -1032,6 +1098,15 @@
       <div class="tool-block" id="tool-group">
         <div class="tool-col" style="flex:1">
           <div id="sym-group"></div>
+          <!-- Brush size otherwise only had a [ / ] keyboard shortcut, with
+               no on-screen control at all — unreachable on a device with no
+               keyboard. -->
+          <div class="tool-row">
+            <span class="bb-label" style="margin-right:4px;">Brush</span>
+            <button class="icon-btn tip-host" onclick="setBrushSize(-1)">−<span class="hover-tip">Smaller brush ([)</span></button>
+            <span class="zoom-lbl" id="brush-lbl" style="min-width:18px;">1×</span>
+            <button class="icon-btn tip-host" onclick="setBrushSize(1)">+<span class="hover-tip">Bigger brush (])</span></button>
+          </div>
           <div class="tool-row">
             <button class="act-btn tip-host" id="undo-btn" onclick="undo()" disabled style="flex:1">↩ Undo<span class="hover-tip">Undo (⌘Z)</span></button>
             <button class="act-btn tip-host" id="redo-btn" onclick="redo()" disabled style="flex:1">↪ Redo<span class="hover-tip">Redo (⌘⇧Z)</span></button>
@@ -1924,8 +1999,86 @@ function paint(col, row, tri) {
 
 // ═══════════════════════════════════════════════════
 // CANVAS EVENTS
+// Pointer Events unify mouse / touch / Apple Pencil — the same triAt()/
+// nearestVertex() math works for all three since they all report
+// clientX/clientY. canvas.setPointerCapture below replaces what used to be
+// a separate document-level mousemove/mouseup pair for panning: a captured
+// pointer keeps firing on `canvas` even once it moves outside its bounds
+// (paint() already no-ops out-of-range cells, so that's safe for drawing
+// too), which is also exactly the behaviour touch dragging needs.
 // ═══════════════════════════════════════════════════
-canvas.addEventListener('mousedown', e => {
+const canvasArea = document.getElementById('canvas-area');
+
+// Two-finger pinch-to-zoom / two-finger pan. Tracked separately from the
+// single-pointer draw/pan/stitch logic below — a second touch landing
+// anywhere in canvas-area (not just exactly on the canvas) always wins and
+// takes over as a view gesture, the same convention drawing apps like
+// Procreate use, regardless of which tool is currently active.
+const touchPoints = new Map();   // pointerId -> {x, y}, touch only
+let pinchActive = false;         // true from the 2nd finger down until every finger lifts
+let lastPinch = null;            // {dist, midX, midY} of the tracked pair, updated every frame
+
+function pinchPair() { return [...touchPoints.values()]; }
+function pinchAnchor() {
+  const [a, b] = pinchPair();
+  lastPinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), midX: (a.x + b.x) / 2, midY: (a.y + b.y) / 2 };
+}
+function stepPinch() {
+  const [a, b] = pinchPair();
+  const dist = Math.hypot(a.x - b.x, a.y - b.y);
+  const midX = (a.x + b.x) / 2, midY = (a.y + b.y) / 2;
+  const newZoom = Math.max(0.25, Math.min(4, +(S.zoom * (dist / lastPinch.dist)).toFixed(2)));
+  if (newZoom !== S.zoom) {
+    // Same "zoom toward a screen point" formula the wheel handler uses
+    // below, run incrementally each frame so it also tracks two-finger pan.
+    const rect = document.getElementById('canvas-wrap').getBoundingClientRect();
+    const originX = rect.left + rect.width / 2;
+    const originY = rect.top + rect.height / 2;
+    const scaleRatio = newZoom / S.zoom;
+    S.panX -= (lastPinch.midX - originX) * (scaleRatio - 1);
+    S.panY -= (lastPinch.midY - originY) * (scaleRatio - 1);
+    S.zoom = newZoom;
+  }
+  S.panX += midX - lastPinch.midX;
+  S.panY += midY - lastPinch.midY;
+  applyTransform(false);
+  document.getElementById('zoom-lbl').textContent = Math.round(S.zoom * 100) + '%';
+  lastPinch = { dist, midX, midY };
+}
+// Capture phase, so this always runs before canvas's own pointerdown below
+// — otherwise a 2nd finger landing on the canvas would start a paint stroke
+// (and push an undo snapshot) for one tick before this cancels it.
+canvasArea.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch') return;
+  touchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (touchPoints.size >= 2) {
+    pinchActive = true;
+    S.drawing = false;
+    S.panning = false;
+    S.motifDrawing = false;
+    if (S.capturingMotif) S.captureDrawing = false;
+    pinchAnchor();
+  }
+}, true);
+canvasArea.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'touch' || !touchPoints.has(e.pointerId)) return;
+  touchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinchActive && touchPoints.size >= 2) { stepPinch(); e.preventDefault(); }
+}, true);
+function endTouchPoint(e) {
+  if (e.pointerType !== 'touch') return;
+  touchPoints.delete(e.pointerId);
+  if (touchPoints.size < 2) lastPinch = null;
+  if (touchPoints.size === 0) pinchActive = false;
+}
+canvasArea.addEventListener('pointerup', endTouchPoint, true);
+canvasArea.addEventListener('pointercancel', endTouchPoint, true);
+
+canvas.addEventListener('pointerdown', e => {
+  // A pinch already in progress (see above) owns every finger until all of
+  // them lift — otherwise the finger that started the pinch would resume
+  // painting the instant the other one is released.
+  if (pinchActive) { e.preventDefault(); return; }
   // Capturing a region or stamping/erasing a selected motif always takes
   // priority over a stale Stitch anchor — otherwise, if Stitch was the last
   // tool used before selecting a motif, the click would set a new stitch
@@ -1933,6 +2086,7 @@ canvas.addEventListener('mousedown', e => {
   // first just to make stamping work again.
   if (S.capturingMotif) {
     e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
     const {col, row} = triAt(e);
     S.captureStart = {col, row};
     S.captureEnd = {col, row};
@@ -1942,6 +2096,7 @@ canvas.addEventListener('mousedown', e => {
   }
   if (S.activeMotif) {
     e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
     let {col, row} = triAt(e);
     ({ col, row } = clampMotifPos(col, row));
     snap();
@@ -1959,6 +2114,7 @@ canvas.addEventListener('mousedown', e => {
   }
   if (S.tool === 'stitch') {
     e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
     const v = nearestVertex(e);
     if (!S.stitchAnchor) {
       S.stitchAnchor = v;
@@ -1966,7 +2122,7 @@ canvas.addEventListener('mousedown', e => {
       S.stitchPath = [v];
       S._stitchLastPx = null;
     } else {
-      // The drag's distance-based sampling (see mousemove) can leave the
+      // The drag's distance-based sampling (see pointermove) can leave the
       // last recorded point short of the actual click position, if the
       // final movement before clicking didn't cross the sample threshold —
       // extend to the exact click point now so the endpoint is never off.
@@ -1974,28 +2130,20 @@ canvas.addEventListener('mousedown', e => {
       if (v.col !== lastPt.col || v.row !== lastPt.row) {
         S.stitchPath.push(...kingPath(lastPt.col, lastPt.row, v.col, v.row).slice(1));
       }
-      if (S.stitchPath.length > 1) {
-        snap();
-        // Mirrors the stitch the same way symTris() mirrors a Weave/Cut
-        // stroke — one line per active symmetry copy, same colour.
-        symPaths(S.stitchPath).forEach(pts => {
-          S.lines.push({ points: pts, color: S.stitchColor });
-        });
-      }
-      S.stitchAnchor = null;
-      S.stitchPreview = null;
-      S.stitchPath = null;
+      commitStitchPath();
     }
     render();
     return;
   }
   if (S.spaceDown || e.button === 1 || S.tool === 'pan') {
     e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
     S.panning  = true;
     S.panStart = { x: e.clientX - S.panX, y: e.clientY - S.panY };
     canvas.style.cursor = 'grabbing';
     return;
   }
+  canvas.setPointerCapture(e.pointerId);
   snap();
   S.drawing = true;
   const {col, row, tri} = triAt(e);
@@ -2008,8 +2156,24 @@ canvas.addEventListener('mousedown', e => {
   render();
 });
 
-canvas.addEventListener('mousemove', e => {
-  // Same priority order as mousedown — capture/motif-stamping always wins
+// Commits the in-progress stitch path as a line (mirrored per active
+// symmetry) and clears the anchor — shared by the 2nd-tap finalize above
+// and the drag-then-release finalize touch needs (see pointerup below).
+function commitStitchPath() {
+  if (S.stitchPath.length > 1) {
+    snap();
+    symPaths(S.stitchPath).forEach(pts => {
+      S.lines.push({ points: pts, color: S.stitchColor });
+    });
+  }
+  S.stitchAnchor = null;
+  S.stitchPreview = null;
+  S.stitchPath = null;
+}
+
+canvas.addEventListener('pointermove', e => {
+  if (pinchActive) return;
+  // Same priority order as pointerdown — capture/motif-stamping always wins
   // over a stale Stitch anchor.
   if (S.capturingMotif) {
     if (!S.captureDrawing) return;
@@ -2054,14 +2218,20 @@ canvas.addEventListener('mousemove', e => {
     }
     return;
   }
+  if (S.panning) {
+    S.panX = e.clientX - S.panStart.x;
+    S.panY = e.clientY - S.panStart.y;
+    applyTransform(false);
+    return;
+  }
   if (S.tool === 'stitch') {
     if (!S.stitchAnchor) return;
-    // A real hand's mouse movement is never a perfectly straight line — even
-    // along an intended diagonal, it wobbles sub-cell amounts constantly.
-    // Reacting to every mousemove tick turned that wobble into its own
-    // zigzag/backtrack step (diagonals in particular felt impossible to
-    // draw cleanly). Only sampling once the cursor has actually travelled a
-    // real distance since the last sample filters that out while still
+    // A real drag is never a perfectly straight line — even along an
+    // intended diagonal, it wobbles sub-cell amounts constantly. Reacting
+    // to every pointermove tick turned that wobble into its own zigzag/
+    // backtrack step (diagonals in particular felt impossible to draw
+    // cleanly). Only sampling once the cursor/finger has actually travelled
+    // a real distance since the last sample filters that out while still
     // following genuine curves and corners.
     const rect = canvas.getBoundingClientRect();
     const px = (e.clientX - rect.left) / S.zoom;
@@ -2106,10 +2276,25 @@ canvas.addEventListener('mousemove', e => {
   render();
 });
 
-canvas.addEventListener('mouseup', () => {
+function endCanvasPointer(e) {
+  if (S.panning) {
+    S.panning = false;
+    canvas.style.cursor = S.spaceDown ? 'grab' : toolCursor();
+  }
   if (S.capturingMotif && S.captureDrawing) {
     S.captureDrawing = false;
     if (S.captureStart && S.captureEnd) showCapturePreview();
+    return;
+  }
+  // Touch has no hover, so the mouse's "move, move, click, click" stitch
+  // workflow (see pointermove/pointerdown above) doesn't reach on its own —
+  // a touch drag that already traced a path finalizes it on release too,
+  // so tap-drag-release completes one stitch in a single gesture. A plain
+  // tap (no drag happened, path is still just the anchor) leaves the anchor
+  // standing so it can chain into another tap, matching mouse behaviour.
+  if (e && e.pointerType === 'touch' && S.tool === 'stitch' && S.stitchAnchor && S.stitchPath && S.stitchPath.length > 1) {
+    commitStitchPath();
+    render();
     return;
   }
   S.drawing = false;
@@ -2117,24 +2302,14 @@ canvas.addEventListener('mouseup', () => {
     S.motifDrawing = false;
     showHint(`Placed — click or drag to stamp more, Esc to finish`);
   }
-});
-canvas.addEventListener('mouseleave', () => {
-  S.drawing = false;
-  S.motifDrawing = false;
-  if (S.activeMotif) clearGhost();
-});
-
-// Pan continues even when mouse leaves canvas — handled at document level
-document.addEventListener('mousemove', e => {
-  if (!S.panning) return;
-  S.panX = e.clientX - S.panStart.x;
-  S.panY = e.clientY - S.panStart.y;
-  applyTransform(false);
-});
-document.addEventListener('mouseup', () => {
-  if (!S.panning) return;
-  S.panning = false;
-  canvas.style.cursor = S.spaceDown ? 'grab' : toolCursor();
+}
+canvas.addEventListener('pointerup', endCanvasPointer);
+canvas.addEventListener('pointercancel', endCanvasPointer);
+// Only an uncaptured mouse can genuinely "leave" the canvas while still
+// hovering (no button down) — a captured drag, mouse or touch alike, keeps
+// delivering its events to `canvas` regardless of where it physically is.
+canvas.addEventListener('pointerleave', e => {
+  if (e.pointerType !== 'touch' && !S.drawing && !S.panning && S.activeMotif) clearGhost();
 });
 
 // ═══════════════════════════════════════════════════
@@ -2734,15 +2909,16 @@ document.addEventListener('keydown', e => {
   if (e.key === '+' || e.key === '=') doZoom(0.25);
   if (e.key === '-') doZoom(-0.25);
   if (e.key === '0') fitZoom();
-  if (e.key === ']') {
-    S.brushSize = Math.min(4, S.brushSize + 1);
-    showHint(S.brushSize === 1 ? 'Brush: single' : `Brush: ${S.brushSize}× — ${(S.brushSize*2-1)}×${(S.brushSize*2-1)} cells`);
-  }
-  if (e.key === '[') {
-    S.brushSize = Math.max(1, S.brushSize - 1);
-    showHint(S.brushSize === 1 ? 'Brush: single' : `Brush: ${S.brushSize}× — ${(S.brushSize*2-1)}×${(S.brushSize*2-1)} cells`);
-  }
+  if (e.key === ']') setBrushSize(1);
+  if (e.key === '[') setBrushSize(-1);
 });
+
+function setBrushSize(delta) {
+  S.brushSize = Math.max(1, Math.min(4, S.brushSize + delta));
+  const lbl = document.getElementById('brush-lbl');
+  if (lbl) lbl.textContent = S.brushSize + '×';
+  showHint(S.brushSize === 1 ? 'Brush: single' : `Brush: ${S.brushSize}× — ${(S.brushSize*2-1)}×${(S.brushSize*2-1)} cells`);
+}
 document.addEventListener('keyup', e => {
   if (e.key === ' ') {
     S.spaceDown = false;
@@ -3258,9 +3434,10 @@ function initCustomColorPicker() {
     val = 1 - Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
     drawSpectrum(); applyFromWheel();
   }
-  specCanvas.addEventListener('mousedown', e => { dragSpec = true; onSpecMove(e); e.preventDefault(); });
-  window.addEventListener('mousemove', e => { if (dragSpec) onSpecMove(e); });
-  window.addEventListener('mouseup', () => { if (dragSpec) { dragSpec = false; pushRecentColor(applyFromWheel()); } });
+  specCanvas.addEventListener('pointerdown', e => { dragSpec = true; onSpecMove(e); e.preventDefault(); });
+  window.addEventListener('pointermove', e => { if (dragSpec) onSpecMove(e); });
+  window.addEventListener('pointerup', () => { if (dragSpec) { dragSpec = false; pushRecentColor(applyFromWheel()); } });
+  window.addEventListener('pointercancel', () => { dragSpec = false; });
 
   // Hue drag
   let dragHue = false;
@@ -3269,9 +3446,10 @@ function initCustomColorPicker() {
     hue = Math.min(359, Math.max(0, Math.round((e.clientX - r.left) / r.width * 360)));
     drawHue(); drawSpectrum(); applyFromWheel();
   }
-  hueCanvas.addEventListener('mousedown', e => { dragHue = true; onHueMove(e); e.preventDefault(); });
-  window.addEventListener('mousemove', e => { if (dragHue) onHueMove(e); });
-  window.addEventListener('mouseup', () => { if (dragHue) { dragHue = false; pushRecentColor(applyFromWheel()); } });
+  hueCanvas.addEventListener('pointerdown', e => { dragHue = true; onHueMove(e); e.preventDefault(); });
+  window.addEventListener('pointermove', e => { if (dragHue) onHueMove(e); });
+  window.addEventListener('pointerup', () => { if (dragHue) { dragHue = false; pushRecentColor(applyFromWheel()); } });
+  window.addEventListener('pointercancel', () => { dragHue = false; });
 
   // Hex input — free-text, copy/paste
   hexInput.addEventListener('change', () => {
@@ -3307,7 +3485,7 @@ function initCustomColorPicker() {
   // itself — reference equality was missing that and closing the popup
   // here first, which made the button's own re-open logic fire right after
   // (net effect: clicking the icon again looked like it did nothing).
-  document.addEventListener('mousedown', e => {
+  document.addEventListener('pointerdown', e => {
     const iconBtns = ['weave', 'stitch', 'cloth'].map(k => document.getElementById(`${k}-icon-btn`)).filter(Boolean);
     const onIcon = iconBtns.some(btn => btn.contains(e.target));
     if (popup.classList.contains('on') && !popup.contains(e.target) && !onIcon) {
@@ -3705,14 +3883,15 @@ function mmPaintAt(hit) {
   function init() {
     const c = document.getElementById('mm-canvas');
     if (!c) return;
-    c.addEventListener('mousedown', e => {
+    c.addEventListener('pointerdown', e => {
       e.preventDefault();
+      c.setPointerCapture(e.pointerId);
       mmState.drawing = true;
       const hit = mmTriAt(e);
       mmState.lastCell = hit ? `${hit.col},${hit.row},${hit.tri}` : null;
       mmPaintAt(hit);
     });
-    c.addEventListener('mousemove', e => {
+    c.addEventListener('pointermove', e => {
       if (!mmState.drawing) return;
       const hit = mmTriAt(e);
       if (!hit) return;
@@ -3721,7 +3900,8 @@ function mmPaintAt(hit) {
       mmState.lastCell = key;
       mmPaintAt(hit);
     });
-    window.addEventListener('mouseup', () => { mmState.drawing = false; });
+    c.addEventListener('pointerup', () => { mmState.drawing = false; });
+    c.addEventListener('pointercancel', () => { mmState.drawing = false; });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
@@ -4575,7 +4755,17 @@ wireBilloContextTips();
 initBubbleVisibility();
 initCustomColorPicker();
 initCanvas();
+fitZoom();
 initCursors();
+// Re-fit whenever the viewport actually changes size (window resize, or an
+// iPad/phone rotating) — without this the canvas was only ever sized once,
+// at whatever the very first viewport happened to be, and stayed that zoom
+// through a rotation even though the available space had changed.
+let _fitResizeT = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_fitResizeT);
+  _fitResizeT = setTimeout(fitZoom, 150);
+});
 // Highlight whichever preset matches the current canvas size
 (function() {
   const match = Object.keys(GRID_PRESETS).find(k => GRID_PRESETS[k].cols === S.cols && GRID_PRESETS[k].rows === S.rows);
