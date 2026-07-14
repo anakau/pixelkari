@@ -922,13 +922,16 @@
     }
 
     /* ── TABLET / PHONE ── the bar above only shrinks controls down to a
-       1024px-wide desktop window; below that (iPad portrait and narrower)
-       there just isn't room for every group (nav / tools / colours / motifs
-       / save) on one line at any legible size. Rather than keep shrinking
-       text into unreadable/untappable territory, #bb-tools becomes its own
-       horizontally-scrollable strip so every control stays reachable (swipe)
-       at a tap-friendly size, instead of trying to cram or wrap it. */
-    @media (max-width: 900px) {
+       1024px-wide desktop window; below that there just isn't room for every
+       group (nav / tools / colours / motifs / save) on one line at any
+       legible size — and critically, that includes iPad in LANDSCAPE
+       (~1180-1194px for 11"/Air, up to ~1366px for 12.9" Pro), which is
+       wider than the 1024px tier but still too narrow to fit everything.
+       Rather than keep shrinking text into unreadable/untappable territory,
+       #bb-tools becomes its own horizontally-scrollable strip so every
+       control stays reachable (swipe) at a tap-friendly size, instead of
+       trying to cram or wrap it. */
+    @media (max-width: 1400px) {
       .page-header { left: 10px; right: 10px; padding: 0 14px; height: 56px; }
       .page-zoom-row { gap: 4px; }
       .header-actions { gap: 8px; }
