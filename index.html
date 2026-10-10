@@ -77,7 +77,7 @@
     .edge-left   { right: 100%;  margin-right: 5px;  top: 50%;  transform: translateY(-50%); flex-direction: column; }
     .edge-right  { left: 100%;   margin-left: 5px;   top: 50%;  transform: translateY(-50%); flex-direction: column; }
     .edge-btn {
-      width: 20px; height: 20px; background: #000; border: none; border-radius: 4px;
+      width: 20px; height: 20px; background: #000; border: none; border-radius: 8px;
       color: rgba(255,255,255,0.65);
       font-size: 15px; font-weight: 300; line-height: 1; cursor: pointer;
       display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0;
@@ -87,7 +87,7 @@
     #hint {
       position: absolute; bottom: calc(var(--bar-h) + 36px); left: 50%; transform: translateX(-50%);
       background: rgba(0,0,0,0.72); border: none;
-      border-radius: 4px; padding: 5px 14px; font-size: 11px; color: var(--muted);
+      border-radius: 8px; padding: 5px 14px; font-size: 11px; color: var(--muted);
       pointer-events: none; opacity: 0; transition: opacity 0.25s; white-space: nowrap;
     }
     #hint.on { opacity: 1; }
@@ -116,7 +116,7 @@
 
     /* tool / sym buttons */
     .tbtn {
-      height: 38px; padding: 0 13px; background: rgba(255,255,255,0.06); border: none; border-radius: 4px;
+      height: 38px; padding: 0 13px; background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
       color: var(--text); cursor: pointer; font-size: 12px; box-sizing: border-box;
       font-family: var(--font-body); font-weight: 400;
       letter-spacing: 0.04em; transition: all 0.12s; white-space: nowrap; flex-shrink: 0;
@@ -128,7 +128,7 @@
     /* symmetry icon buttons */
     .sym-btn {
       position: relative;
-      height: 38px; background: rgba(255,255,255,0.06); border: none; border-radius: 4px;
+      height: 38px; background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
       color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: all 0.12s;
     }
@@ -137,7 +137,7 @@
     .sym-btn svg { display: block; pointer-events: none; }
     .sym-tip {
       position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
-      background: #000; border: none; border-radius: 6px; color: #aaa;
+      background: #000; border: none; border-radius: 10px; color: #aaa;
       font-size: 10px; font-weight: 400; letter-spacing: 0.02em; white-space: nowrap;
       padding: 5px 9px; pointer-events: none; opacity: 0;
       transition: opacity 0.15s; z-index: 200;
@@ -150,7 +150,7 @@
     .tip-host { position: relative; }
     .hover-tip {
       position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
-      background: #000; border: none; border-radius: 6px; color: #aaa;
+      background: #000; border: none; border-radius: 10px; color: #aaa;
       font-size: 10px; font-weight: 400; letter-spacing: 0.02em; white-space: nowrap;
       padding: 5px 9px; pointer-events: none; opacity: 0;
       transition: opacity 0.15s; z-index: 200;
@@ -171,7 +171,7 @@
 
     /* checkbox toggle button — Grid / Border */
     .chk-btn {
-      height: 38px; padding: 0 10px; background: rgba(255,255,255,0.06); border: none; border-radius: 4px;
+      height: 38px; padding: 0 10px; background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
       color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 6px; justify-content: center;
       font-size: 12px; font-family: var(--font-body); font-weight: 400; transition: all 0.12s;
       flex-shrink: 0; box-sizing: border-box;
@@ -179,7 +179,7 @@
     .chk-btn:hover { background: rgba(255,255,255,0.10); color: var(--text); }
     .chk-btn.on { color: var(--text); }
     .chk-box {
-      width: 13px; height: 13px; border-radius: 3px; border: 1.5px solid var(--muted);
+      width: 13px; height: 13px; border-radius: 6px; border: 1.5px solid var(--muted);
       display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.12s;
     }
     .chk-btn.on .chk-box { background: var(--accent); border-color: var(--accent); }
@@ -216,7 +216,7 @@
        on the right), and reads better as a wide bar than a tall column. */
     #cp-popup {
       display: none; position: fixed; z-index: 300;
-      background: #000; border: none; border-radius: 12px;
+      background: #000; border: none; border-radius: 16px;
       padding: 30px 12px 12px; flex-direction: row; gap: 12px;
       box-shadow: 0 6px 24px rgba(0,0,0,0.7);
       width: 344px;
@@ -227,7 +227,7 @@
        rather than sharing the colour one. */
     #brush-popup {
       display: none; position: fixed; z-index: 300;
-      background: #000; border: none; border-radius: 12px;
+      background: #000; border: none; border-radius: 16px;
       padding: 30px 14px 14px; flex-direction: column; gap: 10px;
       box-shadow: 0 6px 24px rgba(0,0,0,0.7);
       width: 188px;
@@ -235,7 +235,7 @@
     #brush-popup.on { display: flex; }
     #text-popup {
       display: none; position: fixed; z-index: 300;
-      background: #000; border: none; border-radius: 12px;
+      background: #000; border: none; border-radius: 16px;
       padding: 30px 14px 14px; flex-direction: column; gap: 10px;
       box-shadow: 0 6px 24px rgba(0,0,0,0.7);
       width: 248px;
@@ -243,31 +243,31 @@
     #text-popup.on { display: flex; }
     #text-input {
       width: 100%; box-sizing: border-box; resize: vertical; min-height: 54px;
-      background: rgba(255,255,255,0.06); border: none; border-radius: 6px; outline: none;
+      background: rgba(255,255,255,0.06); border: none; border-radius: 10px; outline: none;
       color: #eee; font-size: 14px; padding: 8px 10px; font-family: var(--font-body);
     }
     #text-input:focus { background: rgba(255,255,255,0.10); }
     .text-font-heading { margin-bottom: -4px; }
     .text-fonts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
     .text-font-opt {
-      background: rgba(255,255,255,0.06); border: none; border-radius: 6px; color: #ddd;
+      background: rgba(255,255,255,0.06); border: none; border-radius: 10px; color: #ddd;
       font-size: 15px; padding: 6px 4px; cursor: pointer; transition: background 0.12s;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .text-font-opt:hover { background: rgba(255,255,255,0.12); }
     .text-font-opt.on { background: var(--accent); color: #111; }
     .text-swatches { display: flex; flex-wrap: wrap; gap: 4px; }
-    .text-swatch { width: 18px; height: 18px; border-radius: 4px; border: none; cursor: pointer; padding: 0; transition: transform 0.1s; }
+    .text-swatch { width: 18px; height: 18px; border-radius: 8px; border: none; cursor: pointer; padding: 0; transition: transform 0.1s; }
     .text-swatch:hover { transform: scale(1.15); }
     .text-swatch.on { outline: 2px solid #fff; outline-offset: 1px; }
     .text-del-btn {
-      background: rgba(255,255,255,0.06); border: none; border-radius: 6px; color: #e57373;
+      background: rgba(255,255,255,0.06); border: none; border-radius: 10px; color: #e57373;
       font-size: 10px; padding: 6px; cursor: pointer; font-family: var(--font-body);
     }
     .text-del-btn:hover { background: rgba(229,115,115,0.15); }
     .text-hint { font-size: 9px; color: var(--muted); line-height: 1.4; }
     .text-logo-btn {
-      display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.06); border: none; border-radius: 6px;
+      display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.06); border: none; border-radius: 10px;
       color: #ddd; font-size: 11px; padding: 6px; cursor: pointer; font-family: var(--font-body); transition: background 0.12s, color 0.12s;
     }
     .text-logo-btn:hover { background: rgba(255,255,255,0.12); color: var(--accent); }
@@ -284,7 +284,7 @@
     #text-icon-btn .ti-pa { font-family: 'Baloo Paaji 2', sans-serif; transform: translateY(3px); }
     .brush-size-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
     .brush-size-opt {
-      flex: 1; height: 52px; background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
+      flex: 1; height: 52px; background: rgba(255,255,255,0.06); border: none; border-radius: 12px;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
       cursor: pointer; transition: background 0.12s; padding: 0;
     }
@@ -308,11 +308,11 @@
     .cp-close:hover { color: #aaa; }
     .cp-left  { display: flex; flex-direction: column; gap: 8px; width: 148px; flex-shrink: 0; }
     .cp-right { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
-    #cp-spectrum { display: block; cursor: crosshair; width: 100%; height: 152px; border-radius: 6px; touch-action: none; }
-    #cp-hue      { display: block; cursor: crosshair; width: 100%; height: 14px; border-radius: 7px; touch-action: none; }
+    #cp-spectrum { display: block; cursor: crosshair; width: 100%; height: 152px; border-radius: 10px; touch-action: none; }
+    #cp-hue      { display: block; cursor: crosshair; width: 100%; height: 14px; border-radius: 11px; touch-action: none; }
     .cp-eyedrop-btn {
       display: flex; align-items: center; justify-content: center; gap: 6px;
-      background: rgba(255,255,255,0.06); border: none; border-radius: 6px;
+      background: rgba(255,255,255,0.06); border: none; border-radius: 10px;
       color: #fff; font-size: 10px; font-family: var(--font-body);
       padding: 6px 0; cursor: pointer; transition: background 0.12s, color 0.12s; flex-shrink: 0;
     }
@@ -322,9 +322,9 @@
     .cp-values { display: flex; flex-direction: column; gap: 4px; }
     .cp-value-row {
       display: flex; align-items: center; gap: 6px;
-      background: #1c1c1c; border-radius: 6px; padding: 5px 7px;
+      background: #1c1c1c; border-radius: 10px; padding: 5px 7px;
     }
-    .cp-value-dot { width: 13px; height: 13px; border-radius: 4px; flex-shrink: 0; }
+    .cp-value-dot { width: 13px; height: 13px; border-radius: 8px; flex-shrink: 0; }
     .cp-value-lbl {
       font-size: 8px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
       color: var(--muted); width: 27px; flex-shrink: 0;
@@ -336,13 +336,13 @@
     }
     .cp-brush-btn {
       width: 18px; height: 18px; flex-shrink: 0; background: rgba(255,255,255,0.08);
-      border: none; border-radius: 4px; color: #ddd; font-size: 12px; cursor: pointer;
+      border: none; border-radius: 8px; color: #ddd; font-size: 12px; cursor: pointer;
       display: flex; align-items: center; justify-content: center; padding: 0;
       transition: background 0.12s;
     }
     .cp-brush-btn:hover { background: rgba(255,255,255,0.16); }
     .cp-dash-btn {
-      background: rgba(255,255,255,0.08); border: none; border-radius: 4px; color: #999;
+      background: rgba(255,255,255,0.08); border: none; border-radius: 8px; color: #999;
       font-size: 9px; padding: 4px 8px; cursor: pointer; font-family: var(--font-body);
       transition: background 0.12s, color 0.12s;
     }
@@ -356,7 +356,7 @@
     .cp-swatches { display: flex; flex-wrap: wrap; gap: 4px; }
     .cp-swatches.cp-swatches-seasons { display: flex; flex-direction: column; gap: 8px; }
     .cp-swatch {
-      width: 18px; height: 18px; border-radius: 3px; border: none; cursor: pointer;
+      width: 18px; height: 18px; border-radius: 6px; border: none; cursor: pointer;
       padding: 0; transition: transform 0.1s; flex-shrink: 0;
     }
     .cp-swatch:hover { transform: scale(1.15); }
@@ -404,13 +404,13 @@
 
     /* icon buttons */
     .icon-btn {
-      width: 30px; height: 30px; background: rgba(255,255,255,0.06); border: none; border-radius: 4px;
+      width: 30px; height: 30px; background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
       color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
       font-size: 13px; font-family: var(--font-body); transition: background 0.1s; flex-shrink: 0;
     }
     .icon-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
     .fit-btn {
-      height: 30px; padding: 0 10px; background: rgba(255,255,255,0.06); border: none; border-radius: 4px;
+      height: 30px; padding: 0 10px; background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
       color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
       font-size: 12px; font-family: var(--font-body); transition: background 0.1s; flex-shrink: 0;
     }
@@ -422,7 +422,7 @@
 
     /* toggle */
     .toggle {
-      width: 34px; height: 20px; background: #333; border-radius: 10px;
+      width: 34px; height: 20px; background: #333; border-radius: 14px;
       position: relative; cursor: pointer; border: none; transition: background 0.2s; flex-shrink: 0;
     }
     .toggle.on { background: var(--accent); }
@@ -434,7 +434,7 @@
 
     /* action buttons */
     .act-btn {
-      height: 38px; padding: 0 11px; background: rgba(255,255,255,0.06); border: none; border-radius: 4px;
+      height: 38px; padding: 0 11px; background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
       color: var(--text); cursor: pointer; font-size: 12px; box-sizing: border-box;
       font-family: var(--font-body); font-weight: 400;
       transition: background 0.1s; white-space: nowrap; min-width: 0;
@@ -447,7 +447,7 @@
     /* export button */
     .export-btn {
       height: 38px; padding: 0 16px; background: var(--accent); border: none;
-      border-radius: 4px; color: #111; cursor: pointer; font-size: 12px; box-sizing: border-box;
+      border-radius: 8px; color: #111; cursor: pointer; font-size: 12px; box-sizing: border-box;
       font-family: var(--font-body); font-weight: 400;
       letter-spacing: 0.02em; transition: background 0.15s, color 0.15s;
       white-space: nowrap; justify-self: end; display: inline-flex; align-items: center;
@@ -459,24 +459,24 @@
     .save-split { position: relative; display: flex; align-items: stretch; gap: 1px; }
     .export-btn.save-btn { background: rgba(255,255,255,0.08); color: var(--text); gap: 6px; }
     .export-btn.save-btn:hover { background: rgba(255,255,255,0.14); color: var(--accent); }
-    .save-main { border-radius: 4px 0 0 4px; }
-    .export-btn.save-caret { border-radius: 0 4px 4px 0; padding: 0 9px; }
+    .save-main { border-radius: 8px 0 0 8px; }
+    .export-btn.save-caret { border-radius: 0 8px 8px 0; padding: 0 9px; }
     .save-split.open .save-caret { background: rgba(255,255,255,0.14); color: var(--accent); }
     .saved-menu {
       display: none; position: absolute; top: calc(100% + 8px); right: 0; z-index: 300;
-      width: 260px; background: #000; border-radius: 12px; padding: 12px;
+      width: 260px; background: #000; border-radius: 16px; padding: 12px;
       box-shadow: 0 6px 24px rgba(0,0,0,0.7); flex-direction: column; gap: 8px;
     }
     .save-split.open .saved-menu { display: flex; }
     .saved-menu-head { font-size: 10px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
     .saved-list { display: flex; flex-direction: column; gap: 2px; max-height: 300px; overflow-y: auto; }
     .saved-row {
-      display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: 6px;
+      display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: 10px;
       cursor: pointer; transition: background 0.12s; position: relative;
     }
     .saved-row:hover { background: rgba(255,255,255,0.07); }
     .saved-row.current { background: rgba(212,168,39,0.14); }
-    .saved-row canvas { width: 40px; height: 40px; border-radius: 4px; flex-shrink: 0; }
+    .saved-row canvas { width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0; }
     .saved-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
     .saved-row-name { font-size: 12px; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .saved-row-date { font-size: 9px; color: var(--muted); }
@@ -490,7 +490,7 @@
     .saved-empty { font-size: 11px; color: var(--muted); padding: 6px 2px; line-height: 1.5; }
     .saved-menu-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 8px; }
     .saved-all-btn {
-      background: rgba(255,255,255,0.06); border: none; border-radius: 6px; color: #ddd; cursor: pointer;
+      background: rgba(255,255,255,0.06); border: none; border-radius: 10px; color: #ddd; cursor: pointer;
       font-size: 10px; padding: 7px; font-family: var(--font-body); transition: background 0.12s, color 0.12s;
     }
     .saved-all-btn:hover { background: rgba(255,255,255,0.12); color: var(--accent); }
@@ -509,7 +509,7 @@
     .feedback-btn:hover .feedback-icon { color: var(--accent); }
     .feedback-tip {
       position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
-      background: #000; border: none; border-radius: 6px; color: #aaa;
+      background: #000; border: none; border-radius: 10px; color: #aaa;
       font-size: 10px; font-weight: 400; letter-spacing: 0.02em; white-space: nowrap;
       padding: 5px 9px; pointer-events: none; opacity: 0;
       transition: opacity 0.15s; z-index: 200;
@@ -571,7 +571,7 @@
     }
     .logo-tip-fact {
       position: relative;
-      background: #000; border: none; border-radius: 12px;
+      background: #000; border: none; border-radius: 16px;
       padding: 14px 16px 15px;
     }
     .logo-tip-close {
@@ -590,7 +590,7 @@
     }
     .logo-tip-hint {
       display: flex; flex-direction: column; gap: 3px;
-      background: #000; border: none; border-radius: 12px;
+      background: #000; border: none; border-radius: 16px;
       padding: 14px 16px 15px; font-size: 13px; color: #fff; line-height: 1.55;
     }
     .logo-tip-hint-label {
@@ -635,7 +635,7 @@
     body.capture-mode #bottombar { opacity: 0.15; pointer-events: none; transition: opacity 0.2s; }
     .capture-banner {
       display: none; position: absolute; top: calc(64px + 20px + 16px); left: 50%; transform: translateX(-50%);
-      background: #000; border: none; border-radius: 6px; color: var(--accent);
+      background: #000; border: none; border-radius: 10px; color: var(--accent);
       font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
       padding: 7px 10px 7px 16px; z-index: 50; white-space: nowrap;
       font-family: var(--font-body);
@@ -648,14 +648,14 @@
        with no Esc key. */
     body.capture-mode .capture-banner { display: flex; pointer-events: auto; }
     .capture-cancel-btn {
-      background: rgba(255,255,255,0.12); border: none; border-radius: 4px; color: var(--text);
+      background: rgba(255,255,255,0.12); border: none; border-radius: 8px; color: var(--text);
       font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
       padding: 5px 9px; cursor: pointer; flex-shrink: 0;
       font-family: var(--font-body); transition: background 0.12s;
     }
     .capture-cancel-btn:hover { background: rgba(255,255,255,0.22); }
     /* Capture preview */
-    .cp-box { background: #000; border: none; border-radius: 12px; padding: 0; min-width: 260px; overflow: hidden; }
+    .cp-box { background: #000; border: none; border-radius: 16px; padding: 0; min-width: 260px; overflow: hidden; }
     .cp-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
     .cp-title { font-size: 10px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
     .cp-preview { padding: 20px; display: flex; justify-content: center; align-items: center; background: #111; min-height: 120px; }
@@ -666,7 +666,7 @@
     .motif-create-btn .mcb-tip, .project-create-btn .mcb-tip {
       position: absolute; bottom: calc(100% + 10px); left: 50%;
       transform: translateX(-50%); width: 190px;
-      background: #000; border: none; border-radius: 6px;
+      background: #000; border: none; border-radius: 10px;
       color: #aaa; font-size: 11px; font-weight: 400;
       padding: 9px 11px; line-height: 1.55;
       pointer-events: none; opacity: 0;
@@ -679,7 +679,7 @@
     .motif-grid { display: flex; flex-direction: row; gap: 6px; overflow-x: auto; align-items: flex-start; flex: 1; }
     .motif-thumb { flex-shrink: 0; width: 60px; }
     .motif-thumb {
-      position: relative; cursor: pointer; border-radius: 4px; overflow: hidden;
+      position: relative; cursor: pointer; border-radius: 8px; overflow: hidden;
       border: 1px solid var(--border); transition: border-color 0.12s;
     }
     .motif-thumb:hover { border-color: var(--accent); }
@@ -687,7 +687,7 @@
     .motif-thumb .m-del {
       position: absolute; top: 2px; right: 2px; width: 12px; height: 12px;
       background: rgba(0,0,0,0.7); border: none; color: #aaa; cursor: pointer;
-      border-radius: 2px; font-size: 9px; line-height: 1; padding: 0;
+      border-radius: 4px; font-size: 9px; line-height: 1; padding: 0;
       display: flex; align-items: center; justify-content: center;
       opacity: 0; transition: opacity 0.1s;
     }
@@ -695,7 +695,7 @@
     .m-lbl { font-size: 8px; color: var(--muted); text-align: center; padding: 2px 0; background: #1c1c1c; font-family: var(--font-body); letter-spacing: 0.06em; }
     .view-all-tile {
       flex-shrink: 0; width: 60px; cursor: pointer;
-      border: 1px solid var(--border); overflow: hidden; border-radius: 4px;
+      border: 1px solid var(--border); overflow: hidden; border-radius: 8px;
       display: flex; flex-direction: column;
       transition: border-color 0.12s;
     }
@@ -714,7 +714,7 @@
     .view-all-tile:hover .va-count { color: #aaa; }
     /* ── MOTIF LIBRARY MODAL ── */
     .lib-box {
-      background: #000; border: none; border-radius: 12px;
+      background: #000; border: none; border-radius: 16px;
       box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 70px 8px rgba(212,168,39,0.35);
       width: min(680px, 92vw); max-height: 86vh;
       display: flex; flex-direction: column; overflow: hidden;
@@ -724,7 +724,7 @@
       gap: 8px; padding: 16px; overflow-y: auto; flex: 1;
     }
     .lib-thumb {
-      position: relative; cursor: pointer; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; transition: border-color 0.12s;
+      position: relative; cursor: pointer; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: border-color 0.12s;
     }
     .lib-thumb:hover, .lib-thumb.selected { border-color: var(--accent); }
     .lib-thumb canvas { display: block; width: 100%; aspect-ratio: 1; }
@@ -764,7 +764,7 @@
     }
     .overlay.on { display: flex; }
     .finish-box {
-      background: #141414; border-radius: 14px;
+      background: #141414; border-radius: 18px;
       box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 70px 8px rgba(212,168,39,0.35);
       width: min(680px, 94vw); max-height: 92vh;
       display: flex; flex-direction: column; overflow: hidden;
@@ -781,27 +781,27 @@
     .btn-feature {
       font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
       text-transform: uppercase; text-decoration: none;
-      background: var(--accent); color: #111; border: none; border-radius: 6px;
+      background: var(--accent); color: #111; border: none; border-radius: 10px;
       padding: 7px 12px; transition: background 0.12s, color 0.12s;
       cursor: pointer; font-family: var(--font-body);
     }
     .btn-feature:hover { background: #F72585; color: #fff; }
     .finish-close {
-      background: none; border: none; border-radius: 4px; color: var(--muted); cursor: pointer;
+      background: none; border: none; border-radius: 8px; color: var(--muted); cursor: pointer;
       font-size: 18px; line-height: 1; padding: 4px 8px;
       transition: color 0.12s, background 0.12s;
     }
     .motion-body { display: flex; flex-direction: column; gap: 14px; padding: 4px 20px 20px; overflow-y: auto; }
     .motion-stage {
       display: flex; align-items: center; justify-content: center;
-      background: #0a0a0a; border-radius: 12px; padding: 16px; min-height: 200px;
+      background: #0a0a0a; border-radius: 16px; padding: 16px; min-height: 200px;
     }
-    #motion-canvas { display: block; border-radius: 2px; }
+    #motion-canvas { display: block; border-radius: 4px; }
     .motion-styles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; } /* timelapse, colour dance */
     @media (max-width: 600px) { .motion-styles { grid-template-columns: repeat(2, 1fr); } }
     .motion-style {
       display: flex; flex-direction: column; gap: 4px; text-align: left;
-      background: #0a0a0a; border: 1px solid transparent; border-radius: 10px; padding: 10px 12px;
+      background: #0a0a0a; border: 1px solid transparent; border-radius: 14px; padding: 10px 12px;
       cursor: pointer; font-family: var(--font-body); transition: border-color 0.12s, background 0.12s;
     }
     .motion-style:hover { background: #111; }
@@ -820,7 +820,7 @@
     }
     .export-col {
       flex: 1 1 240px; min-width: 220px; display: flex; flex-direction: column; gap: 6px;
-      background: #0a0a0a; border-radius: 12px; padding: 16px;
+      background: #0a0a0a; border-radius: 16px; padding: 16px;
     }
     .export-col-label {
       font-size: 10px; font-weight: 600; letter-spacing: 0.14em;
@@ -828,11 +828,11 @@
     }
     .wp-card {
       padding: 10px 8px; cursor: pointer; transition: background 0.12s;
-      display: flex; align-items: center; gap: 14px; border-radius: 8px;
+      display: flex; align-items: center; gap: 14px; border-radius: 12px;
     }
     .wp-card:hover { background: rgba(255,255,255,0.06); }
     .wp-frame {
-      background: #181818; border-radius: 6px; flex-shrink: 0;
+      background: #181818; border-radius: 10px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center; overflow: hidden;
     }
     .wp-frame-portrait  { width: 30px; height: 54px; }
@@ -851,28 +851,28 @@
     .wp-card:hover .wp-dl { color: var(--accent); }
     .riso-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
     .riso-size-badge {
-      background: rgba(255,255,255,0.06); border-radius: 5px; color: var(--accent);
+      background: rgba(255,255,255,0.06); border-radius: 9px; color: var(--accent);
       font-size: 10px; font-weight: 600; letter-spacing: 0.06em; padding: 5px 9px;
     }
     .disabled { opacity: 0.4; pointer-events: none; }
     .riso-thumbs { display: flex; flex-wrap: wrap; gap: 8px; min-height: 65px; }
     .riso-thumb { display: flex; flex-direction: column; align-items: center; gap: 5px; }
     .riso-thumb-frame {
-      width: 50px; height: 70px; background: #fff; border-radius: 5px;
+      width: 50px; height: 70px; background: #fff; border-radius: 9px;
       overflow: hidden; flex-shrink: 0;
     }
     .riso-thumb-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .riso-thumb-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); flex-shrink: 0; }
     .riso-empty { font-size: 9px; color: var(--muted); letter-spacing: 0.04em; }
     .btn-pri {
-      padding: 8px 20px; background: var(--accent); border: none; border-radius: 6px;
+      padding: 8px 20px; background: var(--accent); border: none; border-radius: 10px;
       color: #111; cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
       text-transform: uppercase; font-family: var(--font-body);
       font-weight: 700; transition: background 0.12s, color 0.12s;
     }
     .btn-pri:hover { background: #F72585; color: #fff; }
     .btn-sec {
-      padding: 8px 20px; background: rgba(255,255,255,0.06); border: none; border-radius: 6px;
+      padding: 8px 20px; background: rgba(255,255,255,0.06); border: none; border-radius: 10px;
       color: #ccc; cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
       text-transform: uppercase; font-family: var(--font-body);
       font-weight: 700; transition: background 0.12s, color 0.12s;
@@ -1033,7 +1033,7 @@
     .s-photo-expand-hint {
       position: absolute; bottom: 8px; right: 8px;
       background: rgba(13,13,13,0.72); border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 4px; padding: 4px 7px;
+      border-radius: 8px; padding: 4px 7px;
       font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
       color: rgba(255,255,255,0.55); font-family: var(--font-body);
       pointer-events: none; opacity: 0; transition: opacity 0.15s;
@@ -1196,7 +1196,7 @@
     .page-header .export-btn.save-btn { background-color: #242424; }
     .page-header .export-btn.save-btn:hover, .save-split.open .save-caret { background-color: #323232; }
     .page-header .zoom-lbl {
-      background: #1f1f1f; border-radius: 4px; height: var(--hdr-h);
+      background: #1f1f1f; border-radius: 8px; height: var(--hdr-h);
       display: flex; align-items: center; justify-content: center; padding: 0 6px; box-sizing: border-box;
     }
     .motif-thumb, .view-all-tile { background: #111; }
@@ -1227,7 +1227,7 @@
     .motif-ctrls .motif-step { font-size: 14px; }
     .motif-size-val {
       display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--muted);
-      background: #1d1d1d; border-radius: 4px; min-width: 34px;
+      background: #1d1d1d; border-radius: 8px; min-width: 34px;
     }
     .motif-size-val.active { color: var(--pink); }
 
@@ -1458,8 +1458,8 @@
         </div>
         <!-- Bottom row: view controls -->
         <div class="nav-row">
-          <button class="chk-btn on tip-host" id="tog-grid" onclick="toggleGrid()"><span class="chk-box"><svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.3 6.2l2.3 2.3 5-5.4"/></svg></span>Grid<span class="hover-tip">Toggle grid (G)</span></button>
-          <button class="chk-btn on tip-host" id="tog-border" onclick="toggleBorder()"><span class="chk-box"><svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.3 6.2l2.3 2.3 5-5.4"/></svg></span>Border<span class="hover-tip">Toggle canvas border</span></button>
+          <button class="chk-btn on tip-host" id="tog-grid" onclick="toggleGrid()">Grid<span class="hover-tip">Toggle grid (G)</span></button>
+          <button class="chk-btn on tip-host" id="tog-border" onclick="toggleBorder()">Border<span class="hover-tip">Toggle canvas border</span></button>
           <button class="tbtn orient-btn tip-host" id="orient-portrait-btn" onclick="setOrientation('portrait')">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="3" width="12" height="18" rx="1.5"/></svg>
             <span class="hover-tip">Portrait</span>
