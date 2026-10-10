@@ -32,10 +32,7 @@
       position: fixed; top: 20px; left: 20px; right: 20px; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 24px; height: 64px;
-      background: rgba(24,24,24,0.72);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      border-radius: 20px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+      background: none;
     }
     .page-zoom-row {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -87,10 +84,8 @@
 
     /* ── BOTTOM BAR ── */
     #bottombar {
-      height: var(--bar-h); background: rgba(24,24,24,0.72);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      border-top: none; border-radius: 20px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+      height: var(--bar-h); background: none;
+      border-top: none;
       display: flex; flex-direction: row; align-items: center;
       padding: 0 20px 22px; overflow: visible;
       position: fixed; left: 20px; right: 20px; bottom: 20px; z-index: 100;
