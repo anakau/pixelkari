@@ -4406,6 +4406,7 @@ function buildSym() {
       document.querySelectorAll('#sym-group .sym-btn').forEach(b => b.classList.remove('on'));
       if (!wasOn) btn.classList.add('on');
       render(); // redraw the centre guides for the new mirror axis
+      if (S.activeMotif && S.ghostCol !== null) drawGhost(S.ghostCol, S.ghostRow);
     });
     el.appendChild(btn);
   });
@@ -4776,13 +4777,17 @@ function placeMotif(col, row) {
     const c = Math.round(col + +p[0]);
     const r = Math.round(row + +p[1]);
     if (c < 0 || c >= S.cols || r < 0 || r >= S.rows) continue;
-    S.cells[`${c},${r},${p[2]}`] = color;
-    S.order[`${c},${r},${p[2]}`] = seq;
+    // Mirror symmetry applies to stamps too: each triangle also lands at
+    // its mirrored spot(s), flipped, exactly as a brush stroke would.
+    for (const m of symTris(c, r, p[2])) {
+      S.cells[`${m.col},${m.row},${m.tri}`] = color;
+      S.order[`${m.col},${m.row},${m.tri}`] = seq;
+    }
   }
   for (const line of getActiveLines()) {
     const points = line.points.map(p => ({ col: Math.round(col + p.col), row: Math.round(row + p.row) }));
     if (points.every(p => p.col >= 0 && p.col <= S.cols && p.row >= 0 && p.row <= S.rows)) {
-      S.lines.push({ points, color: line.color, dashed: line.dashed, seq });
+      for (const pts of symPaths(points)) S.lines.push({ points: pts, color: line.color, dashed: line.dashed, seq });
     }
   }
 }
@@ -4794,8 +4799,10 @@ function eraseMotif(col, row) {
     const c = Math.round(col + +p[0]);
     const r = Math.round(row + +p[1]);
     if (c < 0 || c >= S.cols || r < 0 || r >= S.rows) continue;
-    delete S.cells[`${c},${r},${p[2]}`];
-    delete S.order[`${c},${r},${p[2]}`];
+    for (const m of symTris(c, r, p[2])) {
+      delete S.cells[`${m.col},${m.row},${m.tri}`];
+      delete S.order[`${m.col},${m.row},${m.tri}`];
+    }
   }
 }
 
@@ -4806,34 +4813,27 @@ function drawGhost(col, row) {
   const ctx = gc.getContext('2d');
   ctx.clearRect(0, 0, gc.width, gc.height);
   ctx.globalAlpha = 0.45;
+  // Preview every mirrored copy too, matching what placeMotif will stamp.
   for (const [key, color] of Object.entries(getActiveCells())) {
     const p = key.split(',');
     const c = Math.round(col + +p[0]);
     const r = Math.round(row + +p[1]);
-    const x = c * CELL, y = r * CELL;
-    const mx = x + CELL / 2, my = y + CELL / 2;
-    const tri = p[2];
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    if      (tri==='t') { ctx.moveTo(x,y);           ctx.lineTo(x+CELL,y);        ctx.lineTo(mx,my); }
-    else if (tri==='r') { ctx.moveTo(x+CELL,y);      ctx.lineTo(x+CELL,y+CELL);   ctx.lineTo(mx,my); }
-    else if (tri==='b') { ctx.moveTo(x+CELL,y+CELL); ctx.lineTo(x,y+CELL);        ctx.lineTo(mx,my); }
-    else                { ctx.moveTo(x,y+CELL);      ctx.lineTo(x,y);             ctx.lineTo(mx,my); }
-    ctx.closePath(); ctx.fill();
+    for (const m of symTris(c, r, p[2])) drawTriangle(m.col, m.row, m.tri, color, ctx);
   }
   for (const line of getActiveLines()) {
     if (!line.points || line.points.length < 2) continue;
-    ctx.strokeStyle = line.color;
-    ctx.lineWidth = STITCH_WIDTH;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.setLineDash(line.dashed ? stitchDashPattern(STITCH_WIDTH) : []);
-    ctx.beginPath();
-    ctx.moveTo((col + line.points[0].col) * CELL, (row + line.points[0].row) * CELL);
-    for (let i = 1; i < line.points.length; i++) {
-      ctx.lineTo((col + line.points[i].col) * CELL, (row + line.points[i].row) * CELL);
+    const points = line.points.map(p => ({ col: col + p.col, row: row + p.row }));
+    for (const pts of symPaths(points)) {
+      ctx.strokeStyle = line.color;
+      ctx.lineWidth = STITCH_WIDTH;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.setLineDash(line.dashed ? stitchDashPattern(STITCH_WIDTH) : []);
+      ctx.beginPath();
+      ctx.moveTo(pts[0].col * CELL, pts[0].row * CELL);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].col * CELL, pts[i].row * CELL);
+      ctx.stroke();
     }
-    ctx.stroke();
   }
   ctx.globalAlpha = 1;
   ctx.setLineDash([]); // this context isn't wrapped in save/restore, and is shared with drawCaptureOverlay() below — reset so a dashed stitch preview can't leak into its selection-rectangle stroke
