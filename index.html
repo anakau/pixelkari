@@ -1319,6 +1319,14 @@
     /* Group separators as a zigzag running stitch rather than a rule. */
     .bb-divider { width: 8px !important; height: 44px !important; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="8" height="44" viewBox="0 0 8 44"><polyline points="4,0 7,4 1,10 7,16 1,22 7,28 1,34 7,40 4,44" fill="none" stroke="%23D4A827" stroke-opacity="0.35" stroke-width="1.2" stroke-linejoin="round"/></svg>') no-repeat center / 8px 44px !important; }
 
+    /* Create Motif's icon is the favicon motif's silhouette, filled with the
+       button's text colour (yellow, pink on hover) via a mask. */
+    .motif-btn-icon {
+      display: block; width: 28px; height: 28px; background: currentColor;
+      -webkit-mask: url('public/favicon.png') center / contain no-repeat;
+              mask: url('public/favicon.png') center / contain no-repeat;
+    }
+
     /* ── Uniform control heights ──
        Every header control (zoom, history, icon buttons, GIF / Save /
        Finish) shares one height, stepping down per breakpoint via --hdr-h.
@@ -1509,7 +1517,7 @@
       <!-- Motifs: flower button + inline library -->
       <div style="display:flex;align-items:stretch;gap:var(--btn-gap);flex-shrink:0;">
         <button class="tbtn motif-create-btn" id="motif-btn" onclick="startCaptureMode()">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(0 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(45 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(90 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(135 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(180 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(225 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(270 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(315 12 12)"/><circle cx="12" cy="12" r="2.5"/></svg>
+          <span class="motif-btn-icon" aria-hidden="true"></span>
           <span style="line-height:1.3;text-align:center;font-size:10px;">Create<br>Motif</span>
           <div class="mcb-tip">Paint a design on the canvas, then click <strong style="color:#ddd;">Create Motif</strong> to save it. Pick it from the library to stamp it anywhere — click to place, drag to tile.</div>
         </button>
