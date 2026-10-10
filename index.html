@@ -526,7 +526,13 @@
       position: fixed; left: 24px; bottom: calc(var(--bar-h) / 2 - 7px);
       display: flex; flex-direction: column-reverse; align-items: flex-start;
       gap: 8px; z-index: 300;
+      /* The wrap is as wide as the tip bubbles (272px) but Billo is only
+         102px, and he now stands on the toolbar's line — so the empty part
+         of the wrap would sit over the Grid/Border/size controls and eat
+         their clicks. Only Billo and the bubbles themselves take pointers. */
+      pointer-events: none;
     }
+    .billo-wrap > * { pointer-events: auto; }
     .logo-tip.hidden { display: none; }
     /* Billo sits above the toolbar (z 300), which also put her over modal
        backdrops (z 200) — step aside while any modal is open. */
@@ -5795,11 +5801,43 @@ function audioCtx() {
   if (!_audio) {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
-    _audio = new AC();
+    _audio = new AC({ latencyHint: 'interactive' }); // smallest output buffer the browser offers
+    _keepAudioAwake(_audio);
   }
   if (_audio.state === 'suspended') _audio.resume();
   return _audio;
 }
+
+// Many outputs (Mac speakers after idle, and especially Bluetooth
+// headphones) power down after a few seconds of silence, and the next
+// sound then arrives late while the device wakes. A continuous, inaudible
+// (~−90 dB) noise floor keeps the output awake while the tab is visible,
+// so button clicks always land on press.
+function _keepAudioAwake(ac) {
+  const len = ac.sampleRate;
+  const buf = ac.createBuffer(1, len, ac.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * 3e-5;
+  const src = ac.createBufferSource();
+  src.buffer = buf; src.loop = true;
+  src.connect(ac.destination);
+  src.start();
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) ac.suspend(); else ac.resume();
+  });
+}
+
+// Start the audio engine on the very first interaction anywhere (usually
+// "Start Creating" or the first canvas touch), and pre-build the click's
+// noise burst, so the first real button press doesn't pay for start-up.
+function _warmAudio() {
+  const ac = audioCtx();
+  if (ac) _noiseBuf(ac);
+  document.removeEventListener('pointerdown', _warmAudio, true);
+  document.removeEventListener('keydown', _warmAudio, true);
+}
+document.addEventListener('pointerdown', _warmAudio, true);
+document.addEventListener('keydown', _warmAudio, true);
 
 // Tactile switch click, like the buttons on an old handheld device: a crisp
 // contact "tick" (a few ms of bright noise), a short low "thock" for the
