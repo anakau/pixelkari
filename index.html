@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600&display=swap" rel="stylesheet">
   <!-- Fonts offered by the Text tool -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Space+Mono:wght@700&family=Caveat:wght@600&family=Bungee&family=Pixelify+Sans:wght@500&family=Baloo+Paaji+2:wght@600&family=Rozha+One&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Space+Mono:wght@700&family=Caveat:wght@600&family=Bungee&family=Pixelify+Sans:wght@500&family=Baloo+Paaji+2:wght@600&family=Anek+Gurmukhi:wght@600&family=Mukta+Mahee:wght@600&family=Noto+Serif+Gurmukhi:wght@600&family=Rozha+One&display=swap" rel="stylesheet">
   <!-- Cloudflare Web Analytics -->
   <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "25fd5bd2cd284ab3b267f5e113b3f55e"}'></script>
   <!-- End Cloudflare Web Analytics -->
@@ -236,6 +236,7 @@
       color: #eee; font-size: 14px; padding: 8px 10px; font-family: 'Bricolage Grotesque', sans-serif;
     }
     #text-input:focus { background: rgba(255,255,255,0.10); }
+    .text-font-heading { margin-bottom: -4px; }
     .text-fonts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
     .text-font-opt {
       background: rgba(255,255,255,0.06); border: none; border-radius: 6px; color: #ddd;
@@ -256,8 +257,10 @@
     .text-hint { font-size: 9px; color: var(--muted); line-height: 1.4; }
     #text-icon-btn {
       --tilt: 4deg; height: 68px; display: flex; align-items: center; justify-content: center;
-      font-family: 'Playfair Display', serif; font-weight: 600; font-size: 40px; color: #cfcfcf; line-height: 1;
+      gap: 1px; font-weight: 600; font-size: 38px; color: #cfcfcf; line-height: 1;
     }
+    #text-icon-btn .ti-en { font-family: 'Playfair Display', serif; }
+    #text-icon-btn .ti-pa { font-family: 'Baloo Paaji 2', sans-serif; transform: translateY(3px); }
     .brush-size-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
     .brush-size-opt {
       flex: 1; height: 52px; background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
@@ -3331,10 +3334,11 @@ async function buildToolIcons() {
     el.appendChild(wrap);
     renderToolIcon(key);
   });
-  // Text has no SVG artwork — a big serif "Aa" stands in as its icon.
+  // Text has no SVG artwork — a bilingual "Aਅ" stands in as its icon:
+  // the letter "a" in English and in Gurmukhi (ਅ), since text can be written in both.
   const tWrap = document.createElement('div');
   tWrap.className = 'spool-wrap';
-  tWrap.innerHTML = `<button class="tool-icon-btn" id="text-icon-btn" data-tool="text" aria-label="Text">Aa</button><span class="spool-lbl">Text</span>`;
+  tWrap.innerHTML = `<button class="tool-icon-btn" id="text-icon-btn" data-tool="text" aria-label="Text"><span class="ti-en">A</span><span class="ti-pa">ਅ</span></button><span class="spool-lbl">Text</span>`;
   tWrap.firstChild.onclick = (e) => {
     e.stopPropagation();
     if (window._closeCPPopup) window._closeCPPopup();
@@ -4981,7 +4985,11 @@ const TEXT_FONTS = [
   { family: 'Bungee',              weight: 400, label: 'Display' },
   { family: 'Pixelify Sans',       weight: 500, label: 'Pixel' },
   { family: 'Rozha One',           weight: 400, label: 'Rozha' },
-  { family: 'Baloo Paaji 2',       weight: 600, label: 'ਪੰਜਾਬੀ' },
+  // Gurmukhi — shown under their own heading in the popup
+  { family: 'Baloo Paaji 2',       weight: 600, label: 'ਬਲੂ ਪਾਜੀ',   gurmukhi: true },
+  { family: 'Anek Gurmukhi',       weight: 600, label: 'ਅਨੇਕ',       gurmukhi: true },
+  { family: 'Mukta Mahee',         weight: 600, label: 'ਮੁਕਤਾ',      gurmukhi: true },
+  { family: 'Noto Serif Gurmukhi', weight: 600, label: 'ਨੋਟੋ ਸੈਰਿਫ਼', gurmukhi: true },
 ];
 const TEXT_LINE_HEIGHT = 1.15;
 
@@ -5140,8 +5148,10 @@ function initTextPopup() {
     <span class="cp-popup-title" id="text-popup-title">Text</span>
     <button class="cp-close" aria-label="Close" onclick="closeTextPopup()">✕</button>
     <textarea id="text-input" rows="2" placeholder="Type here…"></textarea>
-    <div class="text-fonts">${TEXT_FONTS.map(f =>
-      `<button type="button" class="text-font-opt" data-font="${f.family}" style="font-family:'${f.family}';font-weight:${f.weight}">${f.label}</button>`).join('')}</div>
+    ${[['English', false], ['ਪੰਜਾਬੀ', true]].map(([heading, g]) => `
+      <span class="cp-section-label text-font-heading">${heading}</span>
+      <div class="text-fonts">${TEXT_FONTS.filter(f => !!f.gurmukhi === g).map(f =>
+        `<button type="button" class="text-font-opt" data-font="${f.family}" style="font-family:'${f.family}';font-weight:${f.weight}">${f.label}</button>`).join('')}</div>`).join('')}
     <div class="cp-value-row">
       <span class="cp-value-lbl" style="width:auto;">Size</span>
       <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
