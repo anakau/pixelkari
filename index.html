@@ -189,10 +189,10 @@
     .nav-row   { display: flex; gap: 3px; }
     .preset-select {
       flex: 1 1 0; width: 100%; min-width: 0; padding: 0 22px 0 8px !important; letter-spacing: 0.06em;
-      background: #1d1d1d url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="%23888"/></svg>') no-repeat right 8px center !important; /* solid so a zoomed canvas can't show through */
+      background: #1d1d1d url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="%23D4A827" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat right 9px center !important; /* same chevron as Save's ▾ */ /* solid so a zoomed canvas can't show through */
       border: none !important; appearance: none; -webkit-appearance: none; -moz-appearance: none; cursor: pointer;
     }
-    .preset-select:hover { background-color: #292929 !important; color: var(--accent); }
+    .preset-select:hover { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="%23E91E8C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important; background-color: #292929 !important; color: var(--accent); }
     .preset-select option { background: #181818; color: #eee; }
     .orient-btn {
       flex: 0 0 28px; width: 28px; padding: 0 !important;
@@ -1437,20 +1437,20 @@
         <div class="nav-row">
           <div class="tip-host" id="canvas-size-host" style="flex:1 1 0; min-width:0;">
             <select class="tbtn preset-select" id="preset-select" onchange="newGridPreset(this.value)">
-              <option value="custom">⬜ Custom · 45 × 45</option>
+              <option value="custom">Custom · 45 × 45</option>
               <optgroup label="Screens">
-                <option value="phone">📱 Phone · 1290 × 2796</option>
-                <option value="desktop">🖥 Desktop · 3840 × 2160</option>
+                <option value="phone">Phone · 1290 × 2796</option>
+                <option value="desktop">Desktop · 3840 × 2160</option>
               </optgroup>
               <optgroup label="Instagram">
-                <option value="igsquare">📸 Square · 1080 × 1080</option>
-                <option value="social">📸 Portrait · 1080 × 1350</option>
-                <option value="iglandscape">📸 Landscape · 1080 × 570</option>
+                <option value="igsquare">IG Square · 1080 × 1080</option>
+                <option value="social">IG Portrait · 1080 × 1350</option>
+                <option value="iglandscape">IG Landscape · 1080 × 570</option>
               </optgroup>
               <optgroup label="Print">
-                <option value="a5">📄 A5 · 148 × 210 mm</option>
-                <option value="a4">📄 A4 · 210 × 297 mm</option>
-                <option value="a3">📄 A3 · 297 × 420 mm</option>
+                <option value="a5">A5 · 148 × 210 mm</option>
+                <option value="a4">A4 · 210 × 297 mm</option>
+                <option value="a3">A3 · 297 × 420 mm</option>
               </optgroup>
             </select>
             <span class="hover-tip">Canvas size</span>
