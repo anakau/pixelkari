@@ -1196,7 +1196,7 @@
     .page-header .export-btn.save-btn { background-color: #242424; }
     .page-header .export-btn.save-btn:hover, .save-split.open .save-caret { background-color: #323232; }
     .page-header .zoom-lbl {
-      background: #1f1f1f; border-radius: 8px; height: var(--hdr-h);
+      background: none; height: var(--hdr-h); /* a readout, not a button — no fill */
       display: flex; align-items: center; justify-content: center; padding: 0 6px; box-sizing: border-box;
     }
     .motif-thumb, .view-all-tile { background: #111; }
@@ -1294,6 +1294,11 @@
     .saved-row.current { background: transparent !important; }
     .saved-row.current .saved-row-name, .saved-row:hover .saved-row-name { color: var(--pink); }
     .export-btn:not(.save-btn):hover, .btn-pri:hover, .btn-feature:hover, .snav-cta:hover, .mm-save:hover { background: var(--pink) !important; color: #111 !important; }
+
+    /* Buttons that never had a radius of their own get the same 8px
+       rounding as the rest: header icon buttons, the motif controls and
+       the capture-modal buttons. */
+    .feedback-btn, .motif-rot-btn, .mm-btn, .mm-save { border-radius: 8px; }
 
     /* ── Uniform control heights ──
        Every header control (zoom, history, icon buttons, GIF / Save /
