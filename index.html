@@ -5888,7 +5888,9 @@ function _bass(freq, t, vol = 0.4) {
   src.start(t); src.stop(t + 1.1);
 }
 
+const MELODY_LEVEL = 0.65; // melody sits under the bass and crackle rather than on top of them
 function _playNote(freq, t, vol = 1) {
+  vol *= MELODY_LEVEL;
   _tumbi(freq, t, 0.3 * vol);
   _morchang(freq, t, 0.7 * vol); // its narrow "mouth" filter passes little energy, so it needs more gain to sit under the tumbi
 }
