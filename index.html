@@ -1322,6 +1322,18 @@
        fixed orientation buttons), so the row spans the canvas-size menu. */
     #tog-grid, #tog-border { flex: 1 1 0; min-width: 0; justify-content: center; }
 
+    /* Hover matches selected: pink text on the deep-pink fill. (Filled
+       calls to action — Finish, Download — keep their own pink hover.) */
+    .page-header .fit-btn:hover, .page-header .icon-btn:hover, .page-header .feedback-btn:hover,
+    .page-header .export-btn.save-btn:hover, #bottombar .tbtn:hover, #bottombar .chk-btn:hover,
+    #bottombar .sym-btn:hover, #bottombar .motif-rot-btn:hover, .preset-select:hover,
+    .tool-size button:hover, .text-font-opt:hover, .text-logo-btn:hover, .cp-dash-btn:hover,
+    .saved-all-btn:hover, .saved-row:hover, .finish-row:hover, .motion-style:hover, .btn-sec:hover,
+    .edge-btn:hover, .finish-close:hover {
+      background-color: var(--pink-deep) !important; color: var(--pink) !important;
+    }
+    .page-header .feedback-btn:hover .feedback-icon { color: var(--pink) !important; }
+
     /* ── Uniform control heights ──
        Every header control (zoom, history, icon buttons, GIF / Save /
        Finish) shares one height, stepping down per breakpoint via --hdr-h.
