@@ -1307,7 +1307,6 @@
       display: none; flex-direction: row; align-items: center; gap: 4px; z-index: 3; white-space: nowrap;
     }
     .tool-icon-btn.on ~ .tool-size { display: flex; }
-    .tool-size-val { min-width: 22px; text-align: center; font-size: 11px; color: var(--accent); } /* readout, no fill — like zoom % */
     .tool-size button {
       width: 18px; height: 18px; border-radius: 50%; border: none; padding: 0; cursor: pointer;
       background: #1f1f1f; color: var(--accent); font-family: var(--font-body); font-size: 13px; line-height: 1;
@@ -3566,7 +3565,6 @@ document.addEventListener('keydown', e => {
 // used, along with the [ / ] keyboard shortcut.
 function selectBrushSize(n) {
   S.brushSize = Math.max(1, Math.min(4, n));
-  if (typeof syncToolSizes === 'function') syncToolSizes();
   const cpLbl = document.getElementById('cp-brush-lbl');
   if (cpLbl) cpLbl.textContent = S.brushSize + '×';
   document.querySelectorAll('.brush-size-opt').forEach(b => {
@@ -3748,29 +3746,11 @@ function _toolSizeCtrl(tool) {
     b.addEventListener('click', e => { e.stopPropagation(); stepToolSize(tool, d); });
     return b;
   };
-  const val = document.createElement('span');
-  val.className = 'tool-size-val';
-  wrap.append(mk('−', -1, 'Smaller'), val, mk('+', 1, 'Bigger'));
+  wrap.append(mk('−', -1, 'Smaller'), mk('+', 1, 'Bigger'));
   return wrap;
 }
 
-// The readout between − and + on each tool (brush 1–4×, stitch 1–4×,
-// text size in cells).
-function syncToolSizes() {
-  document.querySelectorAll('.tool-size').forEach(w => {
-    const v = w.querySelector('.tool-size-val');
-    const tool = w.dataset.tool;
-    v.textContent = tool === 'stitch' ? S.stitchSize + '×'
-      : tool === 'text' ? String(_activeText().size)
-      : S.brushSize + '×';
-  });
-}
-
 function stepToolSize(tool, d) {
-  _stepToolSize(tool, d);
-  syncToolSizes();
-}
-function _stepToolSize(tool, d) {
   if (tool === 'paint' || tool === 'erase') { setBrushSize(d); return; }
   if (tool === 'stitch') {
     S.stitchSize = Math.max(1, Math.min(4, S.stitchSize + d));
@@ -3836,7 +3816,6 @@ async function buildToolIcons() {
   tWrap.appendChild(_toolSizeCtrl('text'));
   el.appendChild(tWrap);
   renderTextIcon();
-  syncToolSizes();
   syncSpoolActiveState();
 }
 
@@ -5779,7 +5758,6 @@ function renderTextIcon() {
 
 function syncTextPopup() {
   renderTextIcon();
-  syncToolSizes();
   const popup = document.getElementById('text-popup');
   if (!popup) return;
   const t = _activeText();
