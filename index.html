@@ -502,7 +502,12 @@
     /* hot tip panel — Billo the mascot + her chat bubble */
     .logo-wrap { position: relative; flex-shrink: 0; }
     .billo-wrap {
-      position: fixed; left: 24px; bottom: var(--bar-h);
+      /* Billo stands on the same baseline as the tool icons: the bar's
+         content is centred in its (--bar-h − 22px padding) box, 20px off the
+         window edge, and the icons are 68px tall — which lands their base at
+         --bar-h/2 − 1px. Her artwork has ~6px of empty canvas below her feet,
+         hence the extra −6px. */
+      position: fixed; left: 24px; bottom: calc(var(--bar-h) / 2 - 7px);
       display: flex; flex-direction: column-reverse; align-items: flex-start;
       gap: 8px; z-index: 300;
     }
@@ -1079,7 +1084,7 @@
          hidden) and nudged left so she perches on the bar's corner instead
          of its content — the same "standing at the edge" spot, just sized
          to actually fit there. */
-      .billo-wrap { display: flex; left: -6px; }
+      .billo-wrap { display: flex; left: -6px; bottom: var(--bar-h); }
       .logo-tip-avatar-slot { width: 28px; height: 28px; }
       .logo-tip { display: none; }
     }
