@@ -5650,7 +5650,7 @@ function closeTextPopup() {
 // ═══════════════════════════════════════════════════
 const MOTION_STYLES = {
   timelapse: { label: 'Timelapse',       secs: 6, fps: 15 },
-  dance:     { label: 'Colour dance',    secs: 5, fps: 15 },
+  dance:     { label: 'Colour dance',    secs: 6, fps: 15 },
 };
 const MOTION_GIF_MAX = 640; // longest side of the exported GIF, in px
 
@@ -5791,7 +5791,10 @@ function drawMotionFrame(g, k, style, t) {
     const K = MOTION.colors.length;
     for (const p of MOTION.tris) {
       if (K < 2) { _fillTri(g, p.v, p.color); continue; }
-      const pos = (p.ci + t * K + p.diag * 1.5) % K, i = Math.floor(pos);
+      // Each thread eases into its neighbouring colour and back once per
+      // loop (not round the whole palette), offset along a soft diagonal
+      // wave — calm rather than strobing, and seamless since it returns.
+      const pos = (p.ci + 0.5 - 0.5 * Math.cos(2 * Math.PI * (t - p.diag * 0.6))) % K, i = Math.floor(pos);
       _fillTri(g, p.v, _mixHex(MOTION.colors[i], MOTION.colors[(i + 1) % K], pos - i));
     }
   }
