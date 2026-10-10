@@ -1326,6 +1326,22 @@
               mask: url('public/favicon.png') center / contain no-repeat;
     }
 
+    /* Finish dropdown rows */
+    .finish-menu { width: 300px; }
+    .finish-list { display: flex; flex-direction: column; gap: 2px; }
+    .finish-print-head { margin-top: 6px; }
+    .finish-row {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border: none; border-radius: 10px;
+      background: none; color: var(--accent); font-family: var(--font-body); font-size: 12px; text-align: left; cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+    .finish-row:hover { background: #1a1a1a; color: var(--pink); }
+    .finish-row:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+    .finish-row-name { flex: 1; }
+    .finish-row-dims { font-size: 10px; color: var(--muted); }
+    .finish-row-dl { font-size: 12px; }
+    .finish-split .export-btn { border-radius: 8px !important; }
+
     /* ── Uniform control heights ──
        Every header control (zoom, history, icon buttons, GIF / Save /
        Finish) shares one height, stepping down per breakpoint via --hdr-h.
@@ -1407,7 +1423,11 @@
           </div>
         </div>
       </div>
-      <button class="export-btn" onclick="openFinishModal()" style="line-height:1;">Finish ✦</button>
+      <!-- Finish: a dropdown of downloads (wallpapers, print files) -->
+      <div class="save-split finish-split" id="finish-split">
+        <button class="export-btn" id="finish-btn" onclick="toggleFinishMenu(event)" style="line-height:1;" aria-haspopup="true" aria-expanded="false">Finish ✦</button>
+        <div class="saved-menu finish-menu" id="finish-menu" role="menu"></div>
+      </div>
     </div>
   </div>
 
@@ -1553,59 +1573,6 @@
       <div class="motion-foot">
         <span class="motion-meta" id="motion-meta"></span>
         <button class="btn-pri" id="motion-gif-btn" onclick="downloadMotionGif()">Download GIF</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- FINISH MODAL -->
-<div class="overlay" id="finish-modal">
-  <div class="finish-box">
-    <div class="finish-head">
-      <span class="finish-head-title">Export</span>
-      <div class="finish-head-actions">
-        <button class="btn-feature" onclick="submitToBeFeatured()">Submit to be Featured</button>
-        <button class="finish-close" onclick="closeFinishModal()">✕</button>
-      </div>
-    </div>
-    <div id="wallpaper-grid">
-      <div class="export-col">
-        <div class="export-col-label">Digital</div>
-        <div class="wp-card" id="wp-card-phone" onclick="downloadWallpaper('phone')">
-          <div class="wp-frame wp-frame-portrait"><img class="wp-art" data-format="phone" alt="" /></div>
-          <div class="wp-info">
-            <div class="wp-name">Phone</div>
-            <div class="wp-dims" id="wp-dims-phone">1290 × 2796 · retina</div>
-          </div>
-          <span class="wp-dl">↓</span>
-        </div>
-        <div class="wp-card" id="wp-card-desktop" onclick="downloadWallpaper('desktop')">
-          <div class="wp-frame wp-frame-landscape"><img class="wp-art" data-format="desktop" alt="" /></div>
-          <div class="wp-info">
-            <div class="wp-name">Desktop</div>
-            <div class="wp-dims" id="wp-dims-desktop">3840 × 2160 · 4K</div>
-          </div>
-          <span class="wp-dl">↓</span>
-        </div>
-        <div class="wp-card" id="wp-card-instagram" onclick="downloadWallpaper('instagram')">
-          <div class="wp-frame wp-frame-social"><img class="wp-art" data-format="instagram" alt="" /></div>
-          <div class="wp-info">
-            <div class="wp-name">Instagram</div>
-            <div class="wp-dims" id="wp-dims-instagram">1080 × 1350</div>
-          </div>
-          <span class="wp-dl">↓</span>
-        </div>
-      </div>
-      <div class="export-col" id="riso-col">
-        <div class="riso-head">
-          <span class="export-col-label">Riso Print</span>
-          <span class="riso-size-badge" id="riso-size-badge"></span>
-        </div>
-        <div class="riso-thumbs" id="riso-swatches"></div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto;">
-          <button class="btn-sec" id="pdf-download-btn" onclick="downloadPrintPDF()" style="width:100%;">Download Print PDF</button>
-          <button class="btn-pri" id="riso-download-btn" onclick="downloadRisoPack()" style="width:100%;">Download Colour Separations (ZIP)</button>
-        </div>
       </div>
     </div>
   </div>
@@ -3109,20 +3076,50 @@ function _currentDigitalFormatId() {
   return DIGITAL_FORMAT_BY_PRESET[document.getElementById('preset-select').value] || null;
 }
 
-function openFinishModal() {
-  document.getElementById('finish-modal').classList.add('on');
-  _renderWallpaperPreviews();
+// Finish dropdown — built fresh on each open so sizes and which downloads
+// apply follow the current canvas: wallpapers for its digital format (all
+// three on Custom), print files only on an A5/A4/A3 paper canvas.
+function buildFinishMenu() {
+  const menu = document.getElementById('finish-menu');
+  const active = _currentDigitalFormatId();
+  const all = document.getElementById('preset-select').value === 'custom';
   const sizeId = _currentRisoSizeId();
-  document.getElementById('riso-col').classList.toggle('disabled', !sizeId);
-  document.getElementById('riso-size-badge').textContent = sizeId ? sizeId.toUpperCase() : '';
-  _renderRisoSwatches();
-  const activeFormat = _currentDigitalFormatId();
-  const allDigitalActive = document.getElementById('preset-select').value === 'custom';
-  ['phone', 'desktop', 'instagram'].forEach(fmt => {
-    document.getElementById('wp-card-' + fmt).classList.toggle('disabled', !allDigitalActive && fmt !== activeFormat);
-  });
+  const row = (label, dims, attrs, enabled) =>
+    `<button type="button" class="finish-row" ${attrs} ${enabled ? '' : 'disabled'}>
+       <span class="finish-row-name">${label}</span><span class="finish-row-dims">${dims}</span><span class="finish-row-dl">↓</span>
+     </button>`;
+  const wp = [['phone', 'Phone wallpaper'], ['desktop', 'Desktop wallpaper'], ['instagram', 'Instagram']]
+    .map(([id, label]) => row(label, _wallpaperDims(id).join(' × '), `onclick="closeFinishMenu(); downloadWallpaper('${id}')"`, all || id === active))
+    .join('');
+  menu.innerHTML = `
+    <div class="saved-menu-head">Digital</div>
+    <div class="finish-list">${wp}</div>
+    <div class="saved-menu-head finish-print-head">Print${sizeId ? ' · ' + sizeId.toUpperCase() : ''}</div>
+    <div class="finish-list">
+      ${row('Print PDF', 'full colour', 'id="pdf-download-btn" onclick="downloadPrintPDF()"', !!sizeId)}
+      ${row('Riso separations', 'ZIP · one PDF per ink', 'id="riso-download-btn" onclick="downloadRisoPack()"', !!sizeId)}
+    </div>
+    ${sizeId ? '' : '<span class="saved-note">Switch to an A5 / A4 / A3 canvas for print files.</span>'}`;
 }
-function closeFinishModal() { document.getElementById('finish-modal').classList.remove('on'); }
+function toggleFinishMenu(e) {
+  if (e) e.stopPropagation();
+  const split = document.getElementById('finish-split');
+  if (split.classList.contains('open')) { closeFinishMenu(); return; }
+  closeSavedMenu();
+  buildFinishMenu();
+  split.classList.add('open');
+  document.getElementById('finish-btn').setAttribute('aria-expanded', 'true');
+}
+function closeFinishMenu() {
+  const split = document.getElementById('finish-split');
+  if (!split) return;
+  split.classList.remove('open');
+  document.getElementById('finish-btn').setAttribute('aria-expanded', 'false');
+}
+document.addEventListener('pointerdown', e => {
+  const split = document.getElementById('finish-split');
+  if (split && split.classList.contains('open') && !split.contains(e.target)) closeFinishMenu();
+}, true);
 
 // Final export pixel size for presetId, always exactly proportional to the
 // current canvas (no padding/letterboxing, no forced device aspect ratio)
@@ -3134,50 +3131,6 @@ function _wallpaperDims(presetId) {
     Math.round((rotate ? logH : logW) * scale),
     Math.round((rotate ? logW : logH) * scale),
   ];
-}
-
-function _renderWallpaperPreviews() {
-  const savedGrid = S.grid; S.grid = false; _doRender();
-  const logW = S.cols * CELL, logH = S.rows * CELL;
-
-  // Desktop preview — exact canvas shape, no padding
-  const src = canvas.toDataURL('image/png');
-  document.querySelectorAll('.wp-art[data-format="desktop"]').forEach(img => { img.src = src; });
-
-  // Instagram preview — exact canvas shape, no forced 4:5 frame
-  const is = 126 / Math.max(logW, logH);
-  const ic = document.createElement('canvas');
-  ic.width = Math.round(logW * is); ic.height = Math.round(logH * is);
-  ic.getContext('2d').drawImage(canvas, 0, 0, ic.width, ic.height);
-  document.querySelectorAll('.wp-art[data-format="instagram"]').forEach(img => { img.src = ic.toDataURL(); });
-
-  // Phone preview — rotates to portrait only if the canvas is currently
-  // landscape-shaped (matches _buildWallpaperCanvas)
-  const phoneRotate = logW > logH;
-  const ps = 108 / Math.max(logW, logH);
-  const pc = document.createElement('canvas');
-  if (phoneRotate) {
-    pc.width = Math.round(logH * ps); pc.height = Math.round(logW * ps);
-    const pctx = pc.getContext('2d');
-    pctx.save();
-    pctx.translate(pc.width / 2, pc.height / 2);
-    pctx.rotate(Math.PI / 2);
-    pctx.drawImage(canvas, -logW * ps / 2, -logH * ps / 2, logW * ps, logH * ps);
-    pctx.restore();
-  } else {
-    pc.width = Math.round(logW * ps); pc.height = Math.round(logH * ps);
-    pc.getContext('2d').drawImage(canvas, 0, 0, pc.width, pc.height);
-  }
-  document.querySelectorAll('.wp-art[data-format="phone"]').forEach(img => { img.src = pc.toDataURL(); });
-
-  const tag = { phone: 'retina', desktop: '4K', instagram: '' };
-  ['phone', 'desktop', 'instagram'].forEach(id => {
-    const [w, h] = _wallpaperDims(id);
-    const el = document.getElementById('wp-dims-' + id);
-    if (el) el.textContent = `${w} × ${h}` + (tag[id] ? ` · ${tag[id]}` : '');
-  });
-
-  S.grid = savedGrid; _doRender();
 }
 
 function _buildWallpaperCanvas(presetId) {
@@ -3213,25 +3166,6 @@ function downloadWallpaper(presetId) {
   a.href = exp.toDataURL('image/png');
   a.click();
   sfxSuccess();
-}
-
-// mailto: links can never attach a file — no browser or email client
-// supports it, by design (a URL triggering a file attachment would be a
-// security hole). The closest we can actually do is download the PNG
-// the same moment the email opens, so attaching it is a single drag from
-// Downloads instead of a "remember to export first" step.
-function submitToBeFeatured() {
-  if (isCanvasEmpty()) {
-    showHint('Paint something before submitting');
-    return;
-  }
-  downloadWallpaper('instagram');
-  const subject = encodeURIComponent('Pixelkari Design - Feature Submission');
-  const body = encodeURIComponent(
-    "Hi,\n\nI'd like to submit my design to be featured on Pixelkari.\n\n" +
-    "(A PNG of it was just downloaded to your device — attach it here before sending!)\n\nThanks!"
-  );
-  window.location.href = `mailto:4nahat@gmail.com?subject=${subject}&body=${body}`;
 }
 
 // ═══════════════════════════════════════════════════
@@ -3300,40 +3234,6 @@ function _buildFullColorCanvas(EW, EH) {
   return exp;
 }
 
-function _renderRisoSwatches() {
-  const el = document.getElementById('riso-swatches');
-  el.innerHTML = '';
-  if (!_currentRisoSizeId()) {
-    el.innerHTML = '<span class="riso-empty">Switch to an A5/A4/A3 paper canvas to enable riso separations</span>';
-    return;
-  }
-  const colors = _getUsedColors();
-  if (!colors.length) {
-    el.innerHTML = '<span class="riso-empty">Paint something to see colour separations here</span>';
-    return;
-  }
-  const [THUMB_W, THUMB_H] = _matchOrientation(100, 140);
-  colors.forEach(hex => {
-    const maskCanvas = _buildSeparationCanvas(hex, THUMB_W, THUMB_H);
-    const card = document.createElement('div');
-    card.className = 'riso-thumb';
-    card.title = hex;
-    const frame = document.createElement('div');
-    frame.className = 'riso-thumb-frame';
-    frame.style.width = (THUMB_W / 2) + 'px';
-    frame.style.height = (THUMB_H / 2) + 'px';
-    const img = document.createElement('img');
-    img.src = maskCanvas.toDataURL('image/png');
-    frame.appendChild(img);
-    const dot = document.createElement('div');
-    dot.className = 'riso-thumb-dot';
-    dot.style.background = hex;
-    card.appendChild(frame);
-    card.appendChild(dot);
-    el.appendChild(card);
-  });
-}
-
 async function downloadRisoPack() {
   const sizeId = _currentRisoSizeId();
   if (!sizeId) { showHint('Switch to an A5/A4/A3 paper canvas to export riso separations'); return; }
@@ -3369,6 +3269,8 @@ async function downloadRisoPack() {
   } finally {
     btn.disabled = false;
     btn.textContent = label;
+    // a Finish row's label was flattened to text while generating — rebuild it
+    if (document.getElementById('finish-split').classList.contains('open')) buildFinishMenu();
   }
 }
 
@@ -3396,6 +3298,8 @@ async function downloadPrintPDF() {
   } finally {
     btn.disabled = false;
     btn.textContent = label;
+    // a Finish row's label was flattened to text while generating — rebuild it
+    if (document.getElementById('finish-split').classList.contains('open')) buildFinishMenu();
   }
 }
 let _storyTrail = [];
@@ -3539,7 +3443,7 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('story-page').classList.contains('on')) { closeStoryPage(); return; }
     if (document.getElementById('capture-preview-modal').classList.contains('on')) { cancelCapture(); return; }
     if (document.getElementById('motion-modal').classList.contains('on')) { closeMotionModal(); return; }
-    if (document.getElementById('finish-modal').classList.contains('on')) { closeFinishModal(); return; }
+    if (document.getElementById('finish-split').classList.contains('open')) { closeFinishMenu(); return; }
     if (document.getElementById('motif-library-modal').classList.contains('on')) { closeMotifLibrary(); return; }
     if (S.capturingMotif) { stopCaptureMode(); return; }
     if (S.selectedText !== null) { deselectText(); return; }
@@ -6054,6 +5958,8 @@ async function downloadMotionGif() {
   } finally {
     btn.disabled = false;
     btn.textContent = label;
+    // a Finish row's label was flattened to text while generating — rebuild it
+    if (document.getElementById('finish-split').classList.contains('open')) buildFinishMenu();
   }
 }
 
