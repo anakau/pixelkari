@@ -5374,31 +5374,49 @@ function audioCtx() {
   return _audio;
 }
 
-// A soft wooden "tock" — a quick pitch-dropping sine plus a tiny filtered
-// noise tick for the attack, so it feels like pressing a real button.
+// Tactile switch click, like the buttons on an old handheld device: a crisp
+// contact "tick" (a few ms of bright noise), a short low "thock" for the
+// weight of the press, and a hollow plastic-casing ring between them. The
+// release is a lighter, higher tick, as a real switch makes springing back.
+let _clickNoise = null;
+function _noiseBuf(ac) {
+  if (_clickNoise) return _clickNoise;
+  const len = Math.floor(ac.sampleRate * 0.05);
+  _clickNoise = ac.createBuffer(1, len, ac.sampleRate);
+  const d = _clickNoise.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  return _clickNoise;
+}
+function _tick(ac, t, freq, q, vol, decay) {
+  const n = ac.createBufferSource(); n.buffer = _noiseBuf(ac);
+  const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = q;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+  n.connect(bp).connect(g).connect(ac.destination);
+  n.start(t); n.stop(t + decay + 0.01);
+}
 function sfxClick() {
   const ac = audioCtx(); if (!ac) return;
   const t = ac.currentTime;
-  const osc = ac.createOscillator(), g = ac.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(1400, t);
-  osc.frequency.exponentialRampToValueAtTime(620, t + 0.06);
+  _tick(ac, t, 5200, 0.9, 0.35, 0.004);          // contact
+  _tick(ac, t + 0.002, 1350, 9, 0.22, 0.03);     // casing resonance
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(210, t);
+  o.frequency.exponentialRampToValueAtTime(80, t + 0.03);
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.22, t + 0.004);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
-  osc.connect(g).connect(ac.destination);
-  osc.start(t); osc.stop(t + 0.1);
-
-  const len = Math.floor(ac.sampleRate * 0.02);
-  const buf = ac.createBuffer(1, len, ac.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
-  const noise = ac.createBufferSource(), bp = ac.createBiquadFilter(), ng = ac.createGain();
-  noise.buffer = buf;
-  bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 2.5;
-  ng.gain.value = 0.12;
-  noise.connect(bp).connect(ng).connect(ac.destination);
-  noise.start(t);
+  g.gain.exponentialRampToValueAtTime(0.32, t + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+  o.connect(g).connect(ac.destination);
+  o.start(t); o.stop(t + 0.05);
+  if (navigator.vibrate) navigator.vibrate(8);   // real haptic tap where supported (Android)
+}
+function sfxRelease() {
+  const ac = audioCtx(); if (!ac) return;
+  const t = ac.currentTime;
+  _tick(ac, t, 6800, 1.2, 0.14, 0.003);
+  _tick(ac, t + 0.001, 1900, 8, 0.07, 0.015);
 }
 
 // A small bell — sine fundamental plus a quieter inharmonic partial.
@@ -5424,9 +5442,18 @@ function sfxSuccess() {
   _bell(ac, ac.destination, 880.00, t + 0.11, 0.16, 1.6);
 }
 
-// Every export control clicks on press; the chime above follows on success.
+// Every button clicks down on press and back up on release; exports also
+// get the chime above once the file is ready.
+const CLICKABLE = 'button, select, .wp-card, .saved-row, .motif-thumb, .lib-thumb, .view-all-tile, .text-swatch, .cp-swatch';
+let _pressedEl = null;
 document.addEventListener('pointerdown', e => {
-  if (e.target.closest('.export-btn, .wp-card, #pdf-download-btn, #riso-download-btn, #motif-export-btn, .btn-feature')) sfxClick();
+  const el = e.target.closest(CLICKABLE);
+  if (!el || el.disabled) return;
+  _pressedEl = el;
+  sfxClick();
+}, true);
+document.addEventListener('pointerup', () => {
+  if (_pressedEl) { _pressedEl = null; sfxRelease(); }
 }, true);
 
 // Drawing sounds — when Sound is on, the canvas plays like a keyboard laid
