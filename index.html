@@ -102,8 +102,11 @@
     #bar-logo { flex-shrink: 0; }
     #bb-tools {
       flex: 1; min-width: 0;
-      display: flex; align-items: center; justify-content: center; gap: 0;
-      overflow: visible;
+      /* Groups spread edge to edge rather than bunching in the middle; the
+         left padding keeps the first group clear of Billo (102px wide,
+         24px in from the window edge). */
+      display: flex; align-items: center; justify-content: space-between; gap: 0;
+      padding-left: 110px; overflow: visible;
     }
     .bb-divider { width: 1px; height: 26px; background: rgba(255,255,255,0.07); flex-shrink: 0; margin: 0 14px; }
     /* #motif-panel already contributes 8px of its own right padding before
@@ -163,7 +166,10 @@
     .tool-block { display: flex; gap: 3px; flex-shrink: 0; }
     .tool-col   { display: flex; flex-direction: column; gap: 3px; }
     #sym-group  { display: flex !important; gap: 3px; }
-    #sym-group .sym-btn { flex: 1; width: auto; }
+    /* Mirrors stand alone in their block now (Undo/Redo/Clear moved to the
+       header), so they're fixed square tiles rather than stretching. */
+    #sym-group .sym-btn { flex: none; width: 56px; height: 56px; }
+    #sym-group .sym-btn svg { width: 24px; height: 24px; }
 
     /* checkbox toggle button — Grid / Border */
     .chk-btn {
@@ -401,6 +407,9 @@
       font-size: 12px; font-family: var(--font-body); transition: background 0.1s; flex-shrink: 0;
     }
     .fit-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
+    .fit-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+    .fit-btn.danger { color: #c46060; }
+    .zoom-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.1); margin: 0 4px; flex-shrink: 0; }
     .zoom-lbl { font-size: 13px; font-family: var(--font-body); color: var(--muted); min-width: 34px; text-align: center; flex-shrink: 0; }
 
     /* toggle */
@@ -528,6 +537,14 @@
       position: relative; z-index: 2;
     }
     .logo-tip-avatar-slot canvas { display: block; width: 100%; height: 100%; }
+    /* Name label, styled like the tool labels (CLOTH, CUT…) and sitting on
+       the same line — her artwork has ~6px of empty canvas below her feet,
+       so it's 6px less offset than the tool labels' -14px. */
+    .logo-tip-avatar-slot::after {
+      content: 'Billo'; position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%);
+      font-family: var(--font-body); font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); white-space: nowrap; pointer-events: none;
+    }
     .logo-tip {
       position: relative; z-index: 1;
       width: 272px;
@@ -1094,7 +1111,7 @@
          never show on a touch device anyway. */
       #bottombar { left: 10px; right: 10px; overflow: hidden; }
       #bb-tools {
-        justify-content: flex-start; overflow-x: auto; overflow-y: hidden;
+        justify-content: flex-start; padding-left: 0; overflow-x: auto; overflow-y: hidden;
         -webkit-overflow-scrolling: touch; scrollbar-width: none;
       }
       #bb-tools::-webkit-scrollbar { display: none; }
@@ -1118,6 +1135,7 @@
          to actually fit there. */
       .billo-wrap { display: flex; left: -6px; bottom: var(--bar-h); }
       .logo-tip-avatar-slot { width: 28px; height: 28px; }
+      .logo-tip-avatar-slot::after { display: none; }
       .logo-tip { display: none; }
     }
     @media (max-width: 560px) {
@@ -1161,6 +1179,10 @@
       <span class="zoom-lbl" id="zoom-lbl">100%</span>
       <button class="icon-btn tip-host" onclick="doZoom(0.25)">+<span class="hover-tip hover-tip-below">Zoom in (+)</span></button>
       <button class="fit-btn tip-host" id="pan-btn" onclick="togglePan()"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-1px"><path d="M9 3.5C9 2.67 9.67 2 10.5 2S12 2.67 12 3.5V11h1V5.5C13 4.67 13.67 4 14.5 4S16 4.67 16 5.5V11h1V7.5C17 6.67 17.67 6 18.5 6S20 6.67 20 7.5V15c0 3.31-2.69 6-6 6h-2c-2.1 0-3.96-1.09-5.03-2.75L3.5 13c-.56-.97-.23-2.22.75-2.78.97-.56 2.22-.23 2.78.75L9 13V3.5Z"/></svg>Drag<span class="hover-tip hover-tip-below">Press space bar to drag canvas</span></button>
+      <span class="zoom-divider"></span>
+      <button class="fit-btn tip-host" id="undo-btn" onclick="undo()" disabled>↩ Undo<span class="hover-tip hover-tip-below">Undo (⌘Z)</span></button>
+      <button class="fit-btn tip-host" id="redo-btn" onclick="redo()" disabled>↪ Redo<span class="hover-tip hover-tip-below">Redo (⌘⇧Z)</span></button>
+      <button class="fit-btn tip-host danger" onclick="clearCanvas()">✕ Clear<span class="hover-tip hover-tip-below">Clear the whole canvas</span></button>
     </div>
     <div class="header-actions">
       <div class="feedback-group">
@@ -1304,11 +1326,6 @@
       <div class="tool-block" id="tool-group">
         <div class="tool-col" style="flex:1">
           <div id="sym-group"></div>
-          <div class="tool-row">
-            <button class="act-btn tip-host" id="undo-btn" onclick="undo()" disabled style="flex:1">↩ Undo<span class="hover-tip">Undo (⌘Z)</span></button>
-            <button class="act-btn tip-host" id="redo-btn" onclick="redo()" disabled style="flex:1">↪ Redo<span class="hover-tip">Redo (⌘⇧Z)</span></button>
-            <button class="act-btn danger tip-host" onclick="clearCanvas()" style="flex:1">✕ Clear<span class="hover-tip">Clear the whole canvas</span></button>
-          </div>
         </div>
       </div>
       <div class="bb-divider"></div>
