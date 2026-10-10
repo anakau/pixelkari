@@ -1752,6 +1752,7 @@ function render() {
   });
 }
 function _doRender() {
+  _shadowKey = null; // the canvas changed (edit, undo, load…), so the hover shadow must be recomputed on the next move
   const W   = S.cols * CELL;   // logical pixels
   const H   = S.rows * CELL;
   const bpx = BORDER * CELL;
@@ -2083,13 +2084,21 @@ function symTris(col, row, tri) {
 }
 
 function paint(col, row, tri) {
-  if (col < 0 || col >= S.cols || row < 0 || row >= S.rows) return;
+  for (const key of brushKeys(col, row, tri)) {
+    if (S.tool === 'erase') { delete S.cells[key]; }
+    else                    { S.cells[key] = S.color; }
+  }
+}
+
+// Every triangle a brush stroke at (col, row, tri) would touch — shared by
+// paint() and the hover shadow, so the preview is always exactly the mark.
+function brushKeys(col, row, tri) {
+  const keys = new Set();
+  if (col < 0 || col >= S.cols || row < 0 || row >= S.rows) return keys;
   if (S.brushSize <= 1) {
     symTris(col, row, tri).forEach(({col: c, row: r, tri: t}) => {
       if (c < 0 || c >= S.cols || r < 0 || r >= S.rows) return;
-      const key = `${c},${r},${t}`;
-      if (S.tool === 'erase') { delete S.cells[key]; }
-      else                    { S.cells[key] = S.color; }
+      keys.add(`${c},${r},${t}`);
     });
   } else {
     // A bigger brush is the smallest unit scaled up: one large triangle,
@@ -2109,14 +2118,13 @@ function paint(col, row, tri) {
           if (bc < 0 || bc >= S.cols || br < 0 || br >= S.rows) continue;
           for (const [t, [cu, cv]] of Object.entries(TRI_CENTROID)) {
             if (_triAtUV((dc + R + cu) / span, (dr + R + cv) / span) !== ct) continue;
-            const key = `${bc},${br},${t}`;
-            if (S.tool === 'erase') { delete S.cells[key]; }
-            else                    { S.cells[key] = S.color; }
+            keys.add(`${bc},${br},${t}`);
           }
         }
       }
     });
   }
+  return keys;
 }
 
 // Bucket fill for Weave's Fill mode: floods every triangle connected to the
@@ -2155,15 +2163,18 @@ function triNeighbours(c, r, tri) {
 }
 
 function floodFill(col, row, tri) {
-  if (col < 0 || col >= S.cols || row < 0 || row >= S.rows) return;
+  for (const key of floodRegion(col, row, tri)) S.cells[key] = S.color;
+}
+
+// The triangles a fill at (col, row, tri) would cover, without changing anything.
+function floodRegion(col, row, tri, walls = stitchWalls()) {
+  if (col < 0 || col >= S.cols || row < 0 || row >= S.rows) return new Set();
   const target = S.cells[`${col},${row},${tri}`];
-  if (target === S.color) return;
-  const walls = stitchWalls();
+  if (target === S.color) return new Set();
   const seen = new Set([`${col},${row},${tri}`]);
   const queue = [[col, row, tri]];
   while (queue.length) {
     const [c, r, t] = queue.pop();
-    S.cells[`${c},${r},${t}`] = S.color;
     for (const [nc, nr, nt, e] of triNeighbours(c, r, t)) {
       if (nc < 0 || nc >= S.cols || nr < 0 || nr >= S.rows) continue;
       const key = `${nc},${nr},${nt}`;
@@ -2172,10 +2183,49 @@ function floodFill(col, row, tri) {
       queue.push([nc, nr, nt]);
     }
   }
+  return seen;
+}
+
+// Hover shadow: shows exactly where the next Weave/Cut/Fill mark will land,
+// on the ghost canvas. Recomputed only when the hovered triangle or brush
+// settings change (and after every edit, via snap()).
+let _shadowKey = null;
+function drawBrushShadow({ col, row, tri }) {
+  const key = `${S.tool}|${S.fillMode}|${S.brushSize}|${S.color}|${S.sym}|${col},${row},${tri}`;
+  if (key === _shadowKey) return;
+  _shadowKey = key;
+  const gc = document.getElementById('ghost-canvas');
+  const g = gc.getContext('2d');
+  g.clearRect(0, 0, gc.width, gc.height);
+  let keys, color, alpha;
+  if (S.tool === 'paint' && S.fillMode) {
+    const walls = stitchWalls();
+    keys = new Set();
+    symTris(col, row, tri).forEach(({col: c, row: r, tri: t}) => floodRegion(c, r, t, walls).forEach(k => keys.add(k)));
+    color = S.color; alpha = 0.35;
+  } else {
+    keys = brushKeys(col, row, tri);
+    color = S.tool === 'erase' ? '#000' : S.color;
+    alpha = S.tool === 'erase' ? 0.5 : 0.45;
+  }
+  g.save();
+  g.globalAlpha = alpha;
+  for (const k of keys) {
+    const p = k.split(',');
+    drawTriangle(+p[0], +p[1], p[2], color, g);
+  }
+  g.restore();
+}
+
+function clearBrushShadow() {
+  if (_shadowKey === null) return;
+  _shadowKey = null;
+  clearGhost();
 }
 
 function setFillMode(on) {
   S.fillMode = on;
+  clearBrushShadow();
   document.querySelectorAll('.cp-mode-btn').forEach(b => {
     b.classList.toggle('on', (b.dataset.mode === 'fill') === on);
   });
@@ -2476,6 +2526,7 @@ canvas.addEventListener('pointermove', e => {
     render();
     return;
   }
+  if ((S.tool === 'paint' || S.tool === 'erase') && e.pointerType !== 'touch') drawBrushShadow(triAt(e));
   if (!S.drawing) return;
   if (S.tool === 'erase') {
     // Checked on every move (not just when the triangle cell changes) since
@@ -2527,6 +2578,7 @@ canvas.addEventListener('pointercancel', endCanvasPointer);
 // delivering its events to `canvas` regardless of where it physically is.
 canvas.addEventListener('pointerleave', e => {
   if (e.pointerType !== 'touch' && !S.drawing && !S.panning && S.activeMotif) clearGhost();
+  clearBrushShadow();
 });
 
 // ═══════════════════════════════════════════════════
@@ -3256,6 +3308,7 @@ function syncSpoolActiveState() {
 }
 
 function setTool(id) {
+  clearBrushShadow();
   if (S.activeMotif) { S.activeMotif = null; clearGhost(); }
   if (S.tool === 'text' && id !== 'text') { deselectText(); S.textHover = null; clearGhost(); closeTextPopup(); }
   if (S.tool === 'stitch' && id !== 'stitch' && S.stitchAnchor) { S.stitchAnchor = null; S.stitchPreview = null; S.stitchPath = null; render(); }
