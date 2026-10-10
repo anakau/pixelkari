@@ -414,6 +414,8 @@
       transition: opacity 0.15s; z-index: 200;
     }
     .feedback-btn:hover .feedback-tip { opacity: 1; }
+    button.feedback-btn { cursor: pointer; }
+    .feedback-btn.on .feedback-icon { color: var(--accent); }
 
     /* logo */
     #bar-logo { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; overflow: hidden; }
@@ -492,6 +494,9 @@
     .motif-rot-btn { background: rgba(255,255,255,0.05); border: none; color: var(--muted); font-size: 10px; padding: 3px 8px; cursor: pointer; font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: 0.05em; transition: background 0.12s, color 0.12s; white-space: nowrap; }
     .motif-rot-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
     .motif-rot-btn.active { background: var(--accent); color: #111; }
+    /* Four stacked controls only fit the toolbar's 73px height with tighter rows */
+    .motif-ctrls { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+    .motif-ctrls .motif-rot-btn { padding: 2px 8px; line-height: 1.2; text-align: left; }
     .mm-btn { background: rgba(255,255,255,0.06); border: none; color: #888; font-size: 10px; font-weight: 400; letter-spacing: 0.01em; font-family: 'Bricolage Grotesque', sans-serif; padding: 5px 10px; cursor: pointer; transition: background 0.12s, color 0.12s; }
     .mm-btn:hover { background: rgba(255,255,255,0.11); color: var(--accent); }
     .mm-btn.on { background: var(--accent); color: #111; }
@@ -1045,6 +1050,14 @@
     </div>
     <div class="header-actions">
       <div class="feedback-group">
+        <button type="button" class="feedback-btn" id="music-btn" onclick="toggleMusic()" aria-label="Play music" aria-pressed="false">
+          <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l11-2v13"/>
+            <circle cx="6" cy="18" r="3"/>
+            <circle cx="17" cy="16" r="3"/>
+          </svg>
+          <span class="feedback-tip" id="music-tip">Play music</span>
+        </button>
         <a href="https://tally.so/r/dWgeVA" target="_blank" rel="noopener" class="feedback-btn" aria-label="Suggestions?">
           <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 18h6"/>
@@ -1174,9 +1187,10 @@
         </button>
         <div id="motif-panel">
           <div class="motif-grid" id="motif-pal"></div>
-          <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">
+          <div class="motif-ctrls">
             <button class="motif-rot-btn tip-host" id="motif-flip-btn" onclick="toggleMotifFlip()">↔ Flip<span class="hover-tip">Mirror motif horizontally</span></button>
             <button class="motif-rot-btn tip-host" id="motif-rot-btn" onclick="cycleMotifRotation()">↻ <span id="motif-rot-lbl">0°</span><span class="hover-tip">Rotate motif 90° clockwise</span></button>
+            <button class="motif-rot-btn tip-host" id="motif-size-btn" onclick="cycleMotifScale()">⤢ <span id="motif-size-lbl">1×</span><span class="hover-tip">Make motif bigger (1× → 4×)</span></button>
             <button class="motif-rot-btn tip-host" id="motif-export-btn" onclick="copyMotifsToClipboard()">⬆ Export<span class="hover-tip">Copy all motifs as JSON</span></button>
           </div>
         </div>
@@ -1534,6 +1548,7 @@ const S = {
   paper:     false,
   sym:       null,
   brushSize: 1,
+  fillMode:  false, // Weave only — a click floods the connected region instead of painting one triangle
   stitchDashed: false, // applies to new stitch lines only — existing ones keep whatever they were drawn with
   grid:      true,
   showBorder: true,
@@ -1557,6 +1572,7 @@ const S = {
   activeProjectIdx: null,
   activeMotif: null,
   motifRotation: 0,
+  motifScale:    1,
   ghostCol:   null,
   ghostRow:   null,
   motifDrawing:    false,
@@ -2036,6 +2052,69 @@ function paint(col, row, tri) {
   }
 }
 
+// Bucket fill for Weave's Fill mode: floods every triangle connected to the
+// clicked one that shares its colour (or is likewise empty). Stitch lines
+// act as walls — they always run along triangle edges (cell sides or cell
+// diagonals), so an outline drawn with Stitch can be filled cleanly inside.
+function stitchWalls() {
+  const walls = new Set();
+  const edge = (c0, r0, c1, r1) => (c0 < c1 || (c0 === c1 && r0 < r1)) ? `${c0},${r0}|${c1},${r1}` : `${c1},${r1}|${c0},${r0}`;
+  for (const line of S.lines) {
+    for (let i = 1; i < line.points.length; i++) {
+      const a = line.points[i-1], b = line.points[i];
+      const dc = b.col - a.col, dr = b.row - a.row;
+      // Only straight or 45° runs follow triangle edges (anything else
+      // cuts across triangles, so it can't cleanly wall them off).
+      if (dc && dr && Math.abs(dc) !== Math.abs(dr)) continue;
+      const n = Math.max(Math.abs(dc), Math.abs(dr));
+      const sc = Math.sign(dc), sr = Math.sign(dr);
+      for (let s = 0; s < n; s++) {
+        walls.add(edge(a.col + sc*s, a.row + sr*s, a.col + sc*(s+1), a.row + sr*(s+1)));
+      }
+    }
+  }
+  return { has: (c0, r0, c1, r1) => walls.has(edge(c0, r0, c1, r1)) };
+}
+
+// Neighbours of a triangle, each paired with the grid edge they share.
+function triNeighbours(c, r, tri) {
+  const diag = [c, r, c+1, r+1], anti = [c+1, r, c, r+1];
+  switch (tri) {
+    case 't': return [[c, r, 'l', diag], [c, r, 'r', anti], [c, r-1, 'b', [c, r, c+1, r]]];
+    case 'b': return [[c, r, 'r', diag], [c, r, 'l', anti], [c, r+1, 't', [c, r+1, c+1, r+1]]];
+    case 'l': return [[c, r, 't', diag], [c, r, 'b', anti], [c-1, r, 'r', [c, r, c, r+1]]];
+    default:  return [[c, r, 'b', diag], [c, r, 't', anti], [c+1, r, 'l', [c+1, r, c+1, r+1]]];
+  }
+}
+
+function floodFill(col, row, tri) {
+  if (col < 0 || col >= S.cols || row < 0 || row >= S.rows) return;
+  const target = S.cells[`${col},${row},${tri}`];
+  if (target === S.color) return;
+  const walls = stitchWalls();
+  const seen = new Set([`${col},${row},${tri}`]);
+  const queue = [[col, row, tri]];
+  while (queue.length) {
+    const [c, r, t] = queue.pop();
+    S.cells[`${c},${r},${t}`] = S.color;
+    for (const [nc, nr, nt, e] of triNeighbours(c, r, t)) {
+      if (nc < 0 || nc >= S.cols || nr < 0 || nr >= S.rows) continue;
+      const key = `${nc},${nr},${nt}`;
+      if (seen.has(key) || S.cells[key] !== target || walls.has(...e)) continue;
+      seen.add(key);
+      queue.push([nc, nr, nt]);
+    }
+  }
+}
+
+function setFillMode(on) {
+  S.fillMode = on;
+  document.querySelectorAll('.cp-mode-btn').forEach(b => {
+    b.classList.toggle('on', (b.dataset.mode === 'fill') === on);
+  });
+  if (S.tool === 'paint') setBilloMessage(on ? 'fill' : 'paint');
+}
+
 // ═══════════════════════════════════════════════════
 // CANVAS EVENTS
 // Pointer Events unify mouse / touch / Apple Pencil — the same triAt()/
@@ -2189,6 +2268,16 @@ canvas.addEventListener('pointerdown', e => {
     S.panning  = true;
     S.panStart = { x: e.clientX - S.panX, y: e.clientY - S.panY };
     canvas.style.cursor = 'grabbing';
+    return;
+  }
+  if (S.tool === 'paint' && S.fillMode) {
+    e.preventDefault();
+    const {col, row, tri} = triAt(e);
+    snap();
+    // Mirror symmetry applies to fills too — re-check each mirrored start,
+    // since an earlier fill may already have covered it.
+    symTris(col, row, tri).forEach(({col: c, row: r, tri: t}) => floodFill(c, r, t));
+    render();
     return;
   }
   safeSetPointerCapture(e.pointerId);
@@ -2629,6 +2718,7 @@ function downloadWallpaper(presetId) {
   a.download = `pixelkari-${presetId}.png`;
   a.href = exp.toDataURL('image/png');
   a.click();
+  sfxSuccess();
 }
 
 // mailto: links can never attach a file — no browser or email client
@@ -2775,6 +2865,7 @@ async function downloadRisoPack() {
     a.download = `pixelkari-${sizeId}-riso-separations.zip`;
     a.href = URL.createObjectURL(blob);
     a.click();
+    sfxSuccess();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   } finally {
     btn.disabled = false;
@@ -2802,6 +2893,7 @@ async function downloadPrintPDF() {
     const pdf = new jspdf.jsPDF({ orientation: mmW > mmH ? 'landscape' : 'portrait', unit: 'mm', format: [mmW, mmH] });
     pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, mmW, mmH, undefined, 'MEDIUM');
     pdf.save(`pixelkari-${sizeId}-print.pdf`);
+    sfxSuccess();
   } finally {
     btn.disabled = false;
     btn.textContent = label;
@@ -2953,6 +3045,7 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'p') setTool('paint');
   if (e.key === 'e') setTool('erase');
+  if (e.key === 'f') { setTool('paint'); setFillMode(!S.fillMode); showHint(S.fillMode ? 'Fill mode' : 'Brush mode'); }
   if (e.key === 'g') toggleGrid();
   if (e.key === '+' || e.key === '=') doZoom(0.25);
   if (e.key === '-') doZoom(-0.25);
@@ -2983,7 +3076,7 @@ function setBrushSize(delta) { selectBrushSize(S.brushSize + delta); }
 // affected retroactively, same as how stitch colour already works.
 function setStitchDashed(dashed) {
   S.stitchDashed = dashed;
-  document.querySelectorAll('.cp-dash-btn').forEach(b => {
+  document.querySelectorAll('.cp-dash-btn[data-dashed]').forEach(b => {
     b.classList.toggle('on', (b.dataset.dashed === '1') === dashed);
   });
 }
@@ -3072,7 +3165,7 @@ function setTool(id) {
   S.tool = id;
   document.querySelectorAll('.tbtn[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === id));
   syncSpoolActiveState();
-  setBilloMessage(id);
+  setBilloMessage(id === 'paint' && S.fillMode ? 'fill' : id);
   updateSymTips();
   const mc = document.getElementById('mc');
   if (mc && !S.spaceDown) mc.style.cursor = toolCursor();
@@ -3261,6 +3354,18 @@ function initCustomColorPicker() {
     </div>
   `;
   left.appendChild(brushRow);
+
+  // Brush vs Fill — Weave-only, shown/hidden alongside brushRow.
+  const modeRow = document.createElement('div');
+  modeRow.className = 'cp-value-row cp-mode-row';
+  modeRow.innerHTML = `
+    <span class="cp-value-lbl" style="width:auto;">Mode</span>
+    <div style="display:flex;gap:4px;margin-left:auto;">
+      <button type="button" class="cp-dash-btn cp-mode-btn${S.fillMode ? '' : ' on'}" data-mode="brush" onclick="setFillMode(false)">Brush</button>
+      <button type="button" class="cp-dash-btn cp-mode-btn${S.fillMode ? ' on' : ''}" data-mode="fill" onclick="setFillMode(true)">Fill</button>
+    </div>
+  `;
+  left.appendChild(modeRow);
 
   // Line style is Stitch-only — mirrors brushRow's per-target show/hide.
   const dashRow = document.createElement('div');
@@ -3615,6 +3720,7 @@ function initCustomColorPicker() {
     cpTarget = target;
     window._cpTarget = cpTarget;
     brushRow.style.display = target === 'weave' ? 'flex' : 'none';
+    modeRow.style.display = target === 'weave' ? 'flex' : 'none';
     dashRow.style.display = target === 'stitch' ? 'flex' : 'none';
     if (target === 'cloth') setBilloMessage('cloth'); // weave/stitch already set theirs via setTool()
     renderSwatchSection(cpTarget);
@@ -4032,16 +4138,55 @@ function mirrorMotifLines(lines) {
   return lines.map(l => ({ ...l, points: l.points.map(p => ({ col: -p.col, row: p.row })) }));
 }
 
+// Enlarges a motif k× by turning every cell into a k×k block. Each small
+// triangle in the block is coloured by whichever of the original cell's four
+// triangles its centroid falls in — the block's diagonals run exactly along
+// the small cells' own diagonals, so every small triangle lands wholly inside
+// one big one and the scaled motif keeps the same crisp triangle geometry.
+const TRI_CENTROID = { t: [0.5, 1/6], b: [0.5, 5/6], l: [1/6, 0.5], r: [5/6, 0.5] };
+function _triAtUV(u, v) {
+  if      (v < u  && v < 1-u) return 't';
+  else if (v > u  && v > 1-u) return 'b';
+  else if (u >= v && u >= 1-v) return 'r';
+  return 'l';
+}
+let _scaleCache = { motif: null, k: 1, cells: null };
+function scaleMotifCells(cells, k) {
+  if (k <= 1) return cells;
+  if (_scaleCache.motif === cells && _scaleCache.k === k) return _scaleCache.cells;
+  const next = {};
+  for (const [key, color] of Object.entries(cells)) {
+    const p = key.split(',');
+    const c = +p[0], r = +p[1], tri = p[2];
+    for (let i = 0; i < k; i++) {
+      for (let j = 0; j < k; j++) {
+        for (const [t, [cu, cv]] of Object.entries(TRI_CENTROID)) {
+          if (_triAtUV((i + cu) / k, (j + cv) / k) === tri) next[`${c*k + i},${r*k + j},${t}`] = color;
+        }
+      }
+    }
+  }
+  _scaleCache = { motif: cells, k, cells: next };
+  return next;
+}
+// Line points are grid vertices, so scaling is just multiplying them out —
+// cell (c) spans [c, c+1] which becomes [c·k, c·k+k], keeping lines aligned.
+function scaleMotifLines(lines, k) {
+  if (!lines) return [];
+  if (k <= 1) return lines;
+  return lines.map(l => ({ ...l, points: l.points.map(p => ({ col: p.col * k, row: p.row * k })) }));
+}
+
 function getActiveCells() {
   if (!S.activeMotif) return {};
-  let cells = rotateMotifCells(S.activeMotif.cells, S.motifRotation);
+  let cells = rotateMotifCells(scaleMotifCells(S.activeMotif.cells, S.motifScale), S.motifRotation);
   if (S.motifFlipH) cells = mirrorMotifCells(cells);
   return cells;
 }
 
 function getActiveLines() {
   if (!S.activeMotif) return [];
-  let lines = rotateMotifLines(S.activeMotif.lines, S.motifRotation);
+  let lines = rotateMotifLines(scaleMotifLines(S.activeMotif.lines, S.motifScale), S.motifRotation);
   if (S.motifFlipH) lines = mirrorMotifLines(lines);
   return lines;
 }
@@ -4060,6 +4205,7 @@ function copyMotifsToClipboard() {
   const label = btn.firstChild; // text node before the .hover-tip span
   navigator.clipboard.writeText(JSON.stringify(MOTIFS, null, 2)).then(function() {
     label.textContent = '✓ Copied!';
+    sfxSuccess();
     setTimeout(function() { label.textContent = '⬆ Export'; }, 2000);
   }).catch(function() {
     prompt('Copy this JSON:', JSON.stringify(MOTIFS));
@@ -4075,6 +4221,18 @@ function cycleMotifRotation() {
   if (btn) btn.classList.toggle('active', S.motifRotation !== 0);
   S.motifBounds = getMotifBounds();
   if (S.ghostCol !== null) drawGhost(S.ghostCol, S.ghostRow);
+}
+
+function cycleMotifScale() {
+  if (!S.activeMotif) return;
+  S.motifScale = S.motifScale % 4 + 1;
+  const lbl = document.getElementById('motif-size-lbl');
+  if (lbl) lbl.textContent = S.motifScale + '×';
+  const btn = document.getElementById('motif-size-btn');
+  if (btn) btn.classList.toggle('active', S.motifScale !== 1);
+  S.motifBounds = getMotifBounds();
+  if (S.ghostCol !== null) drawGhost(S.ghostCol, S.ghostRow);
+  showHint(S.motifScale === 1 ? 'Motif: original size' : `Motif: ${S.motifScale}× bigger`);
 }
 
 function clampMotifPos(col, row) {
@@ -4098,6 +4256,11 @@ function selectMotif(motif) {
   if (btn) btn.classList.remove('active');
   const flipBtn = document.getElementById('motif-flip-btn');
   if (flipBtn) flipBtn.classList.remove('active');
+  S.motifScale = 1;
+  const sizeLbl = document.getElementById('motif-size-lbl');
+  if (sizeLbl) sizeLbl.textContent = '1×';
+  const sizeBtn = document.getElementById('motif-size-btn');
+  if (sizeBtn) sizeBtn.classList.remove('active');
   document.querySelectorAll('.motif-thumb').forEach(t => t.classList.remove('selected'));
   if (motif) {
     showHint(`"${motif.name}" selected — click canvas to place, Esc to cancel`);
@@ -4678,6 +4841,7 @@ function pickBilloFact() {
 // Pixelkari. Stays tied to the active tool, unlike the fact above.
 const BILLO_TIPS = {
   paint:  `The main tool — fills the grid to build your motifs. Click or drag to fill triangles with your selected thread colour.`,
+  fill:   `Fill mode — click once to flood a whole area with your thread colour. Stitch lines act as walls, so outline a shape first, then fill it in.`,
   stitch: `Use stitch for outlines or finer details the fill can't capture. Click to start, then just move your cursor — no need to drag — and click again to finish.`,
   erase:  `Click and drag over painted triangles to remove them — aim with the upper blade of the scissors, the exact point that cuts.`,
   cloth:  `Base colours are grouped by season, each pairing a fabric tone with the threads that suit it. Pick one to set the mood for the whole piece.`,
@@ -4713,6 +4877,157 @@ function wireBilloContextTips() {
   });
   const zoomRow = document.querySelector('.page-zoom-row');
   if (zoomRow) zoomRow.addEventListener('mouseenter', () => setBilloMessage('zoom'));
+}
+
+// ═══════════════════════════════════════════════════
+// SOUND — export clicks + ambient music
+// Everything is synthesised with Web Audio, so there are no audio files to
+// load or license. The context is created lazily on the first click, since
+// browsers won't let audio start before a user gesture anyway.
+// ═══════════════════════════════════════════════════
+let _audio = null;
+function audioCtx() {
+  if (!_audio) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    _audio = new AC();
+  }
+  if (_audio.state === 'suspended') _audio.resume();
+  return _audio;
+}
+
+// A soft wooden "tock" — a quick pitch-dropping sine plus a tiny filtered
+// noise tick for the attack, so it feels like pressing a real button.
+function sfxClick() {
+  const ac = audioCtx(); if (!ac) return;
+  const t = ac.currentTime;
+  const osc = ac.createOscillator(), g = ac.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(1400, t);
+  osc.frequency.exponentialRampToValueAtTime(620, t + 0.06);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.22, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+  osc.connect(g).connect(ac.destination);
+  osc.start(t); osc.stop(t + 0.1);
+
+  const len = Math.floor(ac.sampleRate * 0.02);
+  const buf = ac.createBuffer(1, len, ac.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const noise = ac.createBufferSource(), bp = ac.createBiquadFilter(), ng = ac.createGain();
+  noise.buffer = buf;
+  bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 2.5;
+  ng.gain.value = 0.12;
+  noise.connect(bp).connect(ng).connect(ac.destination);
+  noise.start(t);
+}
+
+// A small bell — sine fundamental plus a quieter inharmonic partial.
+function _bell(ac, dest, freq, t, vol, decay) {
+  [[1, vol], [2.76, vol * 0.25], [5.4, vol * 0.08]].forEach(([mult, v]) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq * mult;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + decay / mult);
+    o.connect(g).connect(dest);
+    o.start(t); o.stop(t + decay / mult + 0.05);
+  });
+}
+
+// Played once an export has actually been handed to the browser — two
+// rising bell notes (Sa → Pa), the same scale the ambient music uses.
+function sfxSuccess() {
+  const ac = audioCtx(); if (!ac) return;
+  const t = ac.currentTime;
+  _bell(ac, ac.destination, 587.33, t, 0.16, 1.2);
+  _bell(ac, ac.destination, 880.00, t + 0.11, 0.16, 1.6);
+}
+
+// Every export control clicks on press; the chime above follows on success.
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest('.export-btn, .wp-card, #pdf-download-btn, #riso-download-btn, #motif-export-btn, .btn-feature')) sfxClick();
+}, true);
+
+// Ambient music: a tanpura-style drone (Pa–Sa–Sa–low Sa, looping) with
+// slow, wandering bell notes from raag Bhupali (Sa Re Ga Pa Dha) on top.
+// Notes are scheduled slightly ahead on the audio clock so timing stays
+// steady even when the main thread is busy painting.
+const MUSIC = {
+  playing: false, master: null, timer: null, nextDrone: 0, droneStep: 0, nextNote: 0, noteIdx: 2,
+  DRONE: [110.00, 146.83, 146.83, 73.42],                      // Pa, Sa, Sa, low Sa (Sa = D)
+  SCALE: [293.66, 329.63, 369.99, 440.00, 493.88, 587.33, 659.25], // Sa Re Ga Pa Dha Sa' Re'
+};
+
+function _musicGraph(ac) {
+  const master = ac.createGain();
+  master.gain.value = 0.0001;
+  // A soft feedback echo gives the notes some room without a reverb file.
+  const delay = ac.createDelay(1), fb = ac.createGain(), damp = ac.createBiquadFilter();
+  delay.delayTime.value = 0.42; fb.gain.value = 0.38;
+  damp.type = 'lowpass'; damp.frequency.value = 1800;
+  master.connect(ac.destination);
+  master.connect(delay); delay.connect(damp).connect(fb).connect(delay);
+  damp.connect(ac.destination);
+  return master;
+}
+
+function _tanpuraPluck(ac, freq, t) {
+  const o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
+  o.type = 'sawtooth'; o.frequency.value = freq;
+  f.type = 'lowpass'; f.Q.value = 6;
+  f.frequency.setValueAtTime(freq * 9, t);
+  f.frequency.exponentialRampToValueAtTime(freq * 2.5, t + 3);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.09, t + 0.06);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 4.2);
+  o.connect(f).connect(g).connect(MUSIC.master);
+  o.start(t); o.stop(t + 4.3);
+}
+
+function _scheduleMusic() {
+  const ac = _audio;
+  const horizon = ac.currentTime + 0.6;
+  while (MUSIC.nextDrone < horizon) {
+    _tanpuraPluck(ac, MUSIC.DRONE[MUSIC.droneStep % 4], MUSIC.nextDrone);
+    MUSIC.droneStep++;
+    MUSIC.nextDrone += MUSIC.droneStep % 4 === 0 ? 1.6 : 1.1;
+  }
+  while (MUSIC.nextNote < horizon) {
+    if (Math.random() < 0.6) {
+      // Wander a step or two up/down the scale so the line sounds sung, not random.
+      const step = [-2, -1, -1, 1, 1, 2][Math.floor(Math.random() * 6)];
+      MUSIC.noteIdx = Math.max(0, Math.min(MUSIC.SCALE.length - 1, MUSIC.noteIdx + step));
+      _bell(ac, MUSIC.master, MUSIC.SCALE[MUSIC.noteIdx], MUSIC.nextNote, 0.07, 2.4);
+    }
+    MUSIC.nextNote += [0.55, 1.1, 1.1, 2.2][Math.floor(Math.random() * 4)];
+  }
+}
+
+function toggleMusic() {
+  const ac = audioCtx(); if (!ac) return;
+  if (!MUSIC.master) MUSIC.master = _musicGraph(ac);
+  MUSIC.playing = !MUSIC.playing;
+  const t = ac.currentTime;
+  MUSIC.master.gain.cancelScheduledValues(t);
+  MUSIC.master.gain.setValueAtTime(Math.max(MUSIC.master.gain.value, 0.0001), t);
+  if (MUSIC.playing) {
+    MUSIC.nextDrone = MUSIC.nextNote = t + 0.1;
+    MUSIC.droneStep = 0;
+    MUSIC.master.gain.exponentialRampToValueAtTime(0.9, t + 1.5);
+    _scheduleMusic();
+    MUSIC.timer = setInterval(_scheduleMusic, 200);
+  } else {
+    MUSIC.master.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+    clearInterval(MUSIC.timer);
+  }
+  const btn = document.getElementById('music-btn');
+  btn.classList.toggle('on', MUSIC.playing);
+  btn.setAttribute('aria-pressed', MUSIC.playing);
+  btn.setAttribute('aria-label', MUSIC.playing ? 'Pause music' : 'Play music');
+  document.getElementById('music-tip').textContent = MUSIC.playing ? 'Pause music' : 'Play music';
 }
 
 // ═══════════════════════════════════════════════════
