@@ -1721,28 +1721,29 @@ const THREAD = SEASONS.flatMap(s => s.threads);
 const BASES = SEASONS.flatMap(s => s.bases);
 
 // Icons: dot · line · dot for the single mirrors, four dots around both
-// axes for the 4-fold one — each dot is a copy of what you draw.
+// axes for the 4-fold one — each dot is a copy of what you draw. Solid
+// lines, everything mirrored exactly about the 24-unit centre (12, 12).
 const SYMS = [
   { id:'h', title:'Mirror left ↔ right',
     svg:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-      <line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2.5"/>
+      <line x1="12" y1="4" x2="12" y2="20"/>
       <circle cx="6"  cy="12" r="2.4" fill="currentColor" stroke="none"/>
       <circle cx="18" cy="12" r="2.4" fill="currentColor" stroke="none"/>
     </svg>` },
   { id:'v', title:'Mirror top ↕ bottom',
     svg:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-      <line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2 2.5"/>
+      <line x1="4" y1="12" x2="20" y2="12"/>
       <circle cx="12" cy="6"  r="2.4" fill="currentColor" stroke="none"/>
       <circle cx="12" cy="18" r="2.4" fill="currentColor" stroke="none"/>
     </svg>` },
   { id:'4', title:'4-fold mirror (+ axes)',
     svg:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-      <line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2.5" opacity="0.5"/>
-      <line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2 2.5" opacity="0.5"/>
-      <circle cx="6.5"  cy="6.5"  r="2.4" fill="currentColor" stroke="none"/>
-      <circle cx="17.5" cy="6.5"  r="2.4" fill="currentColor" stroke="none"/>
-      <circle cx="6.5"  cy="17.5" r="2.4" fill="currentColor" stroke="none"/>
-      <circle cx="17.5" cy="17.5" r="2.4" fill="currentColor" stroke="none"/>
+      <line x1="12" y1="4" x2="12" y2="20"/>
+      <line x1="4" y1="12" x2="20" y2="12"/>
+      <circle cx="6"  cy="6"  r="2.4" fill="currentColor" stroke="none"/>
+      <circle cx="18" cy="6"  r="2.4" fill="currentColor" stroke="none"/>
+      <circle cx="6"  cy="18" r="2.4" fill="currentColor" stroke="none"/>
+      <circle cx="18" cy="18" r="2.4" fill="currentColor" stroke="none"/>
     </svg>` },
 ];
 
