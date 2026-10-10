@@ -1171,13 +1171,21 @@
         <div class="nav-row">
           <div class="tip-host" id="canvas-size-host" style="flex:1 1 0; min-width:0;">
             <select class="tbtn preset-select" id="preset-select" onchange="newGridPreset(this.value)">
-              <option value="custom">⬜ Custom</option>
-              <option value="phone">📱 Phone</option>
-              <option value="desktop">🖥 Desktop</option>
-              <option value="social">📸 Social</option>
-              <option value="a5">📄 A5 paper</option>
-              <option value="a4">📄 A4 paper</option>
-              <option value="a3">📄 A3 paper</option>
+              <option value="custom">⬜ Custom · 45 × 45</option>
+              <optgroup label="Screens">
+                <option value="phone">📱 Phone · 1290 × 2796</option>
+                <option value="desktop">🖥 Desktop · 3840 × 2160</option>
+              </optgroup>
+              <optgroup label="Instagram">
+                <option value="igsquare">📸 Square · 1080 × 1080</option>
+                <option value="social">📸 Portrait · 1080 × 1350</option>
+                <option value="iglandscape">📸 Landscape · 1080 × 570</option>
+              </optgroup>
+              <optgroup label="Print">
+                <option value="a5">📄 A5 · 148 × 210 mm</option>
+                <option value="a4">📄 A4 · 210 × 297 mm</option>
+                <option value="a3">📄 A3 · 297 × 420 mm</option>
+              </optgroup>
             </select>
             <span class="hover-tip">Canvas size</span>
           </div>
@@ -2599,7 +2607,10 @@ const WALLPAPER_PRESETS = {
 const GRID_PRESETS = {
   phone:   { cols: 52, rows: 24 },
   desktop: { cols: 80, rows: 45 }, // exact 16:9, matches desktop wallpaper scale x4 = 3840x2160
-  social:  { cols: 36, rows: 45 },
+  // Instagram at 30 export px per cell (CELL 12 × scale 2.5), so 36 cols = 1080px wide
+  igsquare:    { cols: 36, rows: 36 }, // 1080 × 1080
+  social:      { cols: 36, rows: 45 }, // 1080 × 1350 portrait (4:5) — key kept from the old "Social" preset
+  iglandscape: { cols: 36, rows: 19 }, // 1080 × 570, Instagram's ~1.91:1 landscape
   custom:  { cols: 45, rows: 45 },
   a5:      { cols: 30, rows: 42, paper: true },
   a4:      { cols: 42, rows: 59, paper: true },
@@ -2680,7 +2691,7 @@ function _currentRisoSizeId() {
   }) || null;
 }
 
-const DIGITAL_FORMAT_BY_PRESET = { phone: 'phone', desktop: 'desktop', social: 'instagram' };
+const DIGITAL_FORMAT_BY_PRESET = { phone: 'phone', desktop: 'desktop', social: 'instagram', igsquare: 'instagram', iglandscape: 'instagram' };
 function _currentDigitalFormatId() {
   return DIGITAL_FORMAT_BY_PRESET[document.getElementById('preset-select').value] || null;
 }
