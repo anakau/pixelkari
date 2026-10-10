@@ -5476,6 +5476,26 @@ function _prepareMotion() {
   ordered.forEach((p, i) => { p.rank = i / Math.max(1, ordered.length); });
 }
 
+// Same hue, much lighter (HSL lightness pushed ~55% of the way to white,
+// saturation kept) — a sheen that stays the thread's own colour.
+const _lightCache = new Map();
+function _lighter(hex) {
+  if (_lightCache.has(hex)) return _lightCache.get(hex);
+  let [r, g, b] = hexToRgbTuple(hex).map(x => x / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+  let h = 0, sat = 0;
+  if (d) {
+    sat = d / (1 - Math.abs(2 * l - 1));
+    h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    h *= 60; if (h < 0) h += 360;
+  }
+  const L = l + (1 - l) * 0.55, C = (1 - Math.abs(2 * L - 1)) * sat, X = C * (1 - Math.abs((h / 60) % 2 - 1)), m = L - C / 2;
+  const [r1, g1, b1] = h < 60 ? [C, X, 0] : h < 120 ? [X, C, 0] : h < 180 ? [0, C, X] : h < 240 ? [0, X, C] : h < 300 ? [X, 0, C] : [C, 0, X];
+  const out = '#' + [r1, g1, b1].map(v => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('');
+  _lightCache.set(hex, out);
+  return out;
+}
+
 function _mixHex(a, b, f) {
   const A = hexToRgbTuple(a), B = hexToRgbTuple(b);
   return `rgb(${A.map((x, i) => Math.round(x + (B[i] - x) * f)).join(',')})`;
@@ -5537,14 +5557,16 @@ function drawMotionFrame(g, k, style, t) {
     for (const p of MOTION.tris) _fillTri(g, p.v, p.color);
   } else if (style === 'shine') {
     for (const p of MOTION.tris) {
-      _fillTri(g, p.v, p.color);
       const f = ((p.diag - t) % 1 + 1) % 1, w = Math.min(f, 1 - f); // wrapped distance to the moving band
-      const hl = Math.pow(Math.max(0, 1 - w / 0.12), 2) * 0.55;
-      if (hl > 0.01) { g.globalAlpha = hl; _fillTri(g, p.v, '#fff'); g.globalAlpha = 1; }
+      const hl = Math.pow(Math.max(0, 1 - w / 0.12), 2);
+      // The sheen is a lighter tint of each thread's own colour, not white.
+      _fillTri(g, p.v, hl > 0.01 ? _mixHex(p.color, _lighter(p.color), hl) : p.color);
     }
   } else if (style === 'bloom') {
     for (const p of MOTION.tris) {
-      const s = 0.35 + 0.65 * (0.5 + 0.5 * Math.cos(2 * Math.PI * (t - p.d)));
+      // ~10% to ~155% of full size — the peak overlaps its neighbours, the
+      // trough shrinks to a speck; the power curve lingers small, then swells.
+      const s = 0.1 + 1.45 * Math.pow(0.5 + 0.5 * Math.cos(2 * Math.PI * (t - p.d)), 1.4);
       _fillTri(g, p.v, p.color, s, p.gx, p.gy);
     }
   } else { // dance
