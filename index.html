@@ -5310,21 +5310,37 @@ document.addEventListener('pointerdown', e => {
 }, true);
 
 // Drawing sounds — when Sound is on, the canvas plays like a keyboard laid
-// left (low) to right (high). Every tool plays the same blended voice so
-// strokes read as one melody: a tumbi (the high single-string Punjabi
-// lute) plucks the note while a morchang (jaw harp) twangs the same pitch
-// underneath.
-const SOUND = { on: false, lastAt: 0, lastKey: null, buffers: new Map() };
+// left (low) to right (high). Every tool plays the same blended voice: a
+// tumbi (the high single-string Punjabi lute) plucks the note while a
+// morchang (jaw harp) twangs the same pitch underneath.
+//
+// To make strokes come out as tunes rather than random notes, drawing only
+// sets a *target* pitch; a small sequencer plays it on a steady 8th-note
+// beat, walks toward far-away targets a step or two at a time, and snaps
+// strong beats to the current chord of a looping D – A – Bm – G
+// progression, with a soft bass under each bar. Everything runs through a
+// lo-fi chain (warm lowpass, light bit-crush, vinyl crackle) for a retro feel.
+const SOUND = {
+  on: false, buffers: new Map(), bus: null, crackle: null, timer: null,
+  tick: 0, nextTickAt: 0, activeUntil: 0, target: null, cur: null, arp: [],
+};
 try { SOUND.on = localStorage.getItem('pkSound') === '1'; } catch (e) {}
 
-// Major pentatonic (Sa Re Ga Pa Dha) from D4 up two octaves — no note
-// combination can clash, so any scribble sounds musical.
+// Major pentatonic (Sa Re Ga Pa Dha) from D4 up two octaves.
+// Index % 5 gives the note: 0 D, 1 E, 2 F#, 3 A, 4 B.
 const TUMBI_SCALE = (() => {
   const steps = [0, 2, 4, 7, 9], out = [];
   for (let o = 0; o < 2; o++) steps.forEach(s => out.push(293.66 * Math.pow(2, o + s / 12)));
   out.push(293.66 * 4);
   return out;
 })();
+const SOUND_TICK = 60 / 120 / 4; // 16th notes at 120 BPM; melody lands on every other one
+const SOUND_PROGRESSION = [
+  { root: 146.83, tones: [0, 2, 3] }, // D  — D F# A
+  { root: 110.00, tones: [3, 1] },    // A  — A E
+  { root: 123.47, tones: [4, 0, 2] }, // Bm — B D F#
+  { root: 98.00,  tones: [4, 0] },    // G  — B D
+];
 
 function _keyIndex(col, n) {
   return Math.max(0, Math.min(n - 1, Math.floor((col / Math.max(1, S.cols)) * n)));
@@ -5342,7 +5358,7 @@ function _pluckBuffer(ac, freq) {
   const n0 = Math.ceil(P) + 1;
   // Higher notes recirculate more often per second, so they need less loss
   // per pass to ring about as long as the low ones.
-  const rho = 1 - 0.004 * (293.66 / freq);
+  const rho = Math.min(0.9985, 1 - 0.004 * (293.66 / freq));
   for (let i = 0; i < n0; i++) y[i] = Math.random() * 2 - 1;
   for (let i = n0; i < len; i++) {
     const d = i - P, a = Math.floor(d), f = d - a;
@@ -5353,10 +5369,62 @@ function _pluckBuffer(ac, freq) {
   return buf;
 }
 
+// Lo-fi output chain, built once: warm lowpass, then a mostly-dry mix with
+// a coarsely quantised (bit-crushed) copy for that old-console grain.
+function _soundBus(ac) {
+  if (SOUND.bus) return SOUND.bus;
+  const input = ac.createGain();
+  const warm = ac.createBiquadFilter(); warm.type = 'lowpass'; warm.frequency.value = 5200; warm.Q.value = 0.4;
+  const dry = ac.createGain(); dry.gain.value = 0.8;
+  const crush = ac.createWaveShaper();
+  const curve = new Float32Array(4096), levels = 12;
+  for (let i = 0; i < curve.length; i++) curve[i] = Math.round((i / (curve.length - 1) * 2 - 1) * levels) / levels;
+  crush.curve = curve;
+  const wet = ac.createGain(); wet.gain.value = 0.22;
+  input.connect(warm);
+  warm.connect(dry).connect(ac.destination);
+  warm.connect(crush).connect(wet).connect(ac.destination);
+  SOUND.bus = input;
+  return input;
+}
+
+// Vinyl bed: faint hiss with sparse random pops, looped. It fades in while
+// someone is drawing and back out once they stop.
+function _crackle(ac) {
+  if (SOUND.crackle) return SOUND.crackle;
+  const sr = ac.sampleRate, len = sr * 3;
+  const buf = ac.createBuffer(1, len, sr), y = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) y[i] = (Math.random() * 2 - 1) * 0.04;
+  for (let i = 0; i < len; i++) {
+    if (Math.random() < 0.00035) {
+      const amp = 0.3 + Math.random() * 0.7, sign = Math.random() < 0.5 ? -1 : 1;
+      for (let k = 0; k < 40 && i + k < len; k++) y[i + k] += sign * amp * Math.exp(-k / 6);
+    }
+  }
+  const src = ac.createBufferSource(); src.buffer = buf; src.loop = true;
+  const tone = ac.createBiquadFilter(); tone.type = 'bandpass'; tone.frequency.value = 2500; tone.Q.value = 0.5;
+  const g = ac.createGain(); g.gain.value = 0;
+  src.connect(tone).connect(g).connect(ac.destination);
+  src.start();
+  SOUND.crackle = g;
+  return g;
+}
+
+function _fadeCrackle(level, secs) {
+  const g = _crackle(_audio), t = _audio.currentTime;
+  g.gain.cancelScheduledValues(t);
+  g.gain.setValueAtTime(g.gain.value, t);
+  g.gain.linearRampToValueAtTime(level, t + secs);
+}
+
+// Every note drifts a few cents, like slightly warped tape.
+function _drift() { return (Math.random() * 2 - 1) * 7; }
+
 function _tumbi(freq, t, vol = 0.32) {
   const ac = _audio;
   const src = ac.createBufferSource();
   src.buffer = _pluckBuffer(ac, freq);
+  src.detune.value = _drift();
   // Tumbi strings are tight — the note "boings" in from just sharp.
   src.playbackRate.setValueAtTime(1.025, t);
   src.playbackRate.exponentialRampToValueAtTime(1, t + 0.05);
@@ -5365,7 +5433,7 @@ function _tumbi(freq, t, vol = 0.32) {
   const g = ac.createGain();
   g.gain.setValueAtTime(vol, t);
   g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
-  src.connect(hp).connect(nasal).connect(g).connect(ac.destination);
+  src.connect(hp).connect(nasal).connect(g).connect(_soundBus(ac));
   src.start(t); src.stop(t + 1);
 }
 
@@ -5379,6 +5447,7 @@ function _morchang(freq, t, vol = 0.3) {
   const o1 = ac.createOscillator(), o2 = ac.createOscillator();
   o1.type = o2.type = 'sawtooth';
   o1.frequency.value = f0; o2.frequency.value = f0 * 1.003;
+  o1.detune.value = o2.detune.value = _drift();
   // The mouth is a resonant filter — sweeping into the chosen harmonic is
   // the morchang's "wow".
   const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 14;
@@ -5390,8 +5459,22 @@ function _morchang(freq, t, vol = 0.3) {
   g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
   g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
   o1.connect(bp); o2.connect(bp);
-  bp.connect(body).connect(g).connect(ac.destination);
+  bp.connect(body).connect(g).connect(_soundBus(ac));
   o1.start(t); o2.start(t); o1.stop(t + 0.6); o2.stop(t + 0.6);
+}
+
+// Soft low pluck for the chord roots — same string model, darkened.
+function _bass(freq, t, vol = 0.4) {
+  const ac = _audio;
+  const src = ac.createBufferSource();
+  src.buffer = _pluckBuffer(ac, freq);
+  src.detune.value = _drift();
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 1.05);
+  src.connect(lp).connect(g).connect(_soundBus(ac));
+  src.start(t); src.stop(t + 1.1);
 }
 
 function _playNote(freq, t, vol = 1) {
@@ -5399,24 +5482,81 @@ function _playNote(freq, t, vol = 1) {
   _morchang(freq, t, 0.7 * vol); // its narrow "mouth" filter passes little energy, so it needs more gain to sit under the tumbi
 }
 
-// Called as Weave/Stitch strokes move. Throttled, and repeats of the same
-// key are skipped, so a fast drag plays a run of notes rather than a buzz.
-function playDrawNote(col) {
-  if (!SOUND.on) return;
-  const ac = audioCtx(); if (!ac) return;
-  const idx = _keyIndex(col, TUMBI_SCALE.length);
-  const now = performance.now();
-  if (now - SOUND.lastAt < 55 || (idx === SOUND.lastKey && now - SOUND.lastAt < 220)) return;
-  SOUND.lastAt = now; SOUND.lastKey = idx;
-  _playNote(TUMBI_SCALE[idx], ac.currentTime);
+// Nearest scale index to `idx` that is a tone of `chord`.
+function _snapToChord(idx, chord) {
+  for (let d = 0; d <= 2; d++) {
+    for (const c of [idx - d, idx + d]) {
+      if (c >= 0 && c < TUMBI_SCALE.length && chord.tones.includes(c % 5)) return c;
+    }
+  }
+  return idx;
 }
 
-// Fill gets a quick upward strum starting from the clicked key.
+function _playTick(tick, t) {
+  const step = tick % 16;
+  const chord = SOUND_PROGRESSION[Math.floor(tick / 16) % SOUND_PROGRESSION.length];
+  if (step === 0) _bass(chord.root, t, 0.42);
+  if (step === 8) _bass(chord.root, t, 0.26);
+  if (SOUND.arp.length) {               // a Fill strum owns the next few 16ths
+    _playNote(TUMBI_SCALE[SOUND.arp.shift()], t, 0.8);
+    return;
+  }
+  if (step % 2 || SOUND.target === null) return;
+  // Walk toward the target at most two notes per beat, so big jumps across
+  // the canvas become a run instead of a leap; strong beats land on the chord.
+  let next = SOUND.cur === null ? SOUND.target : SOUND.cur + Math.max(-2, Math.min(2, SOUND.target - SOUND.cur));
+  if (step % 4 === 0) next = _snapToChord(next, chord);
+  _playNote(TUMBI_SCALE[next], t, step % 4 === 0 ? 1 : 0.7);
+  SOUND.cur = next;
+  if (Math.abs(next - SOUND.target) <= 1) SOUND.target = null; // arrived — wait for more drawing
+}
+
+function _runSequencer() {
+  const ac = _audio;
+  while (SOUND.nextTickAt < ac.currentTime + 0.1) {
+    if (SOUND.nextTickAt > SOUND.activeUntil) {   // drawing stopped — let the tail ring out
+      clearInterval(SOUND.timer);
+      SOUND.timer = null;
+      _fadeCrackle(0, 1.2);
+      return;
+    }
+    _playTick(SOUND.tick, SOUND.nextTickAt);
+    SOUND.tick++;
+    SOUND.nextTickAt += SOUND_TICK;
+  }
+}
+
+function _soundActivity() {
+  const ac = audioCtx(); if (!ac) return null;
+  SOUND.activeUntil = ac.currentTime + 1.5;
+  if (!SOUND.timer) {
+    SOUND.tick = 0;                              // each new phrase starts on the D chord
+    SOUND.cur = null;
+    SOUND.nextTickAt = ac.currentTime + 0.03;
+    SOUND.timer = setInterval(_runSequencer, 25);
+    _fadeCrackle(0.09, 0.4);
+    _runSequencer();
+  }
+  return ac;
+}
+
+// Called as Weave/Stitch strokes move — just points the melody somewhere.
+function playDrawNote(col) {
+  if (!SOUND.on) return;
+  if (!_soundActivity()) return;
+  SOUND.target = _keyIndex(col, TUMBI_SCALE.length);
+}
+
+// Fill plays the current chord as a rising arpeggio from the clicked key.
 function playFillStrum(col) {
   if (!SOUND.on) return;
-  const ac = audioCtx(); if (!ac) return;
-  const start = _keyIndex(col, TUMBI_SCALE.length - 3);
-  for (let i = 0; i < 4; i++) _playNote(TUMBI_SCALE[start + i], ac.currentTime + i * 0.045, 0.8);
+  if (!_soundActivity()) return;
+  const chord = SOUND_PROGRESSION[Math.floor(SOUND.tick / 16) % SOUND_PROGRESSION.length];
+  const notes = [];
+  for (let i = _keyIndex(col, TUMBI_SCALE.length); i < TUMBI_SCALE.length && notes.length < 4; i++) {
+    if (chord.tones.includes(i % 5)) notes.push(i);
+  }
+  SOUND.arp = notes;
 }
 
 function syncSoundBtn() {
@@ -5434,8 +5574,9 @@ function toggleSound() {
   try { localStorage.setItem('pkSound', SOUND.on ? '1' : '0'); } catch (e) {}
   syncSoundBtn();
   if (SOUND.on) {
-    const ac = audioCtx();
-    if (ac) { const t = ac.currentTime; _playNote(TUMBI_SCALE[5], t); _playNote(TUMBI_SCALE[7], t + 0.09); }
+    if (_soundActivity()) SOUND.arp = [5, 7, 8, 10]; // greet with a D major arpeggio
+  } else if (_audio) {
+    SOUND.target = null; SOUND.arp = []; SOUND.activeUntil = 0;
   }
 }
 
