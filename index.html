@@ -1343,7 +1343,7 @@
     <div class="motion-body">
       <div class="motion-stage"><canvas id="motion-canvas"></canvas></div>
       <div class="motion-styles">
-        <button type="button" class="motion-style" data-style="timelapse" onclick="setMotionStyle('timelapse')"><span class="motion-style-name">Timelapse</span><span class="motion-style-desc">Stitched colour by colour, row by row, like a real piece</span></button>
+        <button type="button" class="motion-style" data-style="timelapse" onclick="setMotionStyle('timelapse')"><span class="motion-style-name">Timelapse</span><span class="motion-style-desc">Replays your piece in the order you made it</span></button>
         <button type="button" class="motion-style" data-style="dance" onclick="setMotionStyle('dance')"><span class="motion-style-name">Colour dance</span><span class="motion-style-desc">Thread colours flow into one another</span></button>
         <button type="button" class="motion-style" data-style="negative" onclick="setMotionStyle('negative')"><span class="motion-style-name">Negative</span><span class="motion-style-desc">Pulses softly between the piece and its negative</span></button>
         <button type="button" class="motion-style" data-style="shine" onclick="setMotionStyle('shine')"><span class="motion-style-name">Silk shine</span><span class="motion-style-desc">A sheen sweeps across the threads, like pat silk</span></button>
@@ -1704,6 +1704,12 @@ const S = {
   cells:     {},
   lines:     [],
   texts:     [],   // {text, font, size (in cells), color, col, row} — a real-font layer drawn above the stitches
+  // Drawing history for Motion's Timelapse: every action (a brush dab, a
+  // fill, a motif stamp, a stitch line, a text) takes the next step number;
+  // order maps each painted triangle to the step that last painted it, and
+  // lines/texts carry their own .seq.
+  order:     {},
+  seq:       0,
   selectedText: null,
   textDraft: { text: '', font: 'Playfair Display', size: 3, color: '#F5C518' },
   textDrag:  null,
@@ -1765,6 +1771,12 @@ function initCanvas() {
 function shiftLines(dc, dr) {
   S.lines = S.lines.map(l => ({ ...l, points: l.points.map(p => ({ col: p.col + dc, row: p.row + dr })) }));
   S.texts = S.texts.map(t => ({ ...t, col: t.col + dc, row: t.row + dr })); // text moves with the design too
+  const no = {};
+  for (const [k, v] of Object.entries(S.order)) {
+    const [c, r, t] = k.split(',');
+    no[`${+c + dc},${+r + dr},${t}`] = v;
+  }
+  S.order = no;
 }
 
 function isCanvasEmpty() {
@@ -1983,7 +1995,7 @@ function drawGrid() {
 // UNDO
 // ═══════════════════════════════════════════════════
 function snap() {
-  S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts }));
+  S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts, order: S.order }));
   if (S.history.length > MAX_H) S.history.shift();
   // A fresh edit invalidates whatever branch redo would have restored.
   S.redoHistory = [];
@@ -1993,12 +2005,13 @@ function snap() {
 
 function undo() {
   if (!S.history.length) return;
-  S.redoHistory.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts }));
+  S.redoHistory.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts, order: S.order }));
   if (S.redoHistory.length > MAX_H) S.redoHistory.shift();
   const snapshot = JSON.parse(S.history.pop());
   S.cells = snapshot.cells;
   S.lines = snapshot.lines || [];
   S.texts = snapshot.texts || [];
+  S.order = snapshot.order || {};
   deselectText();
   document.getElementById('undo-btn').disabled = S.history.length === 0;
   document.getElementById('redo-btn').disabled = false;
@@ -2007,12 +2020,13 @@ function undo() {
 
 function redo() {
   if (!S.redoHistory.length) return;
-  S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts }));
+  S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts, order: S.order }));
   if (S.history.length > MAX_H) S.history.shift();
   const snapshot = JSON.parse(S.redoHistory.pop());
   S.cells = snapshot.cells;
   S.lines = snapshot.lines || [];
   S.texts = snapshot.texts || [];
+  S.order = snapshot.order || {};
   deselectText();
   document.getElementById('undo-btn').disabled = false;
   document.getElementById('redo-btn').disabled = S.redoHistory.length === 0;
@@ -2025,6 +2039,7 @@ function clearCanvas() {
   S.cells = {};
   S.lines = [];
   S.texts = [];
+  S.order = {};
   deselectText();
   render();
 }
@@ -2209,9 +2224,10 @@ function symTris(col, row, tri) {
 }
 
 function paint(col, row, tri) {
+  const seq = ++S.seq;
   for (const key of brushKeys(col, row, tri)) {
-    if (S.tool === 'erase') { delete S.cells[key]; }
-    else                    { S.cells[key] = S.color; }
+    if (S.tool === 'erase') { delete S.cells[key]; delete S.order[key]; }
+    else                    { S.cells[key] = S.color; S.order[key] = seq; }
   }
 }
 
@@ -2288,7 +2304,8 @@ function triNeighbours(c, r, tri) {
 }
 
 function floodFill(col, row, tri) {
-  for (const key of floodRegion(col, row, tri)) S.cells[key] = S.color;
+  const seq = ++S.seq; // a whole fill is one step, so the timelapse pours it in at once
+  for (const key of floodRegion(col, row, tri)) { S.cells[key] = S.color; S.order[key] = seq; }
 }
 
 // The triangles a fill at (col, row, tri) would cover, without changing anything.
@@ -2550,8 +2567,9 @@ canvas.addEventListener('pointerdown', e => {
 function commitStitchPath() {
   if (S.stitchPath.length > 1) {
     snap();
+    const seq = ++S.seq;
     symPaths(S.stitchPath).forEach(pts => {
-      S.lines.push({ points: pts, color: S.stitchColor, dashed: S.stitchDashed });
+      S.lines.push({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, seq });
     });
   }
   S.stitchAnchor = null;
@@ -2825,6 +2843,7 @@ function newGridPreset(preset) {
   S.cells = {};
   S.lines = [];
   S.texts = [];
+  S.order = {};
   deselectText();
   S.cols = cols;
   S.rows = rows;
@@ -2857,6 +2876,7 @@ function setOrientation(mode) {
   S.cells = {};
   S.lines = [];
   S.texts = [];
+  S.order = {};
   deselectText();
   const oldCols = S.cols, oldRows = S.rows;
   S.cols = oldRows;
@@ -4577,17 +4597,19 @@ function getMotifBounds() {
 
 function placeMotif(col, row) {
   ({ col, row } = clampMotifPos(col, row));
+  const seq = ++S.seq; // one stamp = one timelapse step
   for (const [key, color] of Object.entries(getActiveCells())) {
     const p = key.split(',');
     const c = Math.round(col + +p[0]);
     const r = Math.round(row + +p[1]);
     if (c < 0 || c >= S.cols || r < 0 || r >= S.rows) continue;
     S.cells[`${c},${r},${p[2]}`] = color;
+    S.order[`${c},${r},${p[2]}`] = seq;
   }
   for (const line of getActiveLines()) {
     const points = line.points.map(p => ({ col: Math.round(col + p.col), row: Math.round(row + p.row) }));
     if (points.every(p => p.col >= 0 && p.col <= S.cols && p.row >= 0 && p.row <= S.rows)) {
-      S.lines.push({ points, color: line.color, dashed: line.dashed });
+      S.lines.push({ points, color: line.color, dashed: line.dashed, seq });
     }
   }
 }
@@ -4600,6 +4622,7 @@ function eraseMotif(col, row) {
     const r = Math.round(row + +p[1]);
     if (c < 0 || c >= S.cols || r < 0 || r >= S.rows) continue;
     delete S.cells[`${c},${r},${p[2]}`];
+    delete S.order[`${c},${r},${p[2]}`];
   }
 }
 
@@ -4866,8 +4889,9 @@ function saveProject() {
   const project = {
     name,
     cells: { ...S.cells },
-    lines: S.lines.map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed })),
+    lines: S.lines.map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed, seq: l.seq })),
     texts: S.texts.map(t => ({ ...t })),
+    order: { ...S.order },
     base: S.base,
     cols: S.cols,
     rows: S.rows,
@@ -4891,8 +4915,11 @@ function loadProject(idx) {
   if (!project) return;
   snap();
   S.cells = { ...project.cells };
-  S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed }));
+  S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed, seq: l.seq }));
   S.texts = (project.texts || []).map(t => ({ ...t }));
+  S.order = { ...(project.order || {}) };
+  // keep numbering after the loaded piece's steps so new work replays after it
+  S.seq = Math.max(S.seq, ...Object.values(S.order), ...S.lines.map(l => l.seq || 0), ...S.texts.map(t => t.seq || 0));
   deselectText();
   S.cols = project.cols;
   S.rows = project.rows;
@@ -5302,7 +5329,7 @@ function textPointerDown(e) {
     return;
   }
   snap();
-  S.texts.push({ ...S.textDraft, ..._snapTextPos(px, py) });
+  S.texts.push({ ...S.textDraft, ..._snapTextPos(px, py), seq: ++S.seq });
   S.textDraft.text = '';
   selectText(S.texts.length - 1, true);
   render();
@@ -5479,21 +5506,37 @@ function _prepareMotion() {
       v, gx, gy, color, d,
       ci: MOTION.colors.indexOf(color),
       diag: (gx + gy) / (S.cols + S.rows),
-      c: +c, r: +r, tri,
+      c: +c, r: +r, tri, seq: S.order[key],
     };
   });
-  // Timelapse order, the way an embroiderer works: one thread colour at a
-  // time (in the order colours first appear, top-left down), and within a
-  // colour, row by row, alternating direction like a running stitch.
+
+  // Timelapse replays the piece in the order it was actually made: each
+  // recorded step (a dab, a fill, a stamp, a stitch line, a text) is one
+  // beat, so strokes build up and fills/stamps land all at once.
+  // Work from before order was recorded has no steps, so it's laid down
+  // first the way an embroiderer would: one thread colour at a time, row
+  // by row, alternating direction like a running stitch.
+  const unordered = MOTION.tris.filter(p => p.seq === undefined);
   const TRI_ORDER = { l: 0, t: 1, b: 2, r: 3 };
   const colourOrder = new Map();
-  [...MOTION.tris].sort((a, b) => a.r - b.r || a.c - b.c).forEach(p => {
+  [...unordered].sort((a, b) => a.r - b.r || a.c - b.c).forEach(p => {
     if (!colourOrder.has(p.color)) colourOrder.set(p.color, colourOrder.size);
   });
-  const ordered = [...MOTION.tris].sort((a, b) =>
+  unordered.sort((a, b) =>
     colourOrder.get(a.color) - colourOrder.get(b.color) || a.r - b.r ||
     (a.r % 2 ? b.c - a.c : a.c - b.c) || TRI_ORDER[a.tri] - TRI_ORDER[b.tri]);
-  ordered.forEach((p, i) => { p.rank = i / Math.max(1, ordered.length); });
+  unordered.forEach((p, i) => { p.step = i; });
+  const base = unordered.length;
+  // Unrecorded lines and texts go after everything else, as before.
+  const seqs = [...new Set([
+    ...MOTION.tris.map(p => p.seq), ...S.lines.map(l => l.seq), ...S.texts.map(t => t.seq),
+  ].filter(v => v !== undefined))].sort((a, b) => a - b);
+  const stepOf = new Map(seqs.map((v, i) => [v, base + i]));
+  MOTION.tris.forEach(p => { if (p.seq !== undefined) p.step = stepOf.get(p.seq); });
+  let n = base + seqs.length;
+  MOTION.lineSteps = S.lines.map(l => l.seq !== undefined ? stepOf.get(l.seq) : n++);
+  MOTION.textSteps = S.texts.map(t => t.seq !== undefined ? stepOf.get(t.seq) : n++);
+  MOTION.steps = Math.max(1, n);
 }
 
 // Same hue, much lighter (HSL lightness pushed ~55% of the way to white,
@@ -5546,32 +5589,35 @@ function drawMotionFrame(g, k, style, t) {
 
   let overlayAlpha = 1, linesDrawn = false; // stitches + text
   if (style === 'timelapse') {
-    // triangles 0–70%, stitch lines 70–80%, hold the finished piece, then a
-    // quick fade back to bare cloth so the loop restarts like a timelapse
-    const thr = Math.min(1, t / 0.7);
+    // Replay 0–80% (one beat per recorded step), hold the finished piece,
+    // then a quick fade back to bare cloth so the loop restarts.
+    const N = MOTION.steps, at = Math.min(N, (t / 0.8) * N); // steps completed so far (fractional)
     let newest = null;
     for (const p of MOTION.tris) {
-      if (p.rank > thr) continue;
+      if (p.step >= at) continue;
       _fillTri(g, p.v, p.color);
-      if (thr < 1 && thr - p.rank < 0.004) newest = p;
+      if (at < N && p.step >= Math.floor(at) - 1) newest = p;
     }
-    if (newest) { // the needle: a bright point on the stitch just made
+    if (newest) { // the needle: a bright point on the latest stitch
       g.globalAlpha = 0.7; _fillTri(g, newest.v, '#fff'); g.globalAlpha = 1;
       g.fillStyle = '#fff';
       g.beginPath(); g.arc(newest.gx * CELL, newest.gy * CELL, CELL * 0.22, 0, Math.PI * 2); g.fill();
     }
-    const lineP = Math.max(0, Math.min(1, (t - 0.7) / 0.1));
-    for (const l of S.lines) {             // each line sews itself point by point
-      const n = Math.floor(lineP * (l.points.length - 1)) + 1;
-      if (lineP > 0) drawLine({ ...l, points: l.points.slice(0, n) }, g);
-    }
-    linesDrawn = true;
-    overlayAlpha = Math.max(0, Math.min(1, (t - 0.8) / 0.05));
+    S.lines.forEach((l, i) => {      // each line sews itself point by point within its beat
+      const f = Math.min(1, at - MOTION.lineSteps[i]);
+      if (f <= 0) return;
+      drawLine({ ...l, points: l.points.slice(0, Math.floor(f * (l.points.length - 1)) + 1) }, g);
+    });
+    S.texts.forEach((tx, i) => {     // text fades in within its beat
+      const f = Math.min(1, at - MOTION.textSteps[i]);
+      if (f <= 0) return;
+      g.globalAlpha = f; drawTextObj(tx, g); g.globalAlpha = 1;
+    });
+    linesDrawn = true; overlayAlpha = 0;
     if (t > 0.94) { // fade out to the bare cloth
       g.globalAlpha = (t - 0.94) / 0.06;
       g.fillStyle = S.base; g.fillRect(0, 0, W, H);
       g.globalAlpha = 1;
-      overlayAlpha = 0;
     }
   } else if (style === 'negative') {
     for (const p of MOTION.tris) _fillTri(g, p.v, p.color);
