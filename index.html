@@ -1300,6 +1300,21 @@
        the capture-modal buttons. */
     .feedback-btn, .motif-rot-btn, .mm-btn, .mm-save { border-radius: 8px; }
 
+    /* Tool size + / − — a pair of swatch-sized circles over the right edge
+       of the active tool's icon, only while that tool is selected. */
+    .tool-size {
+      position: absolute; right: -11px; top: 50%; transform: translateY(-50%);
+      display: none; flex-direction: column; gap: 4px; z-index: 3;
+    }
+    .tool-icon-btn.on ~ .tool-size { display: flex; }
+    .tool-size button {
+      width: 18px; height: 18px; border-radius: 50%; border: none; padding: 0; cursor: pointer;
+      background: #1f1f1f; color: var(--accent); font-family: var(--font-body); font-size: 13px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.6); transition: color 0.12s, background 0.12s;
+    }
+    .tool-size button:hover { color: var(--pink); background: #292929; }
+
     /* ── Uniform control heights ──
        Every header control (zoom, history, icon buttons, GIF / Save /
        Finish) shares one height, stepping down per breakpoint via --hdr-h.
@@ -1858,6 +1873,10 @@ try { const d = localStorage.getItem('pkProjects'); if (d) PROJECTS = JSON.parse
 // STATE
 // ═══════════════════════════════════════════════════
 const STITCH_WIDTH = 2.4; // logical px — prints ~1mm on every riso paper preset
+// A stitch line's thickness: its .size (1–4, set by Stitch's − / +) steps
+// the base width up by half each time — 2.4, 3.6, 4.8, 6px. Lines from
+// before sizes existed have none and draw at the base width.
+function lineWidthOf(line) { return STITCH_WIDTH * (line.size ? 0.5 + 0.5 * line.size : 1); }
 
 const S = {
   tool:      'paint',
@@ -1869,6 +1888,7 @@ const S = {
   brushSize: 1,
   fillMode:  false, // Weave only — a click floods the connected region instead of painting one triangle
   stitchDashed: false, // applies to new stitch lines only — existing ones keep whatever they were drawn with
+  stitchSize: 1,       // 1–4: thickness for new stitch lines (Stitch's − / +), same rule
   grid:      true,
   showBorder: true,
   zoom:      1,
@@ -2070,7 +2090,7 @@ function _doRender() {
   for (const t of S.texts) drawTextObj(t);
   if (S.stitchAnchor && S.stitchPath) {
     symPaths(S.stitchPath).forEach(pts => {
-      drawLine({ points: pts, color: S.stitchColor, dashed: S.stitchDashed }, ctx, true);
+      drawLine({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, size: S.stitchSize }, ctx, true);
     });
   }
 
@@ -2090,11 +2110,11 @@ function drawLine(line, gctx = ctx, preview = false) {
   if (!line.points || line.points.length < 2) return;
   gctx.save();
   gctx.strokeStyle = line.color;
-  gctx.lineWidth = STITCH_WIDTH;
+  gctx.lineWidth = lineWidthOf(line);
   gctx.lineCap = 'round';
   gctx.lineJoin = 'round';
   gctx.globalAlpha = preview ? 0.55 : 1;
-  gctx.setLineDash(line.dashed ? stitchDashPattern(STITCH_WIDTH) : []);
+  gctx.setLineDash(line.dashed ? stitchDashPattern(gctx.lineWidth) : []);
   gctx.beginPath();
   gctx.moveTo(line.points[0].col * CELL, line.points[0].row * CELL);
   for (let i = 1; i < line.points.length; i++) {
@@ -2748,7 +2768,7 @@ function commitStitchPath() {
     snap();
     const seq = ++S.seq;
     symPaths(S.stitchPath).forEach(pts => {
-      S.lines.push({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, seq });
+      S.lines.push({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, size: S.stitchSize, seq });
     });
   }
   S.stitchAnchor = null;
@@ -3700,6 +3720,37 @@ function renderToolIcon(key) {
   if (hex) btn.title = formatColor(hex);
 }
 
+// Small + / − pair that sits over the active tool's icon (shown only while
+// that tool is selected — see .tool-size CSS) for quick size changes.
+function _toolSizeCtrl(tool) {
+  const wrap = document.createElement('div');
+  wrap.className = 'tool-size';
+  [['+', 1, 'Bigger'], ['−', -1, 'Smaller']].forEach(([sym, d, word]) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = sym;
+    b.setAttribute('aria-label', `${word} ${tool === 'erase' ? 'cut' : tool === 'paint' ? 'weave' : tool}`);
+    b.addEventListener('click', e => { e.stopPropagation(); stepToolSize(tool, d); });
+    wrap.appendChild(b);
+  });
+  return wrap;
+}
+
+function stepToolSize(tool, d) {
+  if (tool === 'paint' || tool === 'erase') { setBrushSize(d); return; }
+  if (tool === 'stitch') {
+    S.stitchSize = Math.max(1, Math.min(4, S.stitchSize + d));
+    showHint(S.stitchSize === 1 ? 'Stitch: fine' : `Stitch: ${S.stitchSize}× thick`);
+    if (S.stitchAnchor) render();
+    return;
+  }
+  if (tool === 'text') {
+    const t = _activeText();
+    editText({ size: Math.max(1, Math.min(30, t.size + d)) });
+    showHint(`${t.logo ? 'Logo' : 'Text'}: size ${_activeText().size}`);
+  }
+}
+
 async function buildToolIcons() {
   await loadToolIcons();
   const el = document.getElementById('color-spools');
@@ -3732,6 +3783,7 @@ async function buildToolIcons() {
     lbl.textContent = label;
     wrap.appendChild(btn);
     wrap.appendChild(lbl);
+    if (tool) wrap.appendChild(_toolSizeCtrl(tool));
     el.appendChild(wrap);
     renderToolIcon(key);
   });
@@ -3747,6 +3799,7 @@ async function buildToolIcons() {
     setTool('text');
     openTextPopup();
   };
+  tWrap.appendChild(_toolSizeCtrl('text'));
   el.appendChild(tWrap);
   renderTextIcon();
   syncSpoolActiveState();
@@ -4541,7 +4594,7 @@ function renderCapturePreview(cells, lines = []) {
   for (const l of lines) {
     ctx.save();
     ctx.strokeStyle = l.color;
-    ctx.lineWidth = Math.max(1.5, STITCH_WIDTH * (cs2 / CELL));
+    ctx.lineWidth = Math.max(1.5, lineWidthOf(l) * (cs2 / CELL));
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.setLineDash(l.dashed ? stitchDashPattern(ctx.lineWidth) : []);
@@ -4567,7 +4620,7 @@ function confirmCaptureMotif() {
   const name = `Motif ${MOTIFS.length + 1}`;
   const motif = { name, cells };
   if (_capturedLines.length) {
-    motif.lines = _capturedLines.map(l => ({ points: l.points.map(p => ({ col: p.col - cx, row: p.row - cy })), color: l.color, dashed: l.dashed }));
+    motif.lines = _capturedLines.map(l => ({ points: l.points.map(p => ({ col: p.col - cx, row: p.row - cy })), color: l.color, dashed: l.dashed, size: l.size }));
   }
   MOTIFS.push(motif);
   saveMotifs();
@@ -4792,7 +4845,7 @@ function placeMotif(col, row) {
   for (const line of getActiveLines()) {
     const points = line.points.map(p => ({ col: Math.round(col + p.col), row: Math.round(row + p.row) }));
     if (points.every(p => p.col >= 0 && p.col <= S.cols && p.row >= 0 && p.row <= S.rows)) {
-      for (const pts of symPaths(points)) S.lines.push({ points: pts, color: line.color, dashed: line.dashed, seq });
+      for (const pts of symPaths(points)) S.lines.push({ points: pts, color: line.color, dashed: line.dashed, size: line.size, seq });
     }
   }
 }
@@ -4830,10 +4883,10 @@ function drawGhost(col, row) {
     const points = line.points.map(p => ({ col: col + p.col, row: row + p.row }));
     for (const pts of symPaths(points)) {
       ctx.strokeStyle = line.color;
-      ctx.lineWidth = STITCH_WIDTH;
+      ctx.lineWidth = lineWidthOf(line);
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      ctx.setLineDash(line.dashed ? stitchDashPattern(STITCH_WIDTH) : []);
+      ctx.setLineDash(line.dashed ? stitchDashPattern(ctx.lineWidth) : []);
       ctx.beginPath();
       ctx.moveTo(pts[0].col * CELL, pts[0].row * CELL);
       for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].col * CELL, pts[i].row * CELL);
@@ -4892,7 +4945,7 @@ function _drawMotifThumb(motif, px, bg = '#000000') {
     for (const l of lines) {
       tctx.save();
       tctx.strokeStyle = l.color;
-      tctx.lineWidth = Math.max(1, STITCH_WIDTH * (tCell / CELL));
+      tctx.lineWidth = Math.max(1, lineWidthOf(l) * (tCell / CELL));
       tctx.lineCap = 'round';
       tctx.lineJoin = 'round';
       tctx.setLineDash(l.dashed ? stitchDashPattern(tctx.lineWidth) : []);
@@ -5040,7 +5093,7 @@ function _drawProjectThumb(project, px) {
   for (const l of (project.lines || [])) {
     tctx.save();
     tctx.strokeStyle = l.color;
-    tctx.lineWidth = Math.max(1, STITCH_WIDTH * (tCell / CELL));
+    tctx.lineWidth = Math.max(1, lineWidthOf(l) * (tCell / CELL));
     tctx.lineCap = 'round';
     tctx.lineJoin = 'round';
     tctx.setLineDash(l.dashed ? stitchDashPattern(tctx.lineWidth) : []);
@@ -5064,7 +5117,7 @@ function saveProject() {
   const project = {
     name,
     cells: { ...S.cells },
-    lines: S.lines.map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed, seq: l.seq })),
+    lines: S.lines.map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed, size: l.size, seq: l.seq })),
     texts: S.texts.map(t => ({ ...t })),
     order: { ...S.order },
     base: S.base,
@@ -5090,7 +5143,7 @@ function loadProject(idx) {
   if (!project) return;
   snap();
   S.cells = { ...project.cells };
-  S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed, seq: l.seq }));
+  S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed, size: l.size, seq: l.seq }));
   S.texts = (project.texts || []).map(t => ({ ...t }));
   S.order = { ...(project.order || {}) };
   // keep numbering after the loaded piece's steps so new work replays after it
