@@ -1257,7 +1257,7 @@
     .logo-tip-hint { color: var(--accent); }
     .page-header .fit-btn, .page-header .icon-btn, .page-header .zoom-lbl, .page-header .export-btn.save-btn,
     .page-header .feedback-icon, #bottombar .tbtn, #bottombar .chk-btn, #bottombar .sym-btn, #bottombar .motif-rot-btn,
-    .motif-size-val, .spool-lbl, .logo-tip-avatar-slot::after, #text-icon-btn,
+    .motif-size-val, .spool-lbl, .logo-tip-avatar-slot::after,
     .text-font-opt, .text-logo-btn, .cp-brush-btn, .cp-dash-btn, .saved-row-name, .saved-all-btn,
     .motion-style-name, .btn-sec, #text-input, .cp-value-input { color: var(--accent); }
     .page-header .fit-btn.danger { color: var(--accent); }
@@ -1267,7 +1267,7 @@
     .page-header .feedback-btn:hover .feedback-icon, #bottombar .tbtn:hover, #bottombar .chk-btn:hover,
     #bottombar .sym-btn:hover, #bottombar .motif-rot-btn:hover, .preset-select:hover,
     .text-font-opt:hover, .text-logo-btn:hover, .cp-brush-btn:hover, .cp-dash-btn:hover, .saved-all-btn:hover,
-    .btn-sec:hover, .finish-close:hover, .lib-name:hover, #text-icon-btn:hover { color: var(--pink) !important; }
+    .btn-sec:hover, .finish-close:hover, .lib-name:hover { color: var(--pink) !important; }
 
     /* selected / active: pink, no fill */
     #bottombar .tbtn.on, #bottombar .sym-btn.on, .orient-btn.on { background-color: #1f1f1f !important; color: var(--pink) !important; }
@@ -1284,7 +1284,6 @@
     .chk-btn.on .chk-box svg { stroke: var(--pink); }
     .chk-btn.on { color: var(--pink) !important; }
     .tool-icon-btn.on + .spool-lbl, .tool-icon-btn:hover + .spool-lbl { color: var(--pink); }
-    #text-icon-btn.on { color: var(--pink); }
     .motif-thumb:hover, .motif-thumb.selected, .view-all-tile:hover, .lib-thumb:hover, .lib-thumb.selected { border-color: var(--pink) !important; }
     .view-all-tile svg { color: var(--accent); }
     .view-all-tile:hover svg { color: var(--pink); }
@@ -3744,6 +3743,7 @@ async function buildToolIcons() {
     openTextPopup();
   };
   el.appendChild(tWrap);
+  renderTextIcon();
   syncSpoolActiveState();
 }
 
@@ -5673,7 +5673,19 @@ function addLogoText() {
   render();
 }
 
+// The Aਅ icon shows the current text colour, like Weave/Stitch show
+// their thread colours — the selected text's, or the next new text's.
+function renderTextIcon() {
+  const btn = document.getElementById('text-icon-btn');
+  if (!btn) return;
+  const t = S.selectedText !== null ? S.texts[S.selectedText] : S.textDraft;
+  const hex = t && !t.logo ? t.color : S.textDraft.color;
+  btn.style.setProperty('color', hex, 'important');
+  btn.style.webkitTextStroke = _isTooDarkForBar(hex) ? '0.75px rgba(255,255,255,0.4)' : '';
+}
+
 function syncTextPopup() {
+  renderTextIcon();
   const popup = document.getElementById('text-popup');
   if (!popup) return;
   const t = _activeText();
