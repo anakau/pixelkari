@@ -102,11 +102,8 @@
     #bar-logo { flex-shrink: 0; }
     #bb-tools {
       flex: 1; min-width: 0;
-      /* Groups spread edge to edge rather than bunching in the middle; the
-         left padding keeps the first group clear of Billo (102px wide,
-         24px in from the window edge). */
-      display: flex; align-items: center; justify-content: space-between; gap: 0;
-      padding-left: 110px; overflow: visible;
+      display: flex; align-items: center; justify-content: center; gap: 0;
+      overflow: visible;
     }
     .bb-divider { width: 1px; height: 26px; background: rgba(255,255,255,0.07); flex-shrink: 0; margin: 0 14px; }
     /* #motif-panel already contributes 8px of its own right padding before
@@ -538,6 +535,7 @@
     }
     .billo-wrap > * { pointer-events: auto; }
     .logo-tip.hidden { display: none; }
+    :root { --hdr-h: 34px; --block-h: 73px; }
     /* Billo sits above the toolbar (z 300), which also put her over modal
        backdrops (z 200) — step aside while any modal is open. */
     body:has(.overlay.on) .billo-wrap { display: none; }
@@ -1058,7 +1056,7 @@
 
     /* ── RESPONSIVE TOOLBAR ── */
     @media (max-width: 1400px) {
-      :root { --bar-h: 120px; }
+      :root { --bar-h: 120px; --hdr-h: 32px; }
       #bottombar { padding: 0 14px 18px; }
       .tbtn    { height: 32px; padding: 0 10px; font-size: 12px; }
       .act-btn { height: 32px; padding: 0 9px; font-size: 12px; }
@@ -1073,7 +1071,7 @@
       .motif-create-btn { width: 60px !important; }
     }
     @media (max-width: 1200px) {
-      :root { --bar-h: 110px; }
+      :root { --bar-h: 110px; --hdr-h: 30px; }
       .tbtn    { height: 30px; padding: 0 9px; font-size: 12px; }
       .act-btn { height: 30px; padding: 0 8px; }
       .sym-btn { height: 30px; }
@@ -1085,7 +1083,7 @@
       .motif-create-btn { width: 60px !important; }
     }
     @media (max-width: 1024px) {
-      :root { --bar-h: 96px; }
+      :root { --bar-h: 96px; --hdr-h: 28px; }
       #bottombar { padding: 0 10px 14px; }
       .tbtn    { height: 27px; padding: 0 7px; font-size: 11px; }
       .act-btn { height: 27px; padding: 0 7px; font-size: 11px; }
@@ -1121,7 +1119,7 @@
          never show on a touch device anyway. */
       #bottombar { left: 10px; right: 10px; overflow: hidden; }
       #bb-tools {
-        justify-content: flex-start; padding-left: 0; overflow-x: auto; overflow-y: hidden;
+        justify-content: flex-start; overflow-x: auto; overflow-y: hidden;
         -webkit-overflow-scrolling: touch; scrollbar-width: none;
       }
       #bb-tools::-webkit-scrollbar { display: none; }
@@ -1149,6 +1147,7 @@
       .logo-tip { display: none; }
     }
     @media (max-width: 560px) {
+      :root { --hdr-h: 26px; }
       .page-header { height: 50px; padding: 0 10px; }
       .logo-title, .logo-sub { font-size: 14px; }
       .fit-btn span:not(.hover-tip), .page-zoom-row .fit-btn { font-size: 11px; padding: 0 7px; }
@@ -1170,7 +1169,25 @@
       .lib-thumb .lib-del, .lib-thumb .lib-copy { width: 20px; height: 20px; font-size: 12px; }
       .edge-btn { width: 26px; height: 26px; font-size: 17px; }
     }
-  </style>
+  
+    /* ── Uniform control heights ──
+       Every header control (zoom, history, icon buttons, GIF / Save /
+       Finish) shares one height, stepping down per breakpoint via --hdr-h.
+       On desktop the bottom bar's boxed blocks all match Create Motif's
+       73px; smaller widths keep their compact scrolling layout. */
+    .page-header .fit-btn, .page-header .icon-btn, .page-header .feedback-btn, .page-header .export-btn {
+      height: var(--hdr-h); box-sizing: border-box;
+    }
+    .page-header .icon-btn, .page-header .feedback-btn { width: var(--hdr-h); padding: 0; }
+    @media (min-width: 1401px) {
+      .nav-block { gap: 3px; }
+      .nav-row > *, .nav-row .tbtn, .nav-row .chk-btn { height: calc((var(--block-h) - 3px) / 2) !important; }
+      #sym-group .sym-btn { width: 52px; height: var(--block-h); }
+      .motif-ctrls { height: var(--block-h); justify-content: space-between; }
+      .motif-ctrls .motif-rot-btn { flex: 1; }
+      #text-icon-btn { font-size: 50px; }
+    }
+</style>
 </head>
 <body>
 <div id="app">
