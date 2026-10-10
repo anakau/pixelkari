@@ -430,6 +430,47 @@
     }
     .export-btn:hover { background: #F72585; color: #fff; }
     .header-actions { display: flex; align-items: center; gap: 12px; }
+    /* Save split button — same size as Finish (shares .export-btn, so its
+       responsive heights follow), but quiet so Finish stays the main action. */
+    .save-split { position: relative; display: flex; align-items: stretch; gap: 1px; }
+    .export-btn.save-btn { background: rgba(255,255,255,0.08); color: var(--text); gap: 6px; }
+    .export-btn.save-btn:hover { background: rgba(255,255,255,0.14); color: var(--accent); }
+    .save-main { border-radius: 4px 0 0 4px; }
+    .export-btn.save-caret { border-radius: 0 4px 4px 0; padding: 0 9px; }
+    .save-split.open .save-caret { background: rgba(255,255,255,0.14); color: var(--accent); }
+    .saved-menu {
+      display: none; position: absolute; top: calc(100% + 8px); right: 0; z-index: 300;
+      width: 260px; background: #000; border-radius: 12px; padding: 12px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.7); flex-direction: column; gap: 8px;
+    }
+    .save-split.open .saved-menu { display: flex; }
+    .saved-menu-head { font-size: 10px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+    .saved-list { display: flex; flex-direction: column; gap: 2px; max-height: 300px; overflow-y: auto; }
+    .saved-row {
+      display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: 6px;
+      cursor: pointer; transition: background 0.12s; position: relative;
+    }
+    .saved-row:hover { background: rgba(255,255,255,0.07); }
+    .saved-row.current { background: rgba(212,168,39,0.14); }
+    .saved-row canvas { width: 40px; height: 40px; border-radius: 4px; flex-shrink: 0; }
+    .saved-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+    .saved-row-name { font-size: 12px; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .saved-row-date { font-size: 9px; color: var(--muted); }
+    .saved-row-del {
+      background: none; border: none; color: #555; font-size: 14px; cursor: pointer; padding: 2px 6px;
+      opacity: 0; transition: opacity 0.12s, color 0.12s;
+    }
+    .saved-row:hover .saved-row-del { opacity: 1; }
+    .saved-row-del:hover { color: #e57373; }
+    @media (hover: none) { .saved-row-del { opacity: 1; } }
+    .saved-empty { font-size: 11px; color: var(--muted); padding: 6px 2px; line-height: 1.5; }
+    .saved-menu-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 8px; }
+    .saved-all-btn {
+      background: rgba(255,255,255,0.06); border: none; border-radius: 6px; color: #ddd; cursor: pointer;
+      font-size: 10px; padding: 7px; font-family: 'Bricolage Grotesque', sans-serif; transition: background 0.12s, color 0.12s;
+    }
+    .saved-all-btn:hover { background: rgba(255,255,255,0.12); color: var(--accent); }
+    .saved-note { font-size: 9px; color: #555; line-height: 1.4; }
     .feedback-group {
       display: flex; flex-direction: row; gap: 4px;
     }
@@ -1111,6 +1152,24 @@
           <span class="feedback-tip">Follow us</span>
         </a>
       </div>
+      <!-- Save split button: save now, or ▾ to open a saved Pixelkari -->
+      <div class="save-split" id="save-split">
+        <button class="export-btn save-btn save-main" onclick="saveProject()" style="line-height:1;">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M12,21.35l-1.45-1.32C5.4,15.36,2,12.28,2,8.5 C2,5.42,4.42,3,7.5,3c1.74,0,3.41,0.81,4.5,2.09C13.09,3.81,14.76,3,16.5,3 C19.58,3,22,5.42,22,8.5c0,3.78-3.4,6.86-8.55,11.54L12,21.35z"/></svg>
+          Save
+        </button>
+        <button class="export-btn save-btn save-caret" onclick="toggleSavedMenu(event)" aria-label="Saved Pixelkaris" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+        </button>
+        <div class="saved-menu" id="saved-menu" role="menu">
+          <div class="saved-menu-head">Saved Pixelkaris</div>
+          <div class="saved-list" id="project-pal"></div>
+          <div class="saved-menu-foot">
+            <button type="button" class="saved-all-btn" onclick="closeSavedMenu(); showProjectLibrary();">View all &amp; rename</button>
+            <span class="saved-note">Saved in this browser — clearing browser data erases them.</span>
+          </div>
+        </div>
+      </div>
       <button class="export-btn" onclick="openFinishModal()" style="line-height:1;">Finish ✦</button>
     </div>
   </div>
@@ -1237,18 +1296,6 @@
             <button class="motif-rot-btn tip-host" id="motif-size-btn" onclick="cycleMotifScale()">⤢ <span id="motif-size-lbl">1×</span><span class="hover-tip">Make motif bigger (1× → 4×)</span></button>
             <button class="motif-rot-btn tip-host" id="motif-export-btn" onclick="copyMotifsToClipboard()">⬆ Export<span class="hover-tip">Copy all motifs as JSON</span></button>
           </div>
-        </div>
-      </div>
-      <div class="bb-divider bb-divider-flush-left"></div>
-      <!-- Saved Phulkaris: save button + inline recent thumbnail -->
-      <div style="display:flex;align-items:stretch;gap:3px;flex-shrink:0;">
-        <button class="tbtn project-create-btn" id="project-btn" onclick="saveProject()">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12,21.35l-1.45-1.32C5.4,15.36,2,12.28,2,8.5 C2,5.42,4.42,3,7.5,3c1.74,0,3.41,0.81,4.5,2.09C13.09,3.81,14.76,3,16.5,3 C19.58,3,22,5.42,22,8.5c0,3.78-3.4,6.86-8.55,11.54L12,21.35z"/></svg>
-          <span style="line-height:1.3;text-align:center;font-size:10px;">Save<br>Pixelkari</span>
-          <div class="mcb-tip">Your Phulkari is saved right in this browser — no account needed. Clearing your browser data will erase it, so export a copy if you want to keep it long-term.</div>
-        </button>
-        <div id="project-panel" style="display:flex;align-items:center;gap:6px;padding:0 8px;">
-          <div class="motif-grid" id="project-pal"></div>
         </div>
       </div>
     </div>
@@ -3180,6 +3227,7 @@ document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
   if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
   if (e.key === 'Escape') {
+    if (document.getElementById('save-split').classList.contains('open')) { closeSavedMenu(); return; }
     if (document.getElementById('story-page').classList.contains('on')) { closeStoryPage(); return; }
     if (document.getElementById('capture-preview-modal').classList.contains('on')) { cancelCapture(); return; }
     if (document.getElementById('finish-modal').classList.contains('on')) { closeFinishModal(); return; }
@@ -4790,43 +4838,64 @@ function deleteProject(idx) {
   buildProjectPal();
 }
 
+// The Save split button's dropdown — every saved Pixelkari, newest first.
 function buildProjectPal() {
   const el = document.getElementById('project-pal');
   el.innerHTML = '';
-  if (!PROJECTS.length) return;
-  // Most recently saved/updated, not just last in array order — an in-place
-  // update to an existing project doesn't move it to the end of PROJECTS.
-  const idx = PROJECTS.reduce((best, p, i) => (p.savedAt > PROJECTS[best].savedAt ? i : best), 0);
-  const project = PROJECTS[idx];
-  const wrap = document.createElement('div');
-  wrap.className = 'motif-thumb';
-  const tc = _drawProjectThumb(project, 60);
-  tc.addEventListener('click', () => loadProject(idx));
-  tc.title = `Load "${project.name}"`;
-  const del = document.createElement('button');
-  del.className = 'm-del'; del.textContent = '×';
-  del.addEventListener('click', e => { e.stopPropagation(); deleteProject(idx); });
-  const lbl = document.createElement('div');
-  lbl.className = 'm-lbl'; lbl.textContent = project.name;
-  wrap.appendChild(tc); wrap.appendChild(del); wrap.appendChild(lbl);
-  el.appendChild(wrap);
-
-  const tile = document.createElement('div');
-  tile.className = 'view-all-tile';
-  tile.title = 'View all saved Phulkaris';
-  tile.onclick = showProjectLibrary;
-  const extra = PROJECTS.length > 1 ? `+${PROJECTS.length - 1}` : '';
-  tile.innerHTML = `
-    <div class="va-frame">
-      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
-        <rect x="1" y="1" width="6" height="6"/><rect x="9" y="1" width="6" height="6"/>
-        <rect x="1" y="9" width="6" height="6"/><rect x="9" y="9" width="6" height="6"/>
-      </svg>
-      ${extra ? `<span class="va-count">${extra}</span>` : ''}
-    </div>
-    <div class="m-lbl">All Phulkaris</div>`;
-  el.appendChild(tile);
+  if (!PROJECTS.length) {
+    el.innerHTML = '<p class="saved-empty">Nothing saved yet — click Save to keep your current design here.</p>';
+    return;
+  }
+  // Sort by savedAt, not array order — an in-place update to an existing
+  // project doesn't move it to the end of PROJECTS.
+  const order = PROJECTS.map((p, i) => i).sort((a, b) => (PROJECTS[b].savedAt || 0) - (PROJECTS[a].savedAt || 0));
+  order.forEach(idx => {
+    const project = PROJECTS[idx];
+    const row = document.createElement('div');
+    row.className = 'saved-row' + (idx === S.activeProjectIdx ? ' current' : '');
+    row.setAttribute('role', 'menuitem');
+    row.title = `Open "${project.name}"`;
+    row.addEventListener('click', () => { closeSavedMenu(); loadProject(idx); });
+    const text = document.createElement('div');
+    text.className = 'saved-row-text';
+    const name = document.createElement('span');
+    name.className = 'saved-row-name'; name.textContent = project.name;
+    const date = document.createElement('span');
+    date.className = 'saved-row-date';
+    date.textContent = project.savedAt ? new Date(project.savedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    text.appendChild(name); text.appendChild(date);
+    const del = document.createElement('button');
+    del.className = 'saved-row-del'; del.textContent = '×';
+    del.setAttribute('aria-label', `Delete "${project.name}"`);
+    del.addEventListener('click', e => {
+      e.stopPropagation();
+      if (confirm(`Delete "${project.name}"? This can't be undone.`)) deleteProject(idx);
+    });
+    row.appendChild(_drawProjectThumb(project, 80));
+    row.appendChild(text);
+    row.appendChild(del);
+    el.appendChild(row);
+  });
 }
+
+function toggleSavedMenu(e) {
+  if (e) e.stopPropagation();
+  const split = document.getElementById('save-split');
+  if (split.classList.contains('open')) { closeSavedMenu(); return; }
+  buildProjectPal();
+  split.classList.add('open');
+  split.querySelector('.save-caret').setAttribute('aria-expanded', 'true');
+}
+function closeSavedMenu() {
+  const split = document.getElementById('save-split');
+  if (!split) return;
+  split.classList.remove('open');
+  split.querySelector('.save-caret').setAttribute('aria-expanded', 'false');
+}
+document.addEventListener('pointerdown', e => {
+  const split = document.getElementById('save-split');
+  if (split && split.classList.contains('open') && !split.contains(e.target)) closeSavedMenu();
+}, true);
 
 function showProjectLibrary() {
   buildProjectLibraryGrid();
@@ -4839,7 +4908,7 @@ function buildProjectLibraryGrid() {
   const el = document.getElementById('project-library-grid');
   el.innerHTML = '';
   if (!PROJECTS.length) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:11px;padding:8px 0;grid-column:1/-1;">No saved Phulkaris yet — click Save Phulkari to save your current design.</p>';
+    el.innerHTML = '<p style="color:var(--muted);font-size:11px;padding:8px 0;grid-column:1/-1;">No saved Phulkaris yet — click Save (top right) to save your current design.</p>';
     return;
   }
   PROJECTS.forEach((project, idx) => {
