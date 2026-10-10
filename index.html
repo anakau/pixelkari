@@ -512,6 +512,9 @@
       gap: 8px; z-index: 300;
     }
     .logo-tip.hidden { display: none; }
+    /* Billo sits above the toolbar (z 300), which also put her over modal
+       backdrops (z 200) — step aside while any modal is open. */
+    body:has(.overlay.on) .billo-wrap { display: none; }
     .logo-tip-avatar-slot {
       width: 102px; height: 102px;
       flex-shrink: 0; display: block;
@@ -745,6 +748,28 @@
       font-size: 18px; line-height: 1; padding: 4px 8px;
       transition: color 0.12s, background 0.12s;
     }
+    .motion-body { display: flex; flex-direction: column; gap: 14px; padding: 4px 20px 20px; overflow-y: auto; }
+    .motion-stage {
+      display: flex; align-items: center; justify-content: center;
+      background: #0a0a0a; border-radius: 12px; padding: 16px; min-height: 200px;
+    }
+    #motion-canvas { display: block; border-radius: 2px; }
+    .motion-styles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    @media (max-width: 600px) { .motion-styles { grid-template-columns: repeat(2, 1fr); } }
+    .motion-style {
+      display: flex; flex-direction: column; gap: 4px; text-align: left;
+      background: #0a0a0a; border: 1px solid transparent; border-radius: 10px; padding: 10px 12px;
+      cursor: pointer; font-family: 'Bricolage Grotesque', sans-serif; transition: border-color 0.12s, background 0.12s;
+    }
+    .motion-style:hover { background: #111; }
+    .motion-style.on { border-color: var(--accent); }
+    .motion-style-name { font-size: 12px; color: #ddd; }
+    .motion-style.on .motion-style-name { color: var(--accent); }
+    .motion-style-desc { font-size: 9px; color: var(--muted); line-height: 1.4; }
+    .motion-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .motion-meta { font-size: 10px; color: var(--muted); letter-spacing: 0.03em; }
+    #motion-gif-btn { width: auto; padding-left: 18px; padding-right: 18px; }
+    #motion-gif-btn:disabled { opacity: 0.7; cursor: default; }
     .finish-close:hover { color: var(--accent); background: rgba(255,255,255,0.06); }
     #wallpaper-grid {
       display: flex; flex-wrap: wrap; gap: 20px;
@@ -1157,6 +1182,10 @@
           <span class="feedback-tip">Follow us</span>
         </a>
       </div>
+      <button class="export-btn save-btn" id="motion-btn" onclick="openMotionModal()" style="line-height:1;">
+        <svg viewBox="0 0 12 12" width="10" height="10" fill="currentColor" aria-hidden="true"><path d="M3 1.8v8.4L10 6z"/></svg>
+        Motion
+      </button>
       <!-- Save split button: save now, or ▾ to open a saved Pixelkari -->
       <div class="save-split" id="save-split">
         <button class="export-btn save-btn save-main" onclick="saveProject()" style="line-height:1;">Save</button>
@@ -1299,6 +1328,29 @@
             <button class="motif-rot-btn tip-host" id="motif-export-btn" onclick="copyMotifsToClipboard()">⬆ Export<span class="hover-tip">Copy all motifs as JSON</span></button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOTION MODAL -->
+<div class="overlay" id="motion-modal">
+  <div class="finish-box">
+    <div class="finish-head">
+      <span class="finish-head-title">Motion</span>
+      <button class="finish-close" onclick="closeMotionModal()">✕</button>
+    </div>
+    <div class="motion-body">
+      <div class="motion-stage"><canvas id="motion-canvas"></canvas></div>
+      <div class="motion-styles">
+        <button type="button" class="motion-style" data-style="embroider" onclick="setMotionStyle('embroider')"><span class="motion-style-name">Embroider</span><span class="motion-style-desc">Stitches itself in from the centre, then unravels</span></button>
+        <button type="button" class="motion-style" data-style="shine" onclick="setMotionStyle('shine')"><span class="motion-style-name">Silk shine</span><span class="motion-style-desc">A sheen sweeps across the threads, like pat silk</span></button>
+        <button type="button" class="motion-style" data-style="bloom" onclick="setMotionStyle('bloom')"><span class="motion-style-name">Bloom</span><span class="motion-style-desc">Triangles breathe in a ripple from the centre</span></button>
+        <button type="button" class="motion-style" data-style="dance" onclick="setMotionStyle('dance')"><span class="motion-style-name">Colour dance</span><span class="motion-style-desc">Thread colours flow into one another</span></button>
+      </div>
+      <div class="motion-foot">
+        <span class="motion-meta" id="motion-meta"></span>
+        <button class="btn-pri" id="motion-gif-btn" onclick="downloadMotionGif()">Download GIF</button>
       </div>
     </div>
   </div>
@@ -3230,6 +3282,7 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('save-split').classList.contains('open')) { closeSavedMenu(); return; }
     if (document.getElementById('story-page').classList.contains('on')) { closeStoryPage(); return; }
     if (document.getElementById('capture-preview-modal').classList.contains('on')) { cancelCapture(); return; }
+    if (document.getElementById('motion-modal').classList.contains('on')) { closeMotionModal(); return; }
     if (document.getElementById('finish-modal').classList.contains('on')) { closeFinishModal(); return; }
     if (document.getElementById('motif-library-modal').classList.contains('on')) { closeMotifLibrary(); return; }
     if (S.capturingMotif) { stopCaptureMode(); return; }
@@ -5086,6 +5139,7 @@ const BILLO_TIPS = {
   border: `Traditional phulkaris often framed their pattern with a bordering motif. Keep that format, or turn it off and let your design run edge to edge.`,
   mirror: `Phulkaris were rarely perfectly symmetrical by hand — the mirror tool makes it easy to build even, uniform patterns when that's what you want.`,
   motifCreate:  `Paint a design on the canvas, then click Create Motif to save it. Pick it from the library to stamp it anywhere — click to place, drag to tile.`,
+  motion: `Set your design moving — pick a style to preview it, then download a looping GIF to share.`,
   motifLibrary: `Motifs you create are saved right in your browser — no account needed. Just know that clearing your browser data will clear them too.`,
   zoom: `It's easier to start zoomed in — build a small motif first, then zoom out to watch the full pattern come together.`,
 };
@@ -5107,6 +5161,7 @@ function wireBilloContextTips() {
     ['tog-border',       'border'],
     ['sym-group',        'mirror'],
     ['motif-btn',         'motifCreate'],
+    ['motion-btn',        'motion'],
   ];
   hoverMap.forEach(([id, key]) => {
     const el = document.getElementById(id);
@@ -5357,6 +5412,207 @@ function openTextPopup() {
 function closeTextPopup() {
   const popup = document.getElementById('text-popup');
   if (popup) popup.classList.remove('on');
+}
+
+// ═══════════════════════════════════════════════════
+// MOTION — generative animations of the current design, previewed live
+// and exported as a looping GIF. Every style is a function of loop
+// progress t ∈ [0, 1) that returns to its start at t = 1, so loops are
+// seamless. Drawing happens in logical canvas px (CELL per cell) under a
+// scale transform, so the same renderer serves preview and export.
+// ═══════════════════════════════════════════════════
+const MOTION_STYLES = {
+  embroider: { label: 'Embroider',    desc: 'Stitches itself in from the centre, then unravels', secs: 3, fps: 15 },
+  shine:     { label: 'Silk shine',   desc: 'A sheen sweeps across the threads, like pat silk',  secs: 2, fps: 20 },
+  bloom:     { label: 'Bloom',        desc: 'Triangles breathe in a ripple from the centre',     secs: 2, fps: 20 },
+  dance:     { label: 'Colour dance', desc: 'Thread colours flow into one another',              secs: 3, fps: 15 },
+};
+const MOTION_GIF_MAX = 640; // longest side of the exported GIF, in px
+
+const MOTION = { style: 'embroider', tris: [], colors: [], raf: null, start: 0 };
+
+function _triVerts(c, r, tri) {
+  if (tri === 't') return [[c, r], [c + 1, r], [c + 0.5, r + 0.5]];
+  if (tri === 'r') return [[c + 1, r], [c + 1, r + 1], [c + 0.5, r + 0.5]];
+  if (tri === 'b') return [[c + 1, r + 1], [c, r + 1], [c + 0.5, r + 0.5]];
+  return [[c, r + 1], [c, r], [c + 0.5, r + 0.5]];
+}
+
+// Snapshot of the design with the per-triangle values each style needs.
+function _prepareMotion() {
+  const cx = S.cols / 2, cy = S.rows / 2, maxD = Math.hypot(cx, cy);
+  MOTION.colors = [...new Set(Object.values(S.cells))];
+  MOTION.tris = Object.entries(S.cells).map(([key, color]) => {
+    const [c, r, tri] = key.split(',');
+    const v = _triVerts(+c, +r, tri);
+    const gx = (v[0][0] + v[1][0] + v[2][0]) / 3, gy = (v[0][1] + v[1][1] + v[2][1]) / 3;
+    const d = Math.hypot(gx - cx, gy - cy) / maxD;
+    return {
+      v, gx, gy, color, d,
+      ci: MOTION.colors.indexOf(color),
+      diag: (gx + gy) / (S.cols + S.rows),
+      rank: Math.min(1, d * 0.92 + Math.random() * 0.08), // stitch order: outward, a little hand-made jitter
+    };
+  });
+}
+
+function _mixHex(a, b, f) {
+  const A = hexToRgbTuple(a), B = hexToRgbTuple(b);
+  return `rgb(${A.map((x, i) => Math.round(x + (B[i] - x) * f)).join(',')})`;
+}
+
+function _fillTri(g, v, color, scale = 1, gx = 0, gy = 0) {
+  g.fillStyle = color;
+  g.beginPath();
+  v.forEach(([x, y], i) => {
+    const px = (gx + (x - gx) * scale) * CELL, py = (gy + (y - gy) * scale) * CELL;
+    i ? g.lineTo(px, py) : g.moveTo(px, py);
+  });
+  g.closePath();
+  g.fill();
+}
+
+function drawMotionFrame(g, k, style, t) {
+  const W = S.cols * CELL, H = S.rows * CELL, bpx = BORDER * CELL;
+  g.setTransform(k, 0, 0, k, 0, 0);
+  g.globalAlpha = 1;
+  g.fillStyle = S.base;
+  g.fillRect(0, 0, W, H);
+  if (!S.paper && S.showBorder) {   // same border treatment as the live canvas
+    g.fillStyle = 'rgba(0,0,0,0.42)'; g.fillRect(0, 0, W, H);
+    g.fillStyle = S.base;             g.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
+    g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
+  }
+
+  let overlayAlpha = 1; // stitches + text
+  if (style === 'embroider') {
+    // build 0–55%, hold to 80%, unravel back out by 100%
+    const thr = t < 0.55 ? t / 0.55 : t < 0.8 ? 1.06 : 1.06 * (1 - (t - 0.8) / 0.2);
+    for (const p of MOTION.tris) {
+      if (p.rank >= thr) continue;
+      const s = Math.min(1, (thr - p.rank) / 0.06); // each stitch pops in
+      _fillTri(g, p.v, p.color, s, p.gx, p.gy);
+    }
+    overlayAlpha = Math.max(0, Math.min(1, (thr - 0.85) / 0.15));
+  } else if (style === 'shine') {
+    for (const p of MOTION.tris) {
+      _fillTri(g, p.v, p.color);
+      const f = ((p.diag - t) % 1 + 1) % 1, w = Math.min(f, 1 - f); // wrapped distance to the moving band
+      const hl = Math.pow(Math.max(0, 1 - w / 0.12), 2) * 0.55;
+      if (hl > 0.01) { g.globalAlpha = hl; _fillTri(g, p.v, '#fff'); g.globalAlpha = 1; }
+    }
+  } else if (style === 'bloom') {
+    for (const p of MOTION.tris) {
+      const s = 0.35 + 0.65 * (0.5 + 0.5 * Math.cos(2 * Math.PI * (t - p.d)));
+      _fillTri(g, p.v, p.color, s, p.gx, p.gy);
+    }
+  } else { // dance
+    const K = MOTION.colors.length;
+    for (const p of MOTION.tris) {
+      if (K < 2) { _fillTri(g, p.v, p.color); continue; }
+      const pos = (p.ci + t * K + p.diag * 1.5) % K, i = Math.floor(pos);
+      _fillTri(g, p.v, _mixHex(MOTION.colors[i], MOTION.colors[(i + 1) % K], pos - i));
+    }
+  }
+
+  if (overlayAlpha > 0) {
+    g.globalAlpha = overlayAlpha;
+    for (const l of S.lines) drawLine(l, g);
+    for (const tx of S.texts) drawTextObj(tx, g);
+    g.globalAlpha = 1;
+  }
+}
+
+function _motionPreviewLoop(now) {
+  const cv = document.getElementById('motion-canvas');
+  const st = MOTION_STYLES[MOTION.style];
+  const t = (((now - MOTION.start) / 1000) / st.secs) % 1;
+  drawMotionFrame(cv.getContext('2d'), cv._k, MOTION.style, t);
+  MOTION.raf = requestAnimationFrame(_motionPreviewLoop);
+}
+
+function _syncMotionUI() {
+  document.querySelectorAll('.motion-style').forEach(b => b.classList.toggle('on', b.dataset.style === MOTION.style));
+  const st = MOTION_STYLES[MOTION.style];
+  const W = S.cols * CELL, H = S.rows * CELL, k = Math.min(1, MOTION_GIF_MAX / Math.max(W, H));
+  document.getElementById('motion-meta').textContent =
+    `${Math.round(W * k)} × ${Math.round(H * k)} · ${st.secs}s loop · ${st.secs * st.fps} frames`;
+}
+
+function setMotionStyle(style) {
+  MOTION.style = style;
+  MOTION.start = performance.now();
+  _syncMotionUI();
+}
+
+function openMotionModal() {
+  if (isCanvasEmpty()) { showHint('Paint something first, then set it in motion'); return; }
+  _prepareMotion();
+  document.getElementById('motion-modal').classList.add('on');
+  const cv = document.getElementById('motion-canvas');
+  const W = S.cols * CELL, H = S.rows * CELL;
+  const stage = document.querySelector('.motion-stage');
+  const fit = Math.min((stage.clientWidth - 2) / W, 380 / H);
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(W * fit * dpr); cv.height = Math.round(H * fit * dpr);
+  cv.style.width = Math.round(W * fit) + 'px'; cv.style.height = Math.round(H * fit) + 'px';
+  cv._k = fit * dpr;
+  setMotionStyle(MOTION.style);
+  cancelAnimationFrame(MOTION.raf);
+  MOTION.raf = requestAnimationFrame(_motionPreviewLoop);
+}
+
+function closeMotionModal() {
+  document.getElementById('motion-modal').classList.remove('on');
+  cancelAnimationFrame(MOTION.raf);
+  MOTION.raf = null;
+}
+
+let _gifenc = null;
+async function downloadMotionGif() {
+  const btn = document.getElementById('motion-gif-btn');
+  if (btn.disabled) return;
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
+  try {
+    if (!_gifenc) _gifenc = await import('https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js');
+    const { GIFEncoder, quantize, applyPalette } = _gifenc;
+    const style = MOTION.style, st = MOTION_STYLES[style], n = st.secs * st.fps;
+    const W = S.cols * CELL, H = S.rows * CELL, k = Math.min(1, MOTION_GIF_MAX / Math.max(W, H));
+    const w = Math.round(W * k), h = Math.round(H * k);
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    const frame = i => { drawMotionFrame(g, k, style, i / n); return g.getImageData(0, 0, w, h).data; };
+
+    // One palette for the whole loop (sampled from a spread of frames)
+    // keeps colours steady from frame to frame instead of flickering.
+    const samples = [0, 0.2, 0.4, 0.6, 0.8].map(f => frame(Math.floor(f * n)));
+    const pool = new Uint8ClampedArray(samples.reduce((a, s) => a + s.length, 0));
+    samples.reduce((off, s) => { pool.set(s, off); return off + s.length; }, 0);
+    const palette = quantize(pool, 256);
+
+    const gif = GIFEncoder();
+    for (let i = 0; i < n; i++) {
+      const data = frame(i);
+      gif.writeFrame(applyPalette(data, palette), w, h, i === 0 ? { palette, delay: 1000 / st.fps, repeat: 0 } : { delay: 1000 / st.fps });
+      btn.textContent = `Making GIF… ${Math.round((i + 1) / n * 100)}%`;
+      await new Promise(r => setTimeout(r)); // let the progress label paint
+    }
+    gif.finish();
+    const blob = new Blob([gif.bytes()], { type: 'image/gif' });
+    const a = document.createElement('a');
+    a.download = `pixelkari-${style}.gif`;
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    sfxSuccess();
+  } catch (e) {
+    showHint('Could not make the GIF — check your connection and try again');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
 }
 
 // ═══════════════════════════════════════════════════
