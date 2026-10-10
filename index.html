@@ -19,7 +19,8 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #111; --bar: #181818; --border: rgba(255,255,255,0.08);
-      --text: #e8e8e8; --muted: #555;
+      --text: #D4A827; --muted: #555; /* UI text is the yellow accent — no white in the interface */
+      --pink: #E91E8C;                  /* hover + selected */
       --accent: #D4A827; --accent-dim: rgba(212,168,39,0.10);
       --bar-h: 144px;
     }
@@ -1190,10 +1191,8 @@
     #bottombar .tbtn, #bottombar .sym-btn, #bottombar .chk-btn { background-color: #1f1f1f; }
     .page-header .fit-btn:hover, .page-header .icon-btn:hover,
     #bottombar .tbtn:hover, #bottombar .sym-btn:hover, #bottombar .chk-btn:hover { background-color: #292929; }
-    #bottombar .tbtn.on, #bottombar .sym-btn.on { background-color: var(--accent); }
     .page-header .feedback-btn, #bottombar .motif-rot-btn { background-color: #1d1d1d; }
     .page-header .feedback-btn:hover, #bottombar .motif-rot-btn:hover { background-color: #292929; }
-    #bottombar .motif-rot-btn.active { background-color: var(--accent); }
     .page-header .export-btn.save-btn { background-color: #242424; }
     .page-header .export-btn.save-btn:hover, .save-split.open .save-caret { background-color: #323232; }
     .page-header .zoom-lbl {
@@ -1230,7 +1229,7 @@
       display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--muted);
       background: #1d1d1d; border-radius: 4px; min-width: 34px;
     }
-    .motif-size-val.active { background: var(--accent); color: #111; }
+    .motif-size-val.active { color: var(--pink); }
 
     /* Motif thumbnails: a 2×4 grid of plain squares (no labels) — the seven
        most recent motifs, with the view-all tile in the 8th spot — two rows
@@ -1247,6 +1246,55 @@
     #motif-pal .va-frame { height: 100%; aspect-ratio: auto; }
     #motif-pal .va-frame svg { width: 12px; height: 12px; }
     #motif-pal .motif-thumb .m-del { width: 11px; height: 11px; font-size: 8px; top: 1px; right: 1px; }
+
+    /* ── Colour states ──
+       Every control reads yellow by default and turns pink on hover and
+       when selected / active. Selection is never a fill — the button keeps
+       its dark background and only its text / icon / outline turns pink.
+       (Finish and the modal Download buttons stay filled as the main calls
+       to action; their hover goes pink with dark text.) */
+    .logo-title { color: var(--accent); }
+    .logo-tip-hint { color: var(--accent); }
+    .page-header .fit-btn, .page-header .icon-btn, .page-header .zoom-lbl, .page-header .export-btn.save-btn,
+    .page-header .feedback-icon, #bottombar .tbtn, #bottombar .chk-btn, #bottombar .sym-btn, #bottombar .motif-rot-btn,
+    .motif-size-val, .spool-lbl, .logo-tip-avatar-slot::after, #text-icon-btn,
+    .text-font-opt, .text-logo-btn, .cp-brush-btn, .cp-dash-btn, .saved-row-name, .saved-all-btn,
+    .motion-style-name, .btn-sec, #text-input, .cp-value-input { color: var(--accent); }
+    .page-header .fit-btn.danger { color: var(--accent); }
+    .page-header .fit-btn:disabled { color: #4a4a4a; }
+
+    .page-header .fit-btn:hover, .page-header .icon-btn:hover, .page-header .export-btn.save-btn:hover,
+    .page-header .feedback-btn:hover .feedback-icon, #bottombar .tbtn:hover, #bottombar .chk-btn:hover,
+    #bottombar .sym-btn:hover, #bottombar .motif-rot-btn:hover, .preset-select:hover,
+    .text-font-opt:hover, .text-logo-btn:hover, .cp-brush-btn:hover, .cp-dash-btn:hover, .saved-all-btn:hover,
+    .btn-sec:hover, .finish-close:hover, .lib-name:hover, #text-icon-btn:hover { color: var(--pink) !important; }
+
+    /* selected / active: pink, no fill */
+    #bottombar .tbtn.on, #bottombar .sym-btn.on, .orient-btn.on { background-color: #1f1f1f !important; color: var(--pink) !important; }
+    #bottombar .motif-rot-btn.active { background-color: #1d1d1d !important; color: var(--pink) !important; }
+    .page-header #pan-btn.on, .page-header .feedback-btn.on .feedback-icon, .save-split.open .save-caret { color: var(--pink) !important; }
+    .text-font-opt.on, .cp-dash-btn.on, .mm-btn.on { background: rgba(255,255,255,0.06) !important; color: var(--pink) !important; }
+    .brush-size-opt .dot { background: var(--accent); }
+    .brush-size-opt .brush-size-lbl { color: var(--accent); }
+    .brush-size-opt.on { background: rgba(255,255,255,0.06) !important; }
+    .brush-size-opt.on .dot, .brush-size-opt:hover .dot { background: var(--pink) !important; }
+    .brush-size-opt.on .brush-size-lbl, .brush-size-opt:hover .brush-size-lbl { color: var(--pink) !important; }
+    .chk-btn .chk-box { border-color: var(--accent); }
+    .chk-btn.on .chk-box { background: transparent !important; border-color: var(--pink) !important; }
+    .chk-btn.on .chk-box svg { stroke: var(--pink); }
+    .chk-btn.on { color: var(--pink) !important; }
+    .tool-icon-btn.on + .spool-lbl, .tool-icon-btn:hover + .spool-lbl { color: var(--pink); }
+    #text-icon-btn.on { color: var(--pink); }
+    .motif-thumb:hover, .motif-thumb.selected, .view-all-tile:hover, .lib-thumb:hover, .lib-thumb.selected { border-color: var(--pink) !important; }
+    .view-all-tile svg { color: var(--accent); }
+    .view-all-tile:hover svg { color: var(--pink); }
+    .motion-style.on { border-color: var(--pink) !important; }
+    .motion-style.on .motion-style-name, .motion-style:hover .motion-style-name { color: var(--pink) !important; }
+    .text-swatch.on { outline-color: var(--pink) !important; }
+    .color-wheel-btn.on { border-color: var(--pink) !important; box-shadow: 0 0 0 2px var(--pink) !important; }
+    .saved-row.current { background: transparent !important; }
+    .saved-row.current .saved-row-name, .saved-row:hover .saved-row-name { color: var(--pink); }
+    .export-btn:not(.save-btn):hover, .btn-pri:hover, .btn-feature:hover, .snav-cta:hover, .mm-save:hover { background: var(--pink) !important; color: #111 !important; }
 
     /* ── Uniform control heights ──
        Every header control (zoom, history, icon buttons, GIF / Save /
