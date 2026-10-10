@@ -222,17 +222,6 @@
       width: 344px;
     }
     #cp-popup.on { display: flex; }
-    /* Erase has no colour to pick, so it gets its own small popup (same
-       visual language as #cp-popup — dark rounded box, title, close button)
-       rather than sharing the colour one. */
-    #brush-popup {
-      display: none; position: fixed; z-index: 300;
-      background: #000; border: none; border-radius: 16px;
-      padding: 30px 14px 14px; flex-direction: column; gap: 10px;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.7);
-      width: 188px;
-    }
-    #brush-popup.on { display: flex; }
     #text-popup {
       display: none; position: fixed; z-index: 300;
       background: #000; border: none; border-radius: 16px;
@@ -282,18 +271,6 @@
     }
     #text-icon-btn .ti-en { font-family: 'Playfair Display', serif; }
     #text-icon-btn .ti-pa { font-family: 'Baloo Paaji 2', sans-serif; transform: translateY(3px); }
-    .brush-size-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-    .brush-size-opt {
-      flex: 1; height: 52px; background: rgba(255,255,255,0.06); border: none; border-radius: 12px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-      cursor: pointer; transition: background 0.12s; padding: 0;
-    }
-    .brush-size-opt:hover { background: rgba(255,255,255,0.10); }
-    .brush-size-opt.on { background: var(--accent); }
-    .brush-size-opt .dot { clip-path: polygon(50% 0, 100% 100%, 0 100%); background: #ddd; flex-shrink: 0; } /* triangles, like the brush itself */
-    .brush-size-opt.on .dot { background: #111; }
-    .brush-size-lbl { font-size: 8px; color: var(--muted); letter-spacing: 0.04em; }
-    .brush-size-opt.on .brush-size-lbl { color: #111; }
     .cp-popup-title {
       position: absolute; top: 10px; left: 12px;
       font-size: 10px; font-weight: 600; letter-spacing: 0.22em;
@@ -1274,11 +1251,6 @@
     #bottombar .motif-rot-btn.active { background-color: #1d1d1d !important; color: var(--pink) !important; }
     .page-header #pan-btn.on, .page-header .feedback-btn.on .feedback-icon, .save-split.open .save-caret { color: var(--pink) !important; }
     .text-font-opt.on, .cp-dash-btn.on, .mm-btn.on { background: rgba(255,255,255,0.06) !important; color: var(--pink) !important; }
-    .brush-size-opt .dot { background: var(--accent); }
-    .brush-size-opt .brush-size-lbl { color: var(--accent); }
-    .brush-size-opt.on { background: rgba(255,255,255,0.06) !important; }
-    .brush-size-opt.on .dot, .brush-size-opt:hover .dot { background: var(--pink) !important; }
-    .brush-size-opt.on .brush-size-lbl, .brush-size-opt:hover .brush-size-lbl { color: var(--pink) !important; }
     .chk-btn .chk-box { border-color: var(--accent); }
     .chk-btn.on .chk-box { background: transparent !important; border-color: var(--pink) !important; }
     .chk-btn.on .chk-box svg { stroke: var(--pink); }
@@ -3462,18 +3434,10 @@ document.addEventListener('keydown', e => {
   if (e.key === '[') setBrushSize(-1);
 });
 
-// Brush size has two on-screen homes — a +/- stepper in Weave's colour
-// popup, and a tap-to-pick size row in Erase's popup (see
-// initBrushSizePopup) — since they're reachable from different places, both
-// funnel through here so either one stays in sync regardless of which was
-// used, along with the [ / ] keyboard shortcut.
+// Brush size (shared by Weave and Cut) is set from the − / + above the
+// active tool's icon and the [ / ] keys; both funnel through here.
 function selectBrushSize(n) {
   S.brushSize = Math.max(1, Math.min(4, n));
-  const cpLbl = document.getElementById('cp-brush-lbl');
-  if (cpLbl) cpLbl.textContent = S.brushSize + '×';
-  document.querySelectorAll('.brush-size-opt').forEach(b => {
-    b.classList.toggle('on', +b.dataset.size === S.brushSize);
-  });
   showHint(S.brushSize === 1 ? 'Brush: single' : `Brush: ${S.brushSize}× — triangle ${S.brushSize} cells wide`);
 }
 function setBrushSize(delta) { selectBrushSize(S.brushSize + delta); }
@@ -3689,12 +3653,11 @@ async function buildToolIcons() {
     // A click always selects the tool (if it has one) AND opens/updates its
     // popup (colour for the other three, brush size for Cut) in one go;
     // clicking the same icon again while its popup is open closes it —
-    // toggleCustomColorPicker/toggleBrushSizePopup already implement that.
+    // toggleCustomColorPicker already implements that.
     btn.onclick = (e) => {
       e.stopPropagation();
       if (tool) setTool(tool);
       if (hasColor) toggleCustomColorPicker(key);
-      if (key === 'cut') toggleBrushSizePopup();
     };
     const lbl = document.createElement('span');
     lbl.className = 'spool-lbl';
@@ -3713,7 +3676,6 @@ async function buildToolIcons() {
   tWrap.firstChild.onclick = (e) => {
     e.stopPropagation();
     if (window._closeCPPopup) window._closeCPPopup();
-    if (window._closeBrushPopup) window._closeBrushPopup();
     setTool('text');
     openTextPopup();
   };
@@ -3798,25 +3760,8 @@ function initCustomColorPicker() {
     left.appendChild(eyedropBtn);
   }
 
-  // Brush size only affects Weave/Erase strokes (there's no "brush" concept
-  // for Stitch's line tool or Cloth's base colour), so this row only shows
-  // up when the popup was opened for Weave — see window._toggleCPPopup
-  // below, which toggles its display alongside the rest of the per-target
-  // swap. Erase has its own equivalent popup (see initBrushSizePopup) since
-  // it has no colour to pick and so never opens this one.
-  const brushRow = document.createElement('div');
-  brushRow.className = 'cp-value-row cp-brush-row';
-  brushRow.innerHTML = `
-    <span class="cp-value-lbl" style="width:auto;">Brush</span>
-    <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
-      <button type="button" class="cp-brush-btn" onclick="setBrushSize(-1)" aria-label="Smaller brush">−</button>
-      <span id="cp-brush-lbl" style="font-size:11px;color:#ddd;min-width:16px;text-align:center;">${S.brushSize}×</span>
-      <button type="button" class="cp-brush-btn" onclick="setBrushSize(1)" aria-label="Bigger brush">+</button>
-    </div>
-  `;
-  left.appendChild(brushRow);
 
-  // Brush vs Fill — Weave-only, shown/hidden alongside brushRow.
+  // Brush vs Fill — Weave-only, shown/hidden per target like dashRow below.
   const modeRow = document.createElement('div');
   modeRow.className = 'cp-value-row cp-mode-row';
   modeRow.innerHTML = `
@@ -3828,7 +3773,7 @@ function initCustomColorPicker() {
   `;
   left.appendChild(modeRow);
 
-  // Line style is Stitch-only — mirrors brushRow's per-target show/hide.
+  // Line style is Stitch-only — mirrors modeRow's per-target show/hide.
   const dashRow = document.createElement('div');
   dashRow.className = 'cp-value-row cp-dash-row';
   dashRow.style.display = 'none';
@@ -4177,10 +4122,8 @@ function initCustomColorPicker() {
       popup.classList.remove('on');
       return;
     }
-    if (window._closeBrushPopup) window._closeBrushPopup(); // mutually exclusive with Erase's popup
     cpTarget = target;
     window._cpTarget = cpTarget;
-    brushRow.style.display = target === 'weave' ? 'flex' : 'none';
     modeRow.style.display = target === 'weave' ? 'flex' : 'none';
     dashRow.style.display = target === 'stitch' ? 'flex' : 'none';
     if (target === 'cloth') setBilloMessage('cloth'); // weave/stitch already set theirs via setTool()
@@ -4201,82 +4144,6 @@ function toggleCustomColorPicker(target) {
   if (window._toggleCPPopup) window._toggleCPPopup(target);
 }
 
-// Erase's brush-size popup — same visual language as #cp-popup (dark
-// rounded box, title, close button, positioned above the icon that opened
-// it) but standalone, since Erase has no colour to pick and so never opens
-// that one.
-function initBrushSizePopup() {
-  const popup = document.createElement('div');
-  popup.id = 'brush-popup';
-
-  const title = document.createElement('span');
-  title.className = 'cp-popup-title';
-  title.textContent = 'Brush Size';
-  popup.appendChild(title);
-
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'cp-close';
-  closeBtn.setAttribute('aria-label', 'Close');
-  closeBtn.textContent = '✕';
-  closeBtn.addEventListener('click', () => popup.classList.remove('on'));
-  popup.appendChild(closeBtn);
-
-  const row = document.createElement('div');
-  row.className = 'brush-size-row';
-  // Dot diameters scale with brush size (a plain 1-4 label wouldn't convey
-  // how much bigger each step actually paints) — same 1/2/3/4x scale
-  // paint() itself uses.
-  [6, 10, 14, 18].forEach((dot, i) => {
-    const n = i + 1;
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'brush-size-opt' + (S.brushSize === n ? ' on' : '');
-    btn.dataset.size = n;
-    btn.setAttribute('aria-label', `Brush size ${n}`);
-    btn.innerHTML = `<span class="dot" style="width:${dot}px;height:${dot}px;"></span><span class="brush-size-lbl">${n}×</span>`;
-    btn.addEventListener('click', () => selectBrushSize(n));
-    row.appendChild(btn);
-  });
-  popup.appendChild(row);
-
-  document.body.appendChild(popup);
-
-  function positionPopup() {
-    const btn = document.getElementById('cut-icon-btn');
-    if (!btn) return;
-    const r = btn.getBoundingClientRect();
-    const pw = popup.offsetWidth || 188, ph = popup.offsetHeight || 110;
-    let left = r.left + r.width / 2 - pw / 2;
-    left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
-    popup.style.left = left + 'px';
-    popup.style.top  = (r.top - ph - 10) + 'px';
-  }
-
-  window._closeBrushPopup = () => popup.classList.remove('on');
-
-  window._toggleBrushPopup = function() {
-    if (popup.classList.contains('on')) {
-      popup.classList.remove('on');
-      return;
-    }
-    if (window._closeCPPopup) window._closeCPPopup(); // mutually exclusive with the colour popup
-    popup.classList.add('on');
-    positionPopup();
-  };
-
-  // Close on outside click — mirrors the colour popup's own listener.
-  document.addEventListener('pointerdown', e => {
-    const cutBtn = document.getElementById('cut-icon-btn');
-    const onIcon = cutBtn && cutBtn.contains(e.target);
-    if (popup.classList.contains('on') && !popup.contains(e.target) && !onIcon) {
-      popup.classList.remove('on');
-    }
-  }, true);
-}
-
-function toggleBrushSizePopup() {
-  if (window._toggleBrushPopup) window._toggleBrushPopup();
-}
 
 // ── Colour format display (hex / rgb / cmyk / riso) ──
 // Riso printing uses a fixed set of ink drums rather than mixable colour, so
@@ -6380,7 +6247,6 @@ pickBilloFact();
 wireBilloContextTips();
 initBubbleVisibility();
 initCustomColorPicker();
-initBrushSizePopup();
 initTextPopup();
 syncSoundBtn();
 initCanvas();
