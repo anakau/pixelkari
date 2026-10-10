@@ -1940,15 +1940,20 @@ function drawGrid() {
   }
   ctx.stroke();
 
-  // centre guide lines
+  // centre guide lines — only the active mirror's axis: left↔right mirrors
+  // across the vertical centre, top↕bottom across the horizontal, 4-fold both
   const cx = (S.cols / 2) * CELL;
   const cy = (S.rows / 2) * CELL;
-  ctx.strokeStyle = 'rgba(255,200,80,0.55)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(cx, 0); ctx.lineTo(cx, H);
-  ctx.moveTo(0, cy); ctx.lineTo(W, cy);
-  ctx.stroke();
+  const showV = S.sym === 'h' || S.sym === '4';
+  const showH = S.sym === 'v' || S.sym === '4';
+  if (showV || showH) {
+    ctx.strokeStyle = 'rgba(255,200,80,0.55)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (showV) { ctx.moveTo(cx, 0); ctx.lineTo(cx, H); }
+    if (showH) { ctx.moveTo(0, cy); ctx.lineTo(W, cy); }
+    ctx.stroke();
+  }
 
   ctx.restore();
 }
@@ -4184,6 +4189,7 @@ function buildSym() {
       S.sym = wasOn ? null : s.id;
       document.querySelectorAll('#sym-group .sym-btn').forEach(b => b.classList.remove('on'));
       if (!wasOn) btn.classList.add('on');
+      render(); // redraw the centre guides for the new mirror axis
     });
     el.appendChild(btn);
   });
