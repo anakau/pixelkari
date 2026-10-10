@@ -21,6 +21,7 @@
       --bg: #111; --bar: #181818; --border: rgba(255,255,255,0.08);
       --text: #D4A827; --muted: #555; /* UI text is the yellow accent — no white in the interface */
       --pink: #E91E8C;                  /* hover + selected */
+      --pink-deep: #2A0D1C;             /* selected fill — near-black deep pink */
       --accent: #D4A827; --accent-dim: rgba(212,168,39,0.10);
       --bar-h: 144px;
     }
@@ -1247,10 +1248,14 @@
     .btn-sec:hover, .finish-close:hover, .lib-name:hover { color: var(--pink) !important; }
 
     /* selected / active: pink, no fill */
-    #bottombar .tbtn.on, #bottombar .sym-btn.on, .orient-btn.on { background-color: #1f1f1f !important; color: var(--pink) !important; }
-    #bottombar .motif-rot-btn.active { background-color: #1d1d1d !important; color: var(--pink) !important; }
-    .page-header #pan-btn.on, .page-header .feedback-btn.on .feedback-icon, .save-split.open .save-caret { color: var(--pink) !important; }
-    .text-font-opt.on, .cp-dash-btn.on, .mm-btn.on { background: rgba(255,255,255,0.06) !important; color: var(--pink) !important; }
+    /* selected: pink text on a near-black deep-pink fill */
+    #bottombar .tbtn.on, #bottombar .sym-btn.on, .orient-btn.on, #bottombar .chk-btn.on,
+    #bottombar .motif-rot-btn.active, .page-header #pan-btn.on, .page-header .feedback-btn.on,
+    .save-split.open .save-caret, .finish-split.open .export-btn,
+    .text-font-opt.on, .cp-dash-btn.on, .mm-btn.on, .motion-style.on, .saved-row.current {
+      background: var(--pink-deep) !important; color: var(--pink) !important;
+    }
+    .page-header .feedback-btn.on .feedback-icon { color: var(--pink) !important; }
     .chk-btn .chk-box { border-color: var(--accent); }
     .chk-btn.on .chk-box { background: transparent !important; border-color: var(--pink) !important; }
     .chk-btn.on .chk-box svg { stroke: var(--pink); }
@@ -1263,7 +1268,6 @@
     .motion-style.on .motion-style-name, .motion-style:hover .motion-style-name { color: var(--pink) !important; }
     .text-swatch.on { outline-color: var(--pink) !important; }
     .color-wheel-btn.on { border-color: var(--pink) !important; box-shadow: 0 0 0 2px var(--pink) !important; }
-    .saved-row.current { background: transparent !important; }
     .saved-row.current .saved-row-name, .saved-row:hover .saved-row-name { color: var(--pink); }
     .export-btn:not(.save-btn):hover, .btn-pri:hover, .btn-feature:hover, .snav-cta:hover, .mm-save:hover { background: var(--pink) !important; color: #111 !important; }
 
