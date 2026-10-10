@@ -184,8 +184,6 @@
     .chk-btn.on .chk-box { background: var(--accent); border-color: var(--accent); }
     .chk-box svg { opacity: 0; transition: opacity 0.1s; }
     .chk-btn.on .chk-box svg { opacity: 1; }
-    .chk-btn.big .chk-box { background: #E91E8C; border-color: #E91E8C; } /* Grid's larger-grid state */
-    .chk-btn.big .chk-box svg { opacity: 1; }
     .nav-block { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
     .nav-row   { display: flex; gap: 3px; }
     .preset-select {
@@ -1384,7 +1382,7 @@
         </div>
         <!-- Bottom row: view controls -->
         <div class="nav-row">
-          <button class="chk-btn on tip-host" id="tog-grid" onclick="toggleGrid()"><span class="chk-box"><svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.3 6.2l2.3 2.3 5-5.4"/></svg></span><span id="grid-lbl">Grid</span><span class="hover-tip" id="grid-tip">Larger grid (G)</span></button>
+          <button class="chk-btn on tip-host" id="tog-grid" onclick="toggleGrid()"><span class="chk-box"><svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.3 6.2l2.3 2.3 5-5.4"/></svg></span>Grid<span class="hover-tip">Toggle grid (G)</span></button>
           <button class="chk-btn on tip-host" id="tog-border" onclick="toggleBorder()"><span class="chk-box"><svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.3 6.2l2.3 2.3 5-5.4"/></svg></span>Border<span class="hover-tip">Toggle canvas border</span></button>
           <button class="tbtn orient-btn tip-host" id="orient-portrait-btn" onclick="setOrientation('portrait')">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="3" width="12" height="18" rx="1.5"/></svg>
@@ -1789,7 +1787,6 @@ const S = {
   fillMode:  false, // Weave only — a click floods the connected region instead of painting one triangle
   stitchDashed: false, // applies to new stitch lines only — existing ones keep whatever they were drawn with
   grid:      true,
-  gridScale: 1,    // 1 = fine grid, 3 = larger grid (3×3 cells per square)
   showBorder: true,
   zoom:      1,
   panX:      0,
@@ -2051,24 +2048,19 @@ function drawGrid() {
   ctx.strokeStyle = S.paper ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.22)';
   ctx.lineWidth   = 0.5;
 
-  // In the larger grid each square spans 3×3 cells (see toggleGrid);
-  // squares cut off by the canvas edge are simply clipped.
-  const step = S.gridScale || 1, G = step * CELL;
-
   // H + V lines in one path
   ctx.beginPath();
-  for (let c = 0; c <= S.cols; c += step) { ctx.moveTo(c*CELL, 0); ctx.lineTo(c*CELL, H); }
-  for (let r = 0; r <= S.rows; r += step) { ctx.moveTo(0, r*CELL); ctx.lineTo(W, r*CELL); }
-  ctx.moveTo(W, 0); ctx.lineTo(W, H); ctx.moveTo(0, H); ctx.lineTo(W, H); // outer edge
+  for (let c = 0; c <= S.cols; c++) { ctx.moveTo(c*CELL, 0); ctx.lineTo(c*CELL, H); }
+  for (let r = 0; r <= S.rows; r++) { ctx.moveTo(0, r*CELL); ctx.lineTo(W, r*CELL); }
   ctx.stroke();
 
   // diagonals in one path
   ctx.beginPath();
-  for (let c = 0; c < S.cols; c += step) {
-    for (let r = 0; r < S.rows; r += step) {
+  for (let c = 0; c < S.cols; c++) {
+    for (let r = 0; r < S.rows; r++) {
       const x = c*CELL, y = r*CELL;
-      ctx.moveTo(x,     y);      ctx.lineTo(x+G, y+G);
-      ctx.moveTo(x+G,   y);      ctx.lineTo(x,   y+G);
+      ctx.moveTo(x,      y);      ctx.lineTo(x+CELL, y+CELL);
+      ctx.moveTo(x+CELL, y);      ctx.lineTo(x,      y+CELL);
     }
   }
   ctx.stroke();
@@ -2343,22 +2335,26 @@ function brushKeys(col, row, tri) {
     });
   } else {
     // A bigger brush is the smallest unit scaled up: one large triangle,
-    // facing the same way as the triangle under the cursor, whose point
-    // sits at the centre of the clicked cell. Built the same way
-    // scaleMotifCells enlarges motifs — every small triangle inside the
-    // (2R+1)-cell square whose centroid lands in the big triangle.
-    const R = S.brushSize - 1, span = 2 * R + 1;
+    // facing the same way as the triangle under the cursor, n cells along
+    // its long edge (n = brush size, so 2, 3, 4 — one triangle more per
+    // step). Its k×k square is placed so the big triangle's centroid sits
+    // on the clicked cell's centre. Built the same way scaleMotifCells
+    // enlarges motifs — every small triangle in that square whose centroid
+    // lands inside the big triangle.
+    const k = S.brushSize;
     const seen = new Set();
     symTris(col, row, tri).forEach(({col: cc, row: cr, tri: ct}) => {
       const sk = `${cc},${cr},${ct}`;
       if (seen.has(sk)) return;
       seen.add(sk);
-      for (let dc = -R; dc <= R; dc++) {
-        for (let dr = -R; dr <= R; dr++) {
-          const bc = cc + dc, br = cr + dr;
+      const [gu, gv] = TRI_CENTROID[ct];                 // big triangle's centroid, in its square's units
+      const x0 = Math.round(cc + 0.5 - gu * k), y0 = Math.round(cr + 0.5 - gv * k);
+      for (let i = 0; i < k; i++) {
+        for (let j = 0; j < k; j++) {
+          const bc = x0 + i, br = y0 + j;
           if (bc < 0 || bc >= S.cols || br < 0 || br >= S.rows) continue;
           for (const [t, [cu, cv]] of Object.entries(TRI_CENTROID)) {
-            if (_triAtUV((dc + R + cu) / span, (dr + R + cv) / span) !== ct) continue;
+            if (_triAtUV((i + cu) / k, (j + cv) / k) !== ct) continue;
             keys.add(`${bc},${br},${t}`);
           }
         }
@@ -2876,22 +2872,11 @@ function fitZoom() {
 // ═══════════════════════════════════════════════════
 // GRID / BORDER TOGGLES
 // ═══════════════════════════════════════════════════
-// Grid cycles through three states: the fine grid (yellow) → a larger
-// grid where every 3×3 block of cells reads as one cell, so each big
-// triangle spans three small ones along its edge — the size of a 2× brush
-// triangle (pink) → off (grey) → back to fine.
 function updateGridBtn() {
-  const btn = document.getElementById('tog-grid');
-  const big = S.grid && S.gridScale === 3;
-  btn.classList.toggle('on', S.grid && !big);
-  btn.classList.toggle('big', big);
-  document.getElementById('grid-lbl').textContent = big ? 'Grid 3×' : 'Grid';
-  document.getElementById('grid-tip').textContent = !S.grid ? 'Show grid (G)' : big ? 'Hide grid (G)' : 'Larger grid (G)';
+  document.getElementById('tog-grid').classList.toggle('on', S.grid);
 }
 function toggleGrid() {
-  if (S.grid && S.gridScale === 1) S.gridScale = 3;
-  else if (S.grid) S.grid = false;
-  else { S.grid = true; S.gridScale = 1; }
+  S.grid = !S.grid;
   updateGridBtn();
   render();
 }
@@ -3471,7 +3456,7 @@ function selectBrushSize(n) {
   document.querySelectorAll('.brush-size-opt').forEach(b => {
     b.classList.toggle('on', +b.dataset.size === S.brushSize);
   });
-  showHint(S.brushSize === 1 ? 'Brush: single' : `Brush: ${S.brushSize}× — triangle ${(S.brushSize*2-1)} cells wide`);
+  showHint(S.brushSize === 1 ? 'Brush: single' : `Brush: ${S.brushSize}× — triangle ${S.brushSize} cells wide`);
 }
 function setBrushSize(delta) { selectBrushSize(S.brushSize + delta); }
 
