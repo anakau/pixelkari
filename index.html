@@ -5759,10 +5759,12 @@ function drawMotionFrame(g, k, style, t) {
 
   let overlayAlpha = 1, linesDrawn = false; // stitches + text
   if (style === 'timelapse') {
-    // Replay 0–55% (one beat per recorded step), hold the finished piece,
-    // then let it slowly dissolve back into bare cloth (70–95%) before the
-    // replay begins again — so the loop breathes rather than cutting.
-    const N = MOTION.steps, at = Math.min(N, (t / 0.55) * N); // steps completed so far (fractional)
+    // Creates and un-creates itself: replay forward over 0–45% (one beat
+    // per recorded step), hold the finished piece, then rewind over 55–100%
+    // — the last stitch made is the first to go, dot by dot, back to bare
+    // cloth — so the loop is seamless.
+    const N = MOTION.steps;
+    const at = t < 0.45 ? (t / 0.45) * N : t < 0.55 ? N : (1 - (t - 0.55) / 0.45) * N; // steps present (fractional)
     let newest = null;
     for (const p of MOTION.tris) {
       if (p.step >= at) continue;
@@ -5785,12 +5787,6 @@ function drawMotionFrame(g, k, style, t) {
       g.globalAlpha = f; drawTextObj(tx, g); g.globalAlpha = 1;
     });
     linesDrawn = true; overlayAlpha = 0;
-    if (t > 0.7) { // slow dissolve to the bare cloth, eased
-      const f = Math.min(1, (t - 0.7) / 0.25);
-      g.globalAlpha = f * f * (3 - 2 * f);
-      _drawCloth(g, k);
-      g.globalAlpha = 1;
-    }
   } else { // dance
     const K = MOTION.colors.length;
     for (const p of MOTION.tris) {
