@@ -1917,6 +1917,26 @@ function drawLine(line, gctx = ctx, preview = false) {
   gctx.restore();
 }
 
+// Mirror guide colour with strong contrast against the cloth: the signature
+// yellow when it reads clearly (WCAG ratio ≥ 3), otherwise near-black or
+// white, whichever contrasts more. Measured against the cloth as shown —
+// the inner area is darkened 18% when the border is on.
+function _relLum(rgb) {
+  const [r, g, b] = rgb.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function _contrast(a, b) {
+  const [hi, lo] = [_relLum(a), _relLum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+function guideColor() {
+  let base = hexToRgbTuple(S.base);
+  if (!S.paper && S.showBorder) base = base.map(v => v * 0.82);
+  const YELLOW = [255, 200, 80], DARK = [17, 17, 17], LIGHT = [255, 255, 255];
+  if (_contrast(YELLOW, base) >= 3) return 'rgba(255,200,80,0.9)';
+  return _contrast(DARK, base) >= _contrast(LIGHT, base) ? 'rgba(17,17,17,0.85)' : 'rgba(255,255,255,0.9)';
+}
+
 function drawGrid() {
   const W = S.cols * CELL;
   const H = S.rows * CELL;
@@ -1948,7 +1968,7 @@ function drawGrid() {
   const showV = S.sym === 'h' || S.sym === '4';
   const showH = S.sym === 'v' || S.sym === '4';
   if (showV || showH) {
-    ctx.strokeStyle = 'rgba(255,200,80,0.55)';
+    ctx.strokeStyle = guideColor();
     ctx.lineWidth = 1;
     ctx.beginPath();
     if (showV) { ctx.moveTo(cx, 0); ctx.lineTo(cx, H); }
