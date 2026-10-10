@@ -1221,16 +1221,32 @@
     /* Motif controls (Flip / Rotate / Size / Export) as a 2×2 grid,
        filling the same 73px height as Create Motif and the thumbnails. */
     .motif-ctrls {
-      display: grid !important; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+      display: grid !important; grid-template-columns: repeat(3, auto); grid-template-rows: 1fr 1fr;
       gap: var(--btn-gap); height: 73px; flex-direction: unset;
     }
-    .motif-ctrls .motif-rot-btn { height: auto; padding: 0 10px; display: flex; align-items: center; justify-content: flex-start; }
+    .motif-ctrls .motif-rot-btn { height: auto; padding: 0 10px; display: flex; align-items: center; justify-content: center; }
+    .motif-ctrls .motif-step { font-size: 14px; }
+    .motif-size-val {
+      display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--muted);
+      background: #1d1d1d; border-radius: 4px; min-width: 34px;
+    }
+    .motif-size-val.active { background: var(--accent); color: #111; }
 
-    /* Motif thumbnails and the library tile are plain 73px squares (no
-       labels), matching Create Motif's height. */
-    #motif-pal .motif-thumb, #motif-pal .view-all-tile { width: 73px; height: 73px; box-sizing: border-box; }
+    /* Motif thumbnails: a 2×4 grid of plain squares (no labels) — the seven
+       most recent motifs, with the view-all tile in the 8th spot — two rows
+       filling Create Motif's 73px height. */
+    #motif-pal {
+      display: grid !important; flex: none;
+      grid-template-columns: repeat(4, calc((73px - var(--btn-gap)) / 2));
+      grid-template-rows: repeat(2, calc((73px - var(--btn-gap)) / 2));
+      grid-auto-flow: row; overflow: visible;
+    }
+    #motif-pal .motif-thumb, #motif-pal .view-all-tile { width: 100%; height: 100%; box-sizing: border-box; }
+    #motif-pal .view-all-tile { grid-column: 4; grid-row: 2; }
     #motif-pal .motif-thumb canvas { width: 100%; height: 100%; }
     #motif-pal .va-frame { height: 100%; aspect-ratio: auto; }
+    #motif-pal .va-frame svg { width: 12px; height: 12px; }
+    #motif-pal .motif-thumb .m-del { width: 11px; height: 11px; font-size: 8px; top: 1px; right: 1px; }
 
     /* ── Uniform control heights ──
        Every header control (zoom, history, icon buttons, GIF / Save /
@@ -1428,10 +1444,13 @@
         </button>
         <div id="motif-panel">
           <div class="motif-grid" id="motif-pal"></div>
+          <!-- top row: motif size − / + ; bottom row: flip, rotate, export -->
           <div class="motif-ctrls">
+            <button class="motif-rot-btn motif-step tip-host" onclick="stepMotifScale(-1)" aria-label="Smaller motif">−<span class="hover-tip">Smaller motif</span></button>
+            <span class="motif-size-val" id="motif-size-lbl">1×</span>
+            <button class="motif-rot-btn motif-step tip-host" onclick="stepMotifScale(1)" aria-label="Bigger motif">+<span class="hover-tip">Bigger motif (up to 4×)</span></button>
             <button class="motif-rot-btn tip-host" id="motif-flip-btn" onclick="toggleMotifFlip()">↔ Flip<span class="hover-tip">Mirror motif horizontally</span></button>
             <button class="motif-rot-btn tip-host" id="motif-rot-btn" onclick="cycleMotifRotation()">↻ <span id="motif-rot-lbl">0°</span><span class="hover-tip">Rotate motif 90° clockwise</span></button>
-            <button class="motif-rot-btn tip-host" id="motif-size-btn" onclick="cycleMotifScale()">⤢ <span id="motif-size-lbl">1×</span><span class="hover-tip">Make motif bigger (1× → 4×)</span></button>
             <button class="motif-rot-btn tip-host" id="motif-export-btn" onclick="copyMotifsToClipboard()">⬆ Export<span class="hover-tip">Copy all motifs as JSON</span></button>
           </div>
         </div>
@@ -4642,13 +4661,13 @@ function cycleMotifRotation() {
   if (S.ghostCol !== null) drawGhost(S.ghostCol, S.ghostRow);
 }
 
-function cycleMotifScale() {
+function stepMotifScale(delta) {
   if (!S.activeMotif) return;
-  S.motifScale = S.motifScale % 4 + 1;
+  const next = Math.max(1, Math.min(4, S.motifScale + delta));
+  if (next === S.motifScale) return;
+  S.motifScale = next;
   const lbl = document.getElementById('motif-size-lbl');
-  if (lbl) lbl.textContent = S.motifScale + '×';
-  const btn = document.getElementById('motif-size-btn');
-  if (btn) btn.classList.toggle('active', S.motifScale !== 1);
+  if (lbl) { lbl.textContent = S.motifScale + '×'; lbl.classList.toggle('active', S.motifScale !== 1); }
   S.motifBounds = getMotifBounds();
   if (S.ghostCol !== null) drawGhost(S.ghostCol, S.ghostRow);
   showHint(S.motifScale === 1 ? 'Motif: original size' : `Motif: ${S.motifScale}× bigger`);
@@ -4677,9 +4696,7 @@ function selectMotif(motif) {
   if (flipBtn) flipBtn.classList.remove('active');
   S.motifScale = 1;
   const sizeLbl = document.getElementById('motif-size-lbl');
-  if (sizeLbl) sizeLbl.textContent = '1×';
-  const sizeBtn = document.getElementById('motif-size-btn');
-  if (sizeBtn) sizeBtn.classList.remove('active');
+  if (sizeLbl) { sizeLbl.textContent = '1×'; sizeLbl.classList.remove('active'); }
   document.querySelectorAll('.motif-thumb').forEach(t => t.classList.remove('selected'));
   if (motif) {
     showHint(`"${motif.name}" selected — click canvas to place, Esc to cancel`);
@@ -4840,14 +4857,14 @@ function buildMotifPal() {
   const el = document.getElementById('motif-pal');
   el.innerHTML = '';
   if (!MOTIFS.length) return;
-  const recent = MOTIFS.slice(-2);
+  const recent = MOTIFS.slice(-7); // 2×4 grid: seven most recent + the view-all tile
   const startIdx = MOTIFS.length - recent.length;
   recent.forEach((motif, i) => {
     const idx = startIdx + i;
     const wrap = document.createElement('div');
     wrap.className = 'motif-thumb';
-    // Drawn at 2× so it stays sharp as a 73px square (names live in the library)
-    const tc = _drawMotifThumb(motif, 146);
+    // Drawn at 2× so it stays sharp in its grid cell (names live in the library)
+    const tc = _drawMotifThumb(motif, 72);
     tc.addEventListener('click', () => { selectMotif(motif); wrap.classList.add('selected'); });
     tc.title = `Select "${motif.name}" to place on canvas`;
     const del = document.createElement('button');
