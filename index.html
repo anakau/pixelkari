@@ -1086,13 +1086,13 @@
     </div>
     <div class="header-actions">
       <div class="feedback-group">
-        <button type="button" class="feedback-btn" id="music-btn" onclick="toggleMusic()" aria-label="Play music" aria-pressed="false">
+        <button type="button" class="feedback-btn" id="sound-btn" onclick="toggleSound()" aria-label="Drawing sounds" aria-pressed="false">
           <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 18V5l11-2v13"/>
-            <circle cx="6" cy="18" r="3"/>
-            <circle cx="17" cy="16" r="3"/>
+            <path d="M11 5 6 9H3v6h3l5 4V5Z"/>
+            <g class="snd-waves" style="display:none"><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></g>
+            <g class="snd-mute"><path d="m16 9 5 6"/><path d="m21 9-5 6"/></g>
           </svg>
-          <span class="feedback-tip" id="music-tip">Play music</span>
+          <span class="feedback-tip" id="sound-tip">Turn on drawing sounds</span>
         </button>
         <a href="https://tally.so/r/dWgeVA" target="_blank" rel="noopener" class="feedback-btn" aria-label="Suggestions?">
           <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -2301,6 +2301,7 @@ canvas.addEventListener('pointerdown', e => {
       S.stitchPreview = v;
       S.stitchPath = [v];
       S._stitchLastPx = null;
+      playDrawNote(v.col, 'stitch');
     } else {
       // The drag's distance-based sampling (see pointermove) can leave the
       // last recorded point short of the actual click position, if the
@@ -2336,6 +2337,7 @@ canvas.addEventListener('pointerdown', e => {
     // Mirror symmetry applies to fills too — re-check each mirrored start,
     // since an earlier fill may already have covered it.
     symTris(col, row, tri).forEach(({col: c, row: r, tri: t}) => floodFill(c, r, t));
+    playFillStrum(col);
     render();
     return;
   }
@@ -2345,6 +2347,7 @@ canvas.addEventListener('pointerdown', e => {
   const {col, row, tri} = triAt(e);
   S.lastCell = {col, row, tri};
   paint(col, row, tri);
+  if (S.tool === 'paint') playDrawNote(col, 'weave');
   if (S.tool === 'erase') {
     const rect = canvas.getBoundingClientRect();
     eraseStitchesNear((e.clientX - rect.left) / S.zoom, (e.clientY - rect.top) / S.zoom);
@@ -2453,6 +2456,7 @@ canvas.addEventListener('pointermove', e => {
       // still snapped via kingPath so it hugs real grid lines, but the
       // full route follows the true movement between clicks.
       S.stitchPath.push(...kingPath(last.col, last.row, v.col, v.row).slice(1));
+      playDrawNote(v.col, 'stitch');
     }
     S.stitchPreview = v;
     render();
@@ -2470,6 +2474,7 @@ canvas.addEventListener('pointermove', e => {
   if (S.lastCell?.col === col && S.lastCell?.row === row && S.lastCell?.tri === tri) return;
   S.lastCell = {col, row, tri};
   paint(col, row, tri);
+  if (S.tool === 'paint') playDrawNote(col, 'weave');
   render();
 });
 
@@ -5216,7 +5221,7 @@ function closeTextPopup() {
 }
 
 // ═══════════════════════════════════════════════════
-// SOUND — export clicks + ambient music
+// SOUND — export clicks + drawing instruments
 // Everything is synthesised with Web Audio, so there are no audio files to
 // load or license. The context is created lazily on the first click, since
 // browsers won't let audio start before a user gesture anyway.
@@ -5274,7 +5279,7 @@ function _bell(ac, dest, freq, t, vol, decay) {
 }
 
 // Played once an export has actually been handed to the browser — two
-// rising bell notes (Sa → Pa), the same scale the ambient music uses.
+// rising bell notes (Sa → Pa).
 function sfxSuccess() {
   const ac = audioCtx(); if (!ac) return;
   const t = ac.currentTime;
@@ -5287,83 +5292,133 @@ document.addEventListener('pointerdown', e => {
   if (e.target.closest('.export-btn, .wp-card, #pdf-download-btn, #riso-download-btn, #motif-export-btn, .btn-feature')) sfxClick();
 }, true);
 
-// Ambient music: a tanpura-style drone (Pa–Sa–Sa–low Sa, looping) with
-// slow, wandering bell notes from raag Bhupali (Sa Re Ga Pa Dha) on top.
-// Notes are scheduled slightly ahead on the audio clock so timing stays
-// steady even when the main thread is busy painting.
-const MUSIC = {
-  playing: false, master: null, timer: null, nextDrone: 0, droneStep: 0, nextNote: 0, noteIdx: 2,
-  DRONE: [110.00, 146.83, 146.83, 73.42],                      // Pa, Sa, Sa, low Sa (Sa = D)
-  SCALE: [293.66, 329.63, 369.99, 440.00, 493.88, 587.33, 659.25], // Sa Re Ga Pa Dha Sa' Re'
-};
+// Drawing sounds — when Sound is on, the canvas plays like a keyboard laid
+// left (low) to right (high). Weave plucks a tumbi, the high single-string
+// Punjabi lute; Stitch twangs a morchang, the jaw harp, whose fixed low
+// buzz "sings" by bringing out different overtones — so across the canvas
+// it walks up the harmonic series rather than changing its own pitch.
+const SOUND = { on: false, lastAt: 0, lastKey: null, buffers: new Map() };
+try { SOUND.on = localStorage.getItem('pkSound') === '1'; } catch (e) {}
 
-function _musicGraph(ac) {
-  const master = ac.createGain();
-  master.gain.value = 0.0001;
-  // A soft feedback echo gives the notes some room without a reverb file.
-  const delay = ac.createDelay(1), fb = ac.createGain(), damp = ac.createBiquadFilter();
-  delay.delayTime.value = 0.42; fb.gain.value = 0.38;
-  damp.type = 'lowpass'; damp.frequency.value = 1800;
-  master.connect(ac.destination);
-  master.connect(delay); delay.connect(damp).connect(fb).connect(delay);
-  damp.connect(ac.destination);
-  return master;
+// Major pentatonic (Sa Re Ga Pa Dha) from D4 up two octaves — no note
+// combination can clash, so any scribble sounds musical.
+const TUMBI_SCALE = (() => {
+  const steps = [0, 2, 4, 7, 9], out = [];
+  for (let o = 0; o < 2; o++) steps.forEach(s => out.push(293.66 * Math.pow(2, o + s / 12)));
+  out.push(293.66 * 4);
+  return out;
+})();
+// Overtones of the morchang's D2 drone that land on scale notes:
+// D A D F# A D E F# A C# D (harmonics 4–16, skipping the out-of-tune ones).
+const MORCHANG_FUNDAMENTAL = 73.42;
+const MORCHANG_HARMONICS = [3, 4, 5, 6, 8, 9, 10, 12, 15, 16];
+
+function _keyIndex(col, n) {
+  return Math.max(0, Math.min(n - 1, Math.floor((col / Math.max(1, S.cols)) * n)));
 }
 
-function _tanpuraPluck(ac, freq, t) {
-  const o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
-  o.type = 'sawtooth'; o.frequency.value = freq;
-  f.type = 'lowpass'; f.Q.value = 6;
-  f.frequency.setValueAtTime(freq * 9, t);
-  f.frequency.exponentialRampToValueAtTime(freq * 2.5, t + 3);
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.09, t + 0.06);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 4.2);
-  o.connect(f).connect(g).connect(MUSIC.master);
-  o.start(t); o.stop(t + 4.3);
+// Plucked string via Karplus–Strong: a burst of noise recirculated through
+// a tiny delay line tuned to the note, averaging each pass so it rings and
+// darkens like a real string. Buffers are cached per pitch.
+function _pluckBuffer(ac, freq) {
+  const key = Math.round(freq * 100);
+  if (SOUND.buffers.has(key)) return SOUND.buffers.get(key);
+  const sr = ac.sampleRate, len = Math.floor(sr * 1.1);
+  const buf = ac.createBuffer(1, len, sr), y = buf.getChannelData(0);
+  const P = sr / freq - 0.5; // the averaging adds half a sample of delay
+  const n0 = Math.ceil(P) + 1;
+  // Higher notes recirculate more often per second, so they need less loss
+  // per pass to ring about as long as the low ones.
+  const rho = 1 - 0.004 * (293.66 / freq);
+  for (let i = 0; i < n0; i++) y[i] = Math.random() * 2 - 1;
+  for (let i = n0; i < len; i++) {
+    const d = i - P, a = Math.floor(d), f = d - a;
+    const s = y[a] * (1 - f) + y[a + 1] * f;          // fractional read keeps high notes in tune
+    y[i] = rho * 0.5 * (s + y[a - 1] * (1 - f) + y[a] * f);
+  }
+  SOUND.buffers.set(key, buf);
+  return buf;
 }
 
-function _scheduleMusic() {
+function _tumbi(freq, t, vol = 0.32) {
   const ac = _audio;
-  const horizon = ac.currentTime + 0.6;
-  while (MUSIC.nextDrone < horizon) {
-    _tanpuraPluck(ac, MUSIC.DRONE[MUSIC.droneStep % 4], MUSIC.nextDrone);
-    MUSIC.droneStep++;
-    MUSIC.nextDrone += MUSIC.droneStep % 4 === 0 ? 1.6 : 1.1;
-  }
-  while (MUSIC.nextNote < horizon) {
-    if (Math.random() < 0.6) {
-      // Wander a step or two up/down the scale so the line sounds sung, not random.
-      const step = [-2, -1, -1, 1, 1, 2][Math.floor(Math.random() * 6)];
-      MUSIC.noteIdx = Math.max(0, Math.min(MUSIC.SCALE.length - 1, MUSIC.noteIdx + step));
-      _bell(ac, MUSIC.master, MUSIC.SCALE[MUSIC.noteIdx], MUSIC.nextNote, 0.07, 2.4);
-    }
-    MUSIC.nextNote += [0.55, 1.1, 1.1, 2.2][Math.floor(Math.random() * 4)];
-  }
+  const src = ac.createBufferSource();
+  src.buffer = _pluckBuffer(ac, freq);
+  // Tumbi strings are tight — the note "boings" in from just sharp.
+  src.playbackRate.setValueAtTime(1.025, t);
+  src.playbackRate.exponentialRampToValueAtTime(1, t + 0.05);
+  const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 220;
+  const nasal = ac.createBiquadFilter(); nasal.type = 'peaking'; nasal.frequency.value = 2600; nasal.Q.value = 1.2; nasal.gain.value = 8;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+  src.connect(hp).connect(nasal).connect(g).connect(ac.destination);
+  src.start(t); src.stop(t + 1);
 }
 
-function toggleMusic() {
+function _morchang(harmonic, t) {
+  const ac = _audio;
+  const f0 = MORCHANG_FUNDAMENTAL;
+  // Buzzy reed: a narrow pulse-ish wave (two detuned saws) at the drone pitch.
+  const o1 = ac.createOscillator(), o2 = ac.createOscillator();
+  o1.type = o2.type = 'sawtooth';
+  o1.frequency.value = f0; o2.frequency.value = f0 * 1.003;
+  // The mouth is a resonant filter — sweeping into the chosen harmonic is
+  // the morchang's "wow".
+  const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 14;
+  bp.frequency.setValueAtTime(f0 * harmonic * 0.6, t);
+  bp.frequency.exponentialRampToValueAtTime(f0 * harmonic, t + 0.07);
+  const body = ac.createBiquadFilter(); body.type = 'lowpass'; body.frequency.value = 2400;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.5, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+  o1.connect(bp); o2.connect(bp);
+  bp.connect(body).connect(g).connect(ac.destination);
+  o1.start(t); o2.start(t); o1.stop(t + 0.6); o2.stop(t + 0.6);
+}
+
+// Called as Weave/Stitch strokes move. Throttled, and repeats of the same
+// key are skipped, so a fast drag plays a run of notes rather than a buzz.
+function playDrawNote(col, tool) {
+  if (!SOUND.on) return;
   const ac = audioCtx(); if (!ac) return;
-  if (!MUSIC.master) MUSIC.master = _musicGraph(ac);
-  MUSIC.playing = !MUSIC.playing;
-  const t = ac.currentTime;
-  MUSIC.master.gain.cancelScheduledValues(t);
-  MUSIC.master.gain.setValueAtTime(Math.max(MUSIC.master.gain.value, 0.0001), t);
-  if (MUSIC.playing) {
-    MUSIC.nextDrone = MUSIC.nextNote = t + 0.1;
-    MUSIC.droneStep = 0;
-    MUSIC.master.gain.exponentialRampToValueAtTime(0.9, t + 1.5);
-    _scheduleMusic();
-    MUSIC.timer = setInterval(_scheduleMusic, 200);
-  } else {
-    MUSIC.master.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
-    clearInterval(MUSIC.timer);
+  const n = tool === 'stitch' ? MORCHANG_HARMONICS.length : TUMBI_SCALE.length;
+  const idx = _keyIndex(col, n);
+  const key = tool + idx;
+  const now = performance.now();
+  if (now - SOUND.lastAt < 55 || (key === SOUND.lastKey && now - SOUND.lastAt < 220)) return;
+  SOUND.lastAt = now; SOUND.lastKey = key;
+  if (tool === 'stitch') _morchang(MORCHANG_HARMONICS[idx], ac.currentTime);
+  else _tumbi(TUMBI_SCALE[idx], ac.currentTime);
+}
+
+// Fill gets a quick upward strum starting from the clicked key.
+function playFillStrum(col) {
+  if (!SOUND.on) return;
+  const ac = audioCtx(); if (!ac) return;
+  const start = _keyIndex(col, TUMBI_SCALE.length - 3);
+  for (let i = 0; i < 4; i++) _tumbi(TUMBI_SCALE[start + i], ac.currentTime + i * 0.045, 0.24);
+}
+
+function syncSoundBtn() {
+  const btn = document.getElementById('sound-btn');
+  if (!btn) return;
+  btn.classList.toggle('on', SOUND.on);
+  btn.setAttribute('aria-pressed', SOUND.on);
+  btn.querySelector('.snd-waves').style.display = SOUND.on ? '' : 'none';
+  btn.querySelector('.snd-mute').style.display = SOUND.on ? 'none' : '';
+  document.getElementById('sound-tip').textContent = SOUND.on ? 'Sound on — weave & stitch play notes' : 'Turn on drawing sounds';
+}
+
+function toggleSound() {
+  SOUND.on = !SOUND.on;
+  try { localStorage.setItem('pkSound', SOUND.on ? '1' : '0'); } catch (e) {}
+  syncSoundBtn();
+  if (SOUND.on) {
+    const ac = audioCtx();
+    if (ac) { const t = ac.currentTime; _tumbi(TUMBI_SCALE[5], t); _tumbi(TUMBI_SCALE[7], t + 0.09); }
   }
-  const btn = document.getElementById('music-btn');
-  btn.classList.toggle('on', MUSIC.playing);
-  btn.setAttribute('aria-pressed', MUSIC.playing);
-  btn.setAttribute('aria-label', MUSIC.playing ? 'Pause music' : 'Play music');
-  document.getElementById('music-tip').textContent = MUSIC.playing ? 'Pause music' : 'Play music';
 }
 
 // ═══════════════════════════════════════════════════
@@ -5381,6 +5436,7 @@ initBubbleVisibility();
 initCustomColorPicker();
 initBrushSizePopup();
 initTextPopup();
+syncSoundBtn();
 initCanvas();
 fitZoom();
 initCursors();
