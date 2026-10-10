@@ -1218,6 +1218,14 @@
       .nav-row > *, .nav-row .tbtn, .nav-row .chk-btn { height: calc((var(--block-h) - var(--btn-gap)) / 2) !important; }
     }
 
+    /* Motif controls (Flip / Rotate / Size / Export) as a 2×2 grid,
+       filling the same 73px height as Create Motif and the thumbnails. */
+    .motif-ctrls {
+      display: grid !important; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+      gap: var(--btn-gap); height: 73px; flex-direction: unset;
+    }
+    .motif-ctrls .motif-rot-btn { height: auto; padding: 0 10px; display: flex; align-items: center; justify-content: flex-start; }
+
     /* ── Uniform control heights ──
        Every header control (zoom, history, icon buttons, GIF / Save /
        Finish) shares one height, stepping down per breakpoint via --hdr-h.
@@ -1231,8 +1239,6 @@
       .nav-block { gap: 3px; }
       .nav-row > *, .nav-row .tbtn, .nav-row .chk-btn { height: calc((var(--block-h) - 3px) / 2) !important; }
       #sym-group .sym-btn { width: 52px; height: var(--block-h); }
-      .motif-ctrls { height: var(--block-h); justify-content: space-between; }
-      .motif-ctrls .motif-rot-btn { flex: 1; }
       #text-icon-btn { font-size: 50px; }
     }
 </style>
