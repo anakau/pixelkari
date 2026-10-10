@@ -265,6 +265,16 @@
     }
     .text-del-btn:hover { background: rgba(229,115,115,0.15); }
     .text-hint { font-size: 9px; color: var(--muted); line-height: 1.4; }
+    .text-logo-btn {
+      display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.06); border: none; border-radius: 6px;
+      color: #ddd; font-size: 11px; padding: 6px; cursor: pointer; font-family: var(--font-body); transition: background 0.12s, color 0.12s;
+    }
+    .text-logo-btn:hover { background: rgba(255,255,255,0.12); color: var(--accent); }
+    .tlb-mark {
+      display: inline-flex; align-items: center; background: #000; color: #fff; padding: 3px 5px;
+      font-family: var(--font-display); font-weight: 600; font-size: 10px; letter-spacing: 0.06em; line-height: 1;
+    }
+    .tlb-mark svg { height: 0.72em; width: 0.66em; fill: currentColor; margin: 0 0.02em; }
     #text-icon-btn {
       --tilt: 4deg; height: 68px; display: flex; align-items: center; justify-content: center;
       gap: 1px; font-weight: 600; font-size: 38px; color: #cfcfcf; line-height: 1;
@@ -5334,7 +5344,50 @@ function _textFont(t, scale) {
   return `${f.weight} ${t.size * scale}px "${f.family}", sans-serif`;
 }
 
+// The Pixelkari wordmark as a text-layer object: white letters (with the
+// hourglass X, as in the site logo) on a tight black box. Its colours are
+// fixed; t.color is '#000000' so riso exports put the box on the black
+// plate with the letters knocked out to paper.
+const LOGO_PAD_X = 0.32, LOGO_PAD_Y = 0.26, LOGO_TRACK = 0.06; // in em
+function _logoLayout(t, scale, g = ctx) {
+  const em = t.size * scale;
+  g.save();
+  g.font = `600 ${em}px "Bricolage Grotesque", sans-serif`;
+  const capH = g.measureText('H').actualBoundingBoxAscent || em * 0.72;
+  const glyphs = [...'PI', 'X', ...'ELKARI'].map(ch => ({ ch, w: ch === 'X' ? capH * 0.92 : g.measureText(ch).width }));
+  g.restore();
+  const track = em * LOGO_TRACK;
+  const textW = glyphs.reduce((a, gl) => a + gl.w, 0) + track * (glyphs.length - 1);
+  return { em, capH, glyphs, track, w: textW + 2 * em * LOGO_PAD_X, h: capH + 2 * em * LOGO_PAD_Y };
+}
+function drawLogoObj(t, g, scale, ox, oy) {
+  const L = _logoLayout(t, scale, g);
+  const x0 = ox + t.col * scale, y0 = oy + t.row * scale;
+  g.save();
+  g.fillStyle = '#000';
+  g.fillRect(x0, y0, L.w, L.h);
+  g.fillStyle = '#fff';
+  g.font = `600 ${L.em}px "Bricolage Grotesque", sans-serif`;
+  g.textBaseline = 'alphabetic';
+  let x = x0 + L.em * LOGO_PAD_X;
+  const base = y0 + L.em * LOGO_PAD_Y + L.capH;
+  for (const gl of L.glyphs) {
+    if (gl.ch === 'X') { // ▼ over ▲, tips meeting at the middle of the cap height
+      const top = base - L.capH, mid = base - L.capH / 2;
+      g.beginPath();
+      g.moveTo(x, top); g.lineTo(x + gl.w, top); g.lineTo(x + gl.w / 2, mid); g.closePath();
+      g.moveTo(x, base); g.lineTo(x + gl.w, base); g.lineTo(x + gl.w / 2, mid); g.closePath();
+      g.fill();
+    } else {
+      g.fillText(gl.ch, x, base);
+    }
+    x += gl.w + L.track;
+  }
+  g.restore();
+}
+
 function drawTextObj(t, gctx = ctx, scale = CELL, ox = 0, oy = 0) {
+  if (t.logo) { drawLogoObj(t, gctx, scale, ox, oy); return; }
   if (!t.text) return;
   gctx.save();
   gctx.font = _textFont(t, scale);
@@ -5349,6 +5402,7 @@ function drawTextObj(t, gctx = ctx, scale = CELL, ox = 0, oy = 0) {
 // Bounding box in logical canvas px — used for hit-testing and the
 // selection outline.
 function textBounds(t) {
+  if (t.logo) { const L = _logoLayout(t, CELL); return { x: t.col * CELL, y: t.row * CELL, w: L.w, h: L.h }; }
   ctx.save();
   ctx.font = _textFont(t, CELL);
   const lines = t.text.split('\n');
@@ -5442,9 +5496,19 @@ let _textEditSnapped = false;
 function _activeText() { return S.selectedText !== null ? S.texts[S.selectedText] : S.textDraft; }
 function editText(patch) {
   if (S.selectedText !== null && !_textEditSnapped) { snap(); _textEditSnapped = true; }
+  const t0 = _activeText();
+  if (t0.logo && patch.size !== undefined) {
+    // the logo grows and shrinks around its own centre, so a centred logo stays centred
+    const before = textBounds(t0);
+    Object.assign(t0, patch);
+    const after = textBounds(t0);
+    t0.col += (before.w - after.w) / 2 / CELL;
+    t0.row += (before.h - after.h) / 2 / CELL;
+    patch = {};
+  }
   Object.assign(_activeText(), patch);
   // Keep the next new text in the same style as the one just edited.
-  if (S.selectedText !== null) { const { font, size, color } = _activeText(); Object.assign(S.textDraft, { font, size, color }); }
+  if (S.selectedText !== null && !_activeText().logo) { const { font, size, color } = _activeText(); Object.assign(S.textDraft, { font, size, color }); }
   if (patch.font) document.fonts.load(_textFont(_activeText(), CELL)).then(() => { render(); drawTextOverlay(); });
   syncTextPopup();
   render();
@@ -5499,6 +5563,10 @@ function initTextPopup() {
     <div class="text-swatches">${THREAD.map(hex =>
       `<button type="button" class="text-swatch" data-color="${hex}" style="background:${hex}" aria-label="${hex}"></button>`).join('')}</div>
     <span class="text-hint" id="text-hint"></span>
+    <button type="button" class="text-logo-btn" id="text-logo-btn" onclick="addLogoText()">
+      <span class="tlb-mark">PI<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg>ELKARI</span>
+      Add Pixelkari logo
+    </button>
     <button type="button" class="text-del-btn" id="text-del-btn" onclick="deleteSelectedText()">Delete text</button>
   `;
   document.body.appendChild(popup);
@@ -5514,18 +5582,37 @@ function initTextPopup() {
   syncTextPopup();
 }
 
+// Drops the wordmark at the exact centre of the canvas and selects it, so
+// it can be resized (− / +), dragged or deleted like any text.
+function addLogoText() {
+  snap();
+  const t = { logo: true, text: 'PIXELKARI', size: 3, color: '#000000', font: 'Bricolage Grotesque' };
+  const L = _logoLayout(t, CELL);
+  t.col = (S.cols * CELL - L.w) / 2 / CELL;
+  t.row = (S.rows * CELL - L.h) / 2 / CELL;
+  t.seq = ++S.seq;
+  S.texts.push(t);
+  selectText(S.texts.length - 1, true);
+  render();
+}
+
 function syncTextPopup() {
   const popup = document.getElementById('text-popup');
   if (!popup) return;
   const t = _activeText();
   const editing = S.selectedText !== null;
+  // The logo only has a size — its wording, font and colours are fixed.
+  const isLogo = !!t.logo;
+  popup.querySelectorAll('#text-input, .text-font-heading, .text-fonts, .text-swatches').forEach(el => { el.style.display = isLogo ? 'none' : ''; });
+  popup.querySelector('#text-logo-btn').style.display = editing ? 'none' : '';
   const input = popup.querySelector('#text-input');
   if (input.value !== t.text) input.value = t.text;
-  popup.querySelector('#text-popup-title').textContent = editing ? 'Edit Text' : 'New Text';
+  popup.querySelector('#text-popup-title').textContent = isLogo ? 'Pixelkari Logo' : editing ? 'Edit Text' : 'New Text';
   popup.querySelector('#text-size-lbl').textContent = t.size;
   popup.querySelectorAll('.text-font-opt').forEach(b => b.classList.toggle('on', b.dataset.font === t.font));
   popup.querySelectorAll('.text-swatch').forEach(b => b.classList.toggle('on', b.dataset.color === t.color));
   popup.querySelector('#text-del-btn').style.display = editing ? 'block' : 'none';
+  popup.querySelector('#text-del-btn').textContent = isLogo ? 'Delete logo' : 'Delete text';
   popup.querySelector('#text-hint').textContent = editing
     ? 'Drag the text on the canvas to move it. Click empty canvas when you are done.'
     : 'Click the canvas to place it.';
