@@ -1226,6 +1226,12 @@
     }
     .motif-ctrls .motif-rot-btn { height: auto; padding: 0 10px; display: flex; align-items: center; justify-content: flex-start; }
 
+    /* Motif thumbnails and the library tile are plain 73px squares (no
+       labels), matching Create Motif's height. */
+    #motif-pal .motif-thumb, #motif-pal .view-all-tile { width: 73px; height: 73px; box-sizing: border-box; }
+    #motif-pal .motif-thumb canvas { width: 100%; height: 100%; }
+    #motif-pal .va-frame { height: 100%; aspect-ratio: auto; }
+
     /* ── Uniform control heights ──
        Every header control (zoom, history, icon buttons, GIF / Save /
        Finish) shares one height, stepping down per breakpoint via --hdr-h.
@@ -4840,15 +4846,14 @@ function buildMotifPal() {
     const idx = startIdx + i;
     const wrap = document.createElement('div');
     wrap.className = 'motif-thumb';
-    const tc = _drawMotifThumb(motif, 60);
+    // Drawn at 2× so it stays sharp as a 73px square (names live in the library)
+    const tc = _drawMotifThumb(motif, 146);
     tc.addEventListener('click', () => { selectMotif(motif); wrap.classList.add('selected'); });
     tc.title = `Select "${motif.name}" to place on canvas`;
     const del = document.createElement('button');
     del.className = 'm-del'; del.textContent = '×';
     del.addEventListener('click', e => { e.stopPropagation(); deleteMotif(idx); });
-    const lbl = document.createElement('div');
-    lbl.className = 'm-lbl'; lbl.textContent = motif.name;
-    wrap.appendChild(tc); wrap.appendChild(del); wrap.appendChild(lbl);
+    wrap.appendChild(tc); wrap.appendChild(del);
     el.appendChild(wrap);
   });
   const tile = document.createElement('div');
@@ -4856,16 +4861,14 @@ function buildMotifPal() {
   tile.title = 'View all motifs';
   tile.onclick = showMotifLibrary;
   tile.addEventListener('mouseenter', () => setBilloMessage('motifLibrary'));
-  const extra = MOTIFS.length > 2 ? `+${MOTIFS.length - 2}` : '';
+  tile.setAttribute('aria-label', 'View all motifs');
   tile.innerHTML = `
     <div class="va-frame">
-      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+      <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
         <rect x="1" y="1" width="6" height="6"/><rect x="9" y="1" width="6" height="6"/>
         <rect x="1" y="9" width="6" height="6"/><rect x="9" y="9" width="6" height="6"/>
       </svg>
-      ${extra ? `<span class="va-count">${extra}</span>` : ''}
-    </div>
-    <div class="m-lbl">Motif Library</div>`;
+    </div>`;
   el.appendChild(tile);
 }
 
