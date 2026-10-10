@@ -512,6 +512,10 @@
 
     /* logo */
     #bar-logo { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; overflow: hidden; }
+    /* The X in the wordmark is two triangles meeting tip to tip (▶◀) — the
+       left and right halves of a Pixelkari grid cell. Sized to the cap
+       height so it sits on the baseline like the letters around it. */
+    .logo-x { display: inline-block; height: 0.72em; width: 0.66em; fill: currentColor; vertical-align: baseline; margin: 0 0.02em; }
     .logo-title { font-size: 28px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #ffffff; line-height: 1; }
     .logo-sub   { font-size: 28px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; line-height: 1; margin-top: 3px; }
 
@@ -1175,7 +1179,7 @@
   <div class="page-header">
     <div class="logo-wrap">
       <div id="bar-logo" class="tip-host" onclick="showStoryPage()" style="cursor:pointer;">
-        <div class="logo-title">Pixelkari</div>
+        <div class="logo-title" aria-label="Pixelkari">Pi<svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 5 5 0 10Z M10 0 5 5 10 10Z"/></svg>elkari</div>
         <span class="hover-tip hover-tip-below">About Pixelkari</span>
       </div>
     </div>
@@ -1481,7 +1485,7 @@
 <div id="story-page">
   <div id="story-header">
     <div style="cursor:pointer;" onclick="closeStoryPage()">
-      <div class="logo-title">Pixelkari</div>
+      <div class="logo-title" aria-label="Pixelkari">Pi<svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 5 5 0 10Z M10 0 5 5 10 10Z"/></svg>elkari</div>
     </div>
     <button class="snav-cta" onclick="closeStoryPage()">Start Creating →</button>
     <span class="mobile-only-msg" style="font-size:9px;font-family:var(--font-body);letter-spacing:0.12em;text-transform:uppercase;color:#888;font-weight:500;">Desktop only</span>
