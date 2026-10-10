@@ -269,7 +269,7 @@
     }
     .brush-size-opt:hover { background: rgba(255,255,255,0.10); }
     .brush-size-opt.on { background: var(--accent); }
-    .brush-size-opt .dot { border-radius: 50%; background: #ddd; flex-shrink: 0; }
+    .brush-size-opt .dot { clip-path: polygon(50% 0, 100% 100%, 0 100%); background: #ddd; flex-shrink: 0; } /* triangles, like the brush itself */
     .brush-size-opt.on .dot { background: #111; }
     .brush-size-lbl { font-size: 8px; color: var(--muted); letter-spacing: 0.04em; }
     .brush-size-opt.on .brush-size-lbl { color: #111; }
@@ -2092,17 +2092,23 @@ function paint(col, row, tri) {
       else                    { S.cells[key] = S.color; }
     });
   } else {
-    const R = S.brushSize - 1;
+    // A bigger brush is the smallest unit scaled up: one large triangle,
+    // facing the same way as the triangle under the cursor, whose point
+    // sits at the centre of the clicked cell. Built the same way
+    // scaleMotifCells enlarges motifs — every small triangle inside the
+    // (2R+1)-cell square whose centroid lands in the big triangle.
+    const R = S.brushSize - 1, span = 2 * R + 1;
     const seen = new Set();
-    symTris(col, row, tri).forEach(({col: cc, row: cr}) => {
-      const sk = `${cc},${cr}`;
+    symTris(col, row, tri).forEach(({col: cc, row: cr, tri: ct}) => {
+      const sk = `${cc},${cr},${ct}`;
       if (seen.has(sk)) return;
       seen.add(sk);
       for (let dc = -R; dc <= R; dc++) {
         for (let dr = -R; dr <= R; dr++) {
           const bc = cc + dc, br = cr + dr;
           if (bc < 0 || bc >= S.cols || br < 0 || br >= S.rows) continue;
-          for (const t of ['t','r','b','l']) {
+          for (const [t, [cu, cv]] of Object.entries(TRI_CENTROID)) {
+            if (_triAtUV((dc + R + cu) / span, (dr + R + cv) / span) !== ct) continue;
             const key = `${bc},${br},${t}`;
             if (S.tool === 'erase') { delete S.cells[key]; }
             else                    { S.cells[key] = S.color; }
@@ -3155,7 +3161,7 @@ function selectBrushSize(n) {
   document.querySelectorAll('.brush-size-opt').forEach(b => {
     b.classList.toggle('on', +b.dataset.size === S.brushSize);
   });
-  showHint(S.brushSize === 1 ? 'Brush: single' : `Brush: ${S.brushSize}× — ${(S.brushSize*2-1)}×${(S.brushSize*2-1)} cells`);
+  showHint(S.brushSize === 1 ? 'Brush: single' : `Brush: ${S.brushSize}× — triangle ${(S.brushSize*2-1)} cells wide`);
 }
 function setBrushSize(delta) { selectBrushSize(S.brushSize + delta); }
 
