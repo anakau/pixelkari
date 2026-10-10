@@ -7,6 +7,8 @@
   <link rel="icon" type="image/png" href="public/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600&display=swap" rel="stylesheet">
+  <!-- Fonts offered by the Text tool -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Space+Mono:wght@700&family=Caveat:wght@600&family=Bungee&family=Pixelify+Sans:wght@500&family=Baloo+Paaji+2:wght@600&family=Rozha+One&display=swap" rel="stylesheet">
   <!-- Cloudflare Web Analytics -->
   <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "25fd5bd2cd284ab3b267f5e113b3f55e"}'></script>
   <!-- End Cloudflare Web Analytics -->
@@ -220,6 +222,42 @@
       width: 188px;
     }
     #brush-popup.on { display: flex; }
+    #text-popup {
+      display: none; position: fixed; z-index: 300;
+      background: #000; border: none; border-radius: 12px;
+      padding: 30px 14px 14px; flex-direction: column; gap: 10px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+      width: 248px;
+    }
+    #text-popup.on { display: flex; }
+    #text-input {
+      width: 100%; box-sizing: border-box; resize: vertical; min-height: 54px;
+      background: rgba(255,255,255,0.06); border: none; border-radius: 6px; outline: none;
+      color: #eee; font-size: 14px; padding: 8px 10px; font-family: 'Bricolage Grotesque', sans-serif;
+    }
+    #text-input:focus { background: rgba(255,255,255,0.10); }
+    .text-fonts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .text-font-opt {
+      background: rgba(255,255,255,0.06); border: none; border-radius: 6px; color: #ddd;
+      font-size: 15px; padding: 6px 4px; cursor: pointer; transition: background 0.12s;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .text-font-opt:hover { background: rgba(255,255,255,0.12); }
+    .text-font-opt.on { background: var(--accent); color: #111; }
+    .text-swatches { display: flex; flex-wrap: wrap; gap: 4px; }
+    .text-swatch { width: 18px; height: 18px; border-radius: 4px; border: none; cursor: pointer; padding: 0; transition: transform 0.1s; }
+    .text-swatch:hover { transform: scale(1.15); }
+    .text-swatch.on { outline: 2px solid #fff; outline-offset: 1px; }
+    .text-del-btn {
+      background: rgba(255,255,255,0.06); border: none; border-radius: 6px; color: #e57373;
+      font-size: 10px; padding: 6px; cursor: pointer; font-family: 'Bricolage Grotesque', sans-serif;
+    }
+    .text-del-btn:hover { background: rgba(229,115,115,0.15); }
+    .text-hint { font-size: 9px; color: var(--muted); line-height: 1.4; }
+    #text-icon-btn {
+      --tilt: 4deg; height: 68px; display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif; font-weight: 600; font-size: 40px; color: #cfcfcf; line-height: 1;
+    }
     .brush-size-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
     .brush-size-opt {
       flex: 1; height: 52px; background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
@@ -1554,6 +1592,11 @@ const S = {
   rows:      0,
   cells:     {},
   lines:     [],
+  texts:     [],   // {text, font, size (in cells), color, col, row} — a real-font layer drawn above the stitches
+  selectedText: null,
+  textDraft: { text: '', font: 'Playfair Display', size: 3, color: '#F5C518' },
+  textDrag:  null,
+  textHover: null,
   stitchAnchor:  null,
   stitchPreview: null,
   stitchPath:    null,
@@ -1610,6 +1653,11 @@ function initCanvas() {
 
 function shiftLines(dc, dr) {
   S.lines = S.lines.map(l => ({ ...l, points: l.points.map(p => ({ col: p.col + dc, row: p.row + dr })) }));
+  S.texts = S.texts.map(t => ({ ...t, col: t.col + dc, row: t.row + dr })); // text moves with the design too
+}
+
+function isCanvasEmpty() {
+  return !Object.keys(S.cells).length && !S.lines.length && !S.texts.length;
 }
 
 function resizeCanvas(axis, action, side) {
@@ -1720,6 +1768,7 @@ function _doRender() {
 
   // stitch lines
   for (const line of S.lines) drawLine(line);
+  for (const t of S.texts) drawTextObj(t);
   if (S.stitchAnchor && S.stitchPath) {
     symPaths(S.stitchPath).forEach(pts => {
       drawLine({ points: pts, color: S.stitchColor, dashed: S.stitchDashed }, ctx, true);
@@ -1797,7 +1846,7 @@ function drawGrid() {
 // UNDO
 // ═══════════════════════════════════════════════════
 function snap() {
-  S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines }));
+  S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts }));
   if (S.history.length > MAX_H) S.history.shift();
   // A fresh edit invalidates whatever branch redo would have restored.
   S.redoHistory = [];
@@ -1807,11 +1856,13 @@ function snap() {
 
 function undo() {
   if (!S.history.length) return;
-  S.redoHistory.push(JSON.stringify({ cells: S.cells, lines: S.lines }));
+  S.redoHistory.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts }));
   if (S.redoHistory.length > MAX_H) S.redoHistory.shift();
   const snapshot = JSON.parse(S.history.pop());
   S.cells = snapshot.cells;
   S.lines = snapshot.lines || [];
+  S.texts = snapshot.texts || [];
+  deselectText();
   document.getElementById('undo-btn').disabled = S.history.length === 0;
   document.getElementById('redo-btn').disabled = false;
   render();
@@ -1819,21 +1870,25 @@ function undo() {
 
 function redo() {
   if (!S.redoHistory.length) return;
-  S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines }));
+  S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts }));
   if (S.history.length > MAX_H) S.history.shift();
   const snapshot = JSON.parse(S.redoHistory.pop());
   S.cells = snapshot.cells;
   S.lines = snapshot.lines || [];
+  S.texts = snapshot.texts || [];
+  deselectText();
   document.getElementById('undo-btn').disabled = false;
   document.getElementById('redo-btn').disabled = S.redoHistory.length === 0;
   render();
 }
 
 function clearCanvas() {
-  if (!Object.keys(S.cells).length && !S.lines.length) return;
+  if (isCanvasEmpty()) return;
   snap();
   S.cells = {};
   S.lines = [];
+  S.texts = [];
+  deselectText();
   render();
 }
 
@@ -2265,6 +2320,12 @@ canvas.addEventListener('pointerdown', e => {
     canvas.style.cursor = 'grabbing';
     return;
   }
+  if (S.tool === 'text') {
+    e.preventDefault();
+    safeSetPointerCapture(e.pointerId);
+    textPointerDown(e);
+    return;
+  }
   if (S.tool === 'paint' && S.fillMode) {
     e.preventDefault();
     const {col, row, tri} = triAt(e);
@@ -2356,6 +2417,7 @@ canvas.addEventListener('pointermove', e => {
     applyTransform(false);
     return;
   }
+  if (S.tool === 'text') { textPointerMove(e); return; }
   if (S.tool === 'stitch') {
     if (!S.stitchAnchor) return;
     // A real drag is never a perfectly straight line — even along an
@@ -2409,6 +2471,7 @@ canvas.addEventListener('pointermove', e => {
 });
 
 function endCanvasPointer(e) {
+  S.textDrag = null;
   if (S.panning) {
     S.panning = false;
     canvas.style.cursor = S.spaceDown ? 'grab' : toolCursor();
@@ -2559,6 +2622,8 @@ function newGridPreset(preset) {
   const { cols, rows, paper } = GRID_PRESETS[preset];
   S.cells = {};
   S.lines = [];
+  S.texts = [];
+  deselectText();
   S.cols = cols;
   S.rows = rows;
   S.paper = !!paper;
@@ -2589,6 +2654,8 @@ function setOrientation(mode) {
   if (!confirm('Rotate canvas? Your current design will be cleared.')) return;
   S.cells = {};
   S.lines = [];
+  S.texts = [];
+  deselectText();
   const oldCols = S.cols, oldRows = S.rows;
   S.cols = oldRows;
   S.rows = oldCols;
@@ -2722,7 +2789,7 @@ function downloadWallpaper(presetId) {
 // the same moment the email opens, so attaching it is a single drag from
 // Downloads instead of a "remember to export first" step.
 function submitToBeFeatured() {
-  if (!Object.keys(S.cells).length && !S.lines.length) {
+  if (isCanvasEmpty()) {
     showHint('Paint something before submitting');
     return;
   }
@@ -2741,6 +2808,7 @@ function submitToBeFeatured() {
 function _getUsedColors() {
   const set = new Set(Object.values(S.cells));
   S.lines.forEach(l => set.add(l.color));
+  S.texts.forEach(t => set.add(t.color));
   const known = THREAD.filter(hex => set.has(hex));
   const unknown = [...set].filter(hex => !THREAD.includes(hex));
   return [...known, ...unknown];
@@ -2768,6 +2836,9 @@ function _buildSeparationCanvas(color, EW, EH) {
     if (l.color !== color) continue;
     drawLine({ ...l, color: '#000' }, ec);
   }
+  for (const t of S.texts) {
+    if (t.color === color) drawTextObj({ ...t, color: '#000' }, ec);
+  }
   return exp;
 }
 
@@ -2793,6 +2864,7 @@ function _buildFullColorCanvas(EW, EH) {
     drawTriangle(+parts[0], +parts[1], parts[2], c, ec);
   }
   for (const l of S.lines) drawLine(l, ec);
+  for (const t of S.texts) drawTextObj(t, ec);
   return exp;
 }
 
@@ -2871,7 +2943,7 @@ async function downloadRisoPack() {
 async function downloadPrintPDF() {
   const sizeId = _currentRisoSizeId();
   if (!sizeId) { showHint('Switch to an A5/A4/A3 paper canvas to export a print PDF'); return; }
-  if (!Object.keys(S.cells).length && !S.lines.length) { showHint('Paint something before exporting a PDF'); return; }
+  if (isCanvasEmpty()) { showHint('Paint something before exporting a PDF'); return; }
   if (typeof jspdf === 'undefined') {
     showHint('PDF export tools still loading — try again in a moment');
     return;
@@ -3021,7 +3093,8 @@ function _stopStoryTrail() {
 // KEYBOARD
 // ═══════════════════════════════════════════════════
 document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if ((e.key === 'Delete' || e.key === 'Backspace') && S.selectedText !== null) { e.preventDefault(); deleteSelectedText(); return; }
   if (e.key === ' ') {
     e.preventDefault();
     if (!S.spaceDown) { S.spaceDown = true; canvas.style.cursor = 'grab'; }
@@ -3035,11 +3108,13 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('finish-modal').classList.contains('on')) { closeFinishModal(); return; }
     if (document.getElementById('motif-library-modal').classList.contains('on')) { closeMotifLibrary(); return; }
     if (S.capturingMotif) { stopCaptureMode(); return; }
+    if (S.selectedText !== null) { deselectText(); return; }
     if (S.stitchAnchor) { S.stitchAnchor = null; S.stitchPreview = null; S.stitchPath = null; render(); return; }
     if (S.activeMotif) { S.activeMotif = null; clearGhost(); showHint('Motif cancelled'); } return;
   }
   if (e.key === 'p') setTool('paint');
   if (e.key === 'e') setTool('erase');
+  if (e.key === 't') { e.preventDefault(); setTool('text'); openTextPopup(); }
   if (e.key === 'f') { setTool('paint'); setFillMode(!S.fillMode); showHint(S.fillMode ? 'Fill mode' : 'Brush mode'); }
   if (e.key === 'g') toggleGrid();
   if (e.key === '+' || e.key === '=') doZoom(0.25);
@@ -3133,6 +3208,7 @@ async function initCursors() {
 
 function toolCursor() {
   if (S.tool === 'pan') return 'grab';
+  if (S.tool === 'text') return 'text';
   return TOOL_CURSORS[S.tool] || 'crosshair';
 }
 
@@ -3147,7 +3223,7 @@ function togglePan() {
 // the same active-state highlight a toolbar button would normally show.
 // Cloth isn't a tool (it's just a colour launcher), so it's excluded here.
 function syncSpoolActiveState() {
-  const toolOf = { weave: 'paint', stitch: 'stitch', cut: 'erase' };
+  const toolOf = { weave: 'paint', stitch: 'stitch', cut: 'erase', text: 'text' };
   Object.entries(toolOf).forEach(([key, tool]) => {
     const btn = document.getElementById(`${key}-icon-btn`);
     if (btn) btn.classList.toggle('on', S.tool === tool);
@@ -3156,6 +3232,7 @@ function syncSpoolActiveState() {
 
 function setTool(id) {
   if (S.activeMotif) { S.activeMotif = null; clearGhost(); }
+  if (S.tool === 'text' && id !== 'text') { deselectText(); S.textHover = null; clearGhost(); closeTextPopup(); }
   if (S.tool === 'stitch' && id !== 'stitch' && S.stitchAnchor) { S.stitchAnchor = null; S.stitchPreview = null; S.stitchPath = null; render(); }
   S.tool = id;
   document.querySelectorAll('.tbtn[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === id));
@@ -3254,6 +3331,18 @@ async function buildToolIcons() {
     el.appendChild(wrap);
     renderToolIcon(key);
   });
+  // Text has no SVG artwork — a big serif "Aa" stands in as its icon.
+  const tWrap = document.createElement('div');
+  tWrap.className = 'spool-wrap';
+  tWrap.innerHTML = `<button class="tool-icon-btn" id="text-icon-btn" data-tool="text" aria-label="Text">Aa</button><span class="spool-lbl">Text</span>`;
+  tWrap.firstChild.onclick = (e) => {
+    e.stopPropagation();
+    if (window._closeCPPopup) window._closeCPPopup();
+    if (window._closeBrushPopup) window._closeBrushPopup();
+    setTool('text');
+    openTextPopup();
+  };
+  el.appendChild(tWrap);
   syncSpoolActiveState();
 }
 
@@ -4556,11 +4645,12 @@ function _drawProjectThumb(project, px) {
     tctx.stroke();
     tctx.restore();
   }
+  for (const t of (project.texts || [])) drawTextObj(t, tctx, tCell, offX, offY);
   return tc;
 }
 
 function saveProject() {
-  if (!Object.keys(S.cells).length && !S.lines.length) {
+  if (isCanvasEmpty()) {
     showHint('Nothing to save yet — paint something first');
     return;
   }
@@ -4570,6 +4660,7 @@ function saveProject() {
     name,
     cells: { ...S.cells },
     lines: S.lines.map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed })),
+    texts: S.texts.map(t => ({ ...t })),
     base: S.base,
     cols: S.cols,
     rows: S.rows,
@@ -4594,6 +4685,8 @@ function loadProject(idx) {
   snap();
   S.cells = { ...project.cells };
   S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed }));
+  S.texts = (project.texts || []).map(t => ({ ...t }));
+  deselectText();
   S.cols = project.cols;
   S.rows = project.rows;
   S.paper = !!project.paper;
@@ -4837,6 +4930,7 @@ function pickBilloFact() {
 const BILLO_TIPS = {
   paint:  `The main tool — fills the grid to build your motifs. Click or drag to fill triangles with your selected thread colour.`,
   fill:   `Fill mode — click once to flood a whole area with your thread colour. Stitch lines act as walls, so outline a shape first, then fill it in.`,
+  text:   `Type in the box, pick a font, then click the canvas to place it. Click placed text to edit it, or drag it to move it.`,
   stitch: `Use stitch for outlines or finer details the fill can't capture. Click to start, then just move your cursor — no need to drag — and click again to finish.`,
   erase:  `Click and drag over painted triangles to remove them — aim with the upper blade of the scissors, the exact point that cuts.`,
   cloth:  `Base colours are grouped by season, each pairing a fabric tone with the threads that suit it. Pick one to set the mood for the whole piece.`,
@@ -4872,6 +4966,243 @@ function wireBilloContextTips() {
   });
   const zoomRow = document.querySelector('.page-zoom-row');
   if (zoomRow) zoomRow.addEventListener('mouseenter', () => setBilloMessage('zoom'));
+}
+
+// ═══════════════════════════════════════════════════
+// TEXT — a real-font layer above the triangles and stitches. Positions and
+// sizes are stored in grid units (not pixels) so text stays put when the
+// canvas grows and scales cleanly into thumbnails and print exports.
+// ═══════════════════════════════════════════════════
+const TEXT_FONTS = [
+  { family: 'Playfair Display',    weight: 600, label: 'Serif' },
+  { family: 'Bricolage Grotesque', weight: 600, label: 'Grotesque' },
+  { family: 'Space Mono',          weight: 700, label: 'Mono' },
+  { family: 'Caveat',              weight: 600, label: 'Handwritten' },
+  { family: 'Bungee',              weight: 400, label: 'Display' },
+  { family: 'Pixelify Sans',       weight: 500, label: 'Pixel' },
+  { family: 'Rozha One',           weight: 400, label: 'Rozha' },
+  { family: 'Baloo Paaji 2',       weight: 600, label: 'ਪੰਜਾਬੀ' },
+];
+const TEXT_LINE_HEIGHT = 1.15;
+
+function _textFont(t, scale) {
+  const f = TEXT_FONTS.find(f => f.family === t.font) || TEXT_FONTS[0];
+  return `${f.weight} ${t.size * scale}px "${f.family}", sans-serif`;
+}
+
+function drawTextObj(t, gctx = ctx, scale = CELL, ox = 0, oy = 0) {
+  if (!t.text) return;
+  gctx.save();
+  gctx.font = _textFont(t, scale);
+  gctx.fillStyle = t.color;
+  gctx.textBaseline = 'top';
+  t.text.split('\n').forEach((line, i) => {
+    gctx.fillText(line, ox + t.col * scale, oy + t.row * scale + i * t.size * scale * TEXT_LINE_HEIGHT);
+  });
+  gctx.restore();
+}
+
+// Bounding box in logical canvas px — used for hit-testing and the
+// selection outline.
+function textBounds(t) {
+  ctx.save();
+  ctx.font = _textFont(t, CELL);
+  const lines = t.text.split('\n');
+  const w = Math.max(...lines.map(l => ctx.measureText(l).width), CELL);
+  ctx.restore();
+  return { x: t.col * CELL, y: t.row * CELL, w, h: lines.length * t.size * CELL * TEXT_LINE_HEIGHT };
+}
+
+function _canvasPx(e) {
+  const rect = canvas.getBoundingClientRect();
+  return { px: (e.clientX - rect.left) / S.zoom, py: (e.clientY - rect.top) / S.zoom };
+}
+
+function textAt(px, py) {
+  for (let i = S.texts.length - 1; i >= 0; i--) {
+    const b = textBounds(S.texts[i]);
+    if (px >= b.x - 4 && px <= b.x + b.w + 4 && py >= b.y - 4 && py <= b.y + b.h + 4) return i;
+  }
+  return null;
+}
+
+// The ghost canvas shows the selection outline, or — with nothing selected —
+// a see-through preview of the typed text following the cursor.
+function drawTextOverlay() {
+  const gc = document.getElementById('ghost-canvas');
+  if (!gc) return;
+  const g = gc.getContext('2d');
+  g.clearRect(0, 0, gc.width, gc.height);
+  if (S.tool !== 'text') return;
+  if (S.selectedText !== null && S.texts[S.selectedText]) {
+    const b = textBounds(S.texts[S.selectedText]);
+    g.save();
+    g.strokeStyle = '#D4A827'; g.lineWidth = 1; g.setLineDash([4, 3]);
+    g.strokeRect(b.x - 4, b.y - 4, b.w + 8, b.h + 8);
+    g.restore();
+  } else if (S.textDraft.text && S.textHover) {
+    g.save();
+    g.globalAlpha = 0.5;
+    drawTextObj({ ...S.textDraft, ...S.textHover }, g);
+    g.restore();
+  }
+}
+
+function _snapTextPos(px, py) {
+  return { col: Math.round(px / CELL), row: Math.round(py / CELL) };
+}
+
+function textPointerDown(e) {
+  const { px, py } = _canvasPx(e);
+  const hit = textAt(px, py);
+  if (hit !== null) {
+    selectText(hit);
+    const t = S.texts[hit];
+    S.textDrag = { dx: px - t.col * CELL, dy: py - t.row * CELL, moved: false };
+    return;
+  }
+  if (S.selectedText !== null) { deselectText(); return; }
+  if (!S.textDraft.text.trim()) {
+    openTextPopup();
+    showHint('Type something in the Text box first');
+    return;
+  }
+  snap();
+  S.texts.push({ ...S.textDraft, ..._snapTextPos(px, py) });
+  S.textDraft.text = '';
+  selectText(S.texts.length - 1, true);
+  render();
+}
+
+function textPointerMove(e) {
+  const { px, py } = _canvasPx(e);
+  if (S.textDrag && S.selectedText !== null) {
+    const t = S.texts[S.selectedText];
+    const pos = _snapTextPos(px - S.textDrag.dx, py - S.textDrag.dy);
+    if (pos.col === t.col && pos.row === t.row) return;
+    if (!S.textDrag.moved) { snap(); S.textDrag.moved = true; }
+    t.col = pos.col; t.row = pos.row;
+    render();
+    drawTextOverlay();
+    return;
+  }
+  S.textHover = _snapTextPos(px, py);
+  canvas.style.cursor = textAt(px, py) !== null ? 'move' : toolCursor();
+  drawTextOverlay();
+}
+
+// Edits made in the popup apply to the selected text, or to the draft
+// that the next canvas click will place. One undo step per selection, not
+// one per keystroke.
+let _textEditSnapped = false;
+function _activeText() { return S.selectedText !== null ? S.texts[S.selectedText] : S.textDraft; }
+function editText(patch) {
+  if (S.selectedText !== null && !_textEditSnapped) { snap(); _textEditSnapped = true; }
+  Object.assign(_activeText(), patch);
+  // Keep the next new text in the same style as the one just edited.
+  if (S.selectedText !== null) { const { font, size, color } = _activeText(); Object.assign(S.textDraft, { font, size, color }); }
+  if (patch.font) document.fonts.load(_textFont(_activeText(), CELL)).then(() => { render(); drawTextOverlay(); });
+  syncTextPopup();
+  render();
+  drawTextOverlay();
+}
+
+function selectText(idx, justPlaced = false) {
+  S.selectedText = idx;
+  _textEditSnapped = justPlaced; // placing already took its own snapshot
+  syncTextPopup();
+  openTextPopup();
+  drawTextOverlay();
+}
+
+function deselectText() {
+  if (S.selectedText === null) return;
+  S.selectedText = null;
+  _textEditSnapped = false;
+  syncTextPopup();
+  drawTextOverlay();
+}
+
+function deleteSelectedText() {
+  if (S.selectedText === null) return;
+  snap();
+  S.texts.splice(S.selectedText, 1);
+  S.selectedText = null;
+  syncTextPopup();
+  render();
+  drawTextOverlay();
+}
+
+function initTextPopup() {
+  const popup = document.createElement('div');
+  popup.id = 'text-popup';
+  popup.innerHTML = `
+    <span class="cp-popup-title" id="text-popup-title">Text</span>
+    <button class="cp-close" aria-label="Close" onclick="closeTextPopup()">✕</button>
+    <textarea id="text-input" rows="2" placeholder="Type here…"></textarea>
+    <div class="text-fonts">${TEXT_FONTS.map(f =>
+      `<button type="button" class="text-font-opt" data-font="${f.family}" style="font-family:'${f.family}';font-weight:${f.weight}">${f.label}</button>`).join('')}</div>
+    <div class="cp-value-row">
+      <span class="cp-value-lbl" style="width:auto;">Size</span>
+      <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+        <button type="button" class="cp-brush-btn" data-step="-1" aria-label="Smaller text">−</button>
+        <span id="text-size-lbl" style="font-size:11px;color:#ddd;min-width:22px;text-align:center;"></span>
+        <button type="button" class="cp-brush-btn" data-step="1" aria-label="Bigger text">+</button>
+      </div>
+    </div>
+    <div class="text-swatches">${THREAD.map(hex =>
+      `<button type="button" class="text-swatch" data-color="${hex}" style="background:${hex}" aria-label="${hex}"></button>`).join('')}</div>
+    <span class="text-hint" id="text-hint"></span>
+    <button type="button" class="text-del-btn" id="text-del-btn" onclick="deleteSelectedText()">Delete text</button>
+  `;
+  document.body.appendChild(popup);
+  popup.querySelector('#text-input').addEventListener('input', e => editText({ text: e.target.value }));
+  popup.querySelectorAll('.text-font-opt').forEach(b => b.addEventListener('click', () => editText({ font: b.dataset.font })));
+  popup.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => {
+    editText({ size: Math.max(1, Math.min(30, _activeText().size + +b.dataset.step)) });
+  }));
+  popup.querySelectorAll('.text-swatch').forEach(b => b.addEventListener('click', () => editText({ color: b.dataset.color })));
+  // Fonts load lazily — draw again once they arrive so canvas text isn't
+  // stuck in the fallback face.
+  Promise.all(TEXT_FONTS.map(f => document.fonts.load(`${f.weight} 20px "${f.family}"`, 'Aaਪੰ'))).then(() => render()).catch(() => {});
+  syncTextPopup();
+}
+
+function syncTextPopup() {
+  const popup = document.getElementById('text-popup');
+  if (!popup) return;
+  const t = _activeText();
+  const editing = S.selectedText !== null;
+  const input = popup.querySelector('#text-input');
+  if (input.value !== t.text) input.value = t.text;
+  popup.querySelector('#text-popup-title').textContent = editing ? 'Edit Text' : 'New Text';
+  popup.querySelector('#text-size-lbl').textContent = t.size;
+  popup.querySelectorAll('.text-font-opt').forEach(b => b.classList.toggle('on', b.dataset.font === t.font));
+  popup.querySelectorAll('.text-swatch').forEach(b => b.classList.toggle('on', b.dataset.color === t.color));
+  popup.querySelector('#text-del-btn').style.display = editing ? 'block' : 'none';
+  popup.querySelector('#text-hint').textContent = editing
+    ? 'Drag the text on the canvas to move it. Click empty canvas when you are done.'
+    : 'Click the canvas to place it.';
+}
+
+function openTextPopup() {
+  const popup = document.getElementById('text-popup');
+  if (!popup) return;
+  const wasOpen = popup.classList.contains('on');
+  popup.classList.add('on');
+  const btn = document.getElementById('text-icon-btn');
+  if (btn) {
+    const r = btn.getBoundingClientRect();
+    const pw = popup.offsetWidth, ph = popup.offsetHeight;
+    popup.style.left = Math.max(8, Math.min(r.left + r.width / 2 - pw / 2, window.innerWidth - pw - 8)) + 'px';
+    popup.style.top = Math.max(8, r.top - ph - 10) + 'px';
+  }
+  if (!wasOpen || S.selectedText === null) popup.querySelector('#text-input').focus();
+}
+
+function closeTextPopup() {
+  const popup = document.getElementById('text-popup');
+  if (popup) popup.classList.remove('on');
 }
 
 // ═══════════════════════════════════════════════════
@@ -5039,6 +5370,7 @@ wireBilloContextTips();
 initBubbleVisibility();
 initCustomColorPicker();
 initBrushSizePopup();
+initTextPopup();
 initCanvas();
 fitZoom();
 initCursors();
