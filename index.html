@@ -889,7 +889,13 @@
     #story-box .s-hero, #story-box .s-collage, #story-box .s-cta {
       width: 100cqw; margin-left: -50cqw;
     }
-    #story-box .s-hero { padding-top: 120px; }
+    #story-box .s-hero { padding-top: 100px; padding-bottom: 48px; }
+    #story-box .s-h1 { font-size: clamp(30px, 3.6vw, 42px); margin-bottom: 20px; }
+    #story-box .s-lead { font-size: 14px; line-height: 1.65; font-weight: 400; }
+    #story-box .s-section p { font-size: 13px; line-height: 1.7; font-weight: 400; }
+    #story-box .s-section h2 { font-size: 22px; }
+    #story-box .s-cta h2 { font-size: 26px; }
+    #story-box .s-section .s-dedication p { font-size: 13px; }
     #story-box .s-cta { padding: 100px 40px 120px; }
     @media (max-width: 900px) {
       #story-page { padding: 0; }
@@ -3033,7 +3039,7 @@ function stepPinch() {
   S.panX += midX - lastPinch.midX;
   S.panY += midY - lastPinch.midY;
   applyTransform(false);
-  document.getElementById('zoom-lbl').textContent = Math.round(S.zoom * 100) + '%';
+  updateZoomLabel();
   lastPinch = { dist, midX, midY };
 }
 // Capture phase, so this always runs before canvas's own pointerdown below
@@ -3351,10 +3357,16 @@ function applyTransform(animate) {
   wrap.style.transition = animate ? 'transform 0.15s' : 'none';
   wrap.style.transform  = `translate(${S.panX}px, ${S.panY}px) scale(${S.zoom})`;
 }
+// The readout calls a canvas scale of 1.28 "100%" — the size the default
+// canvas fills on a typical screen — so − / + step in 25% of that.
+const ZOOM_UNIT = 1.28;
+function updateZoomLabel() {
+  document.getElementById('zoom-lbl').textContent = Math.round(S.zoom / ZOOM_UNIT * 100) + '%';
+}
 function doZoom(d) {
-  S.zoom = Math.max(0.25, Math.min(4, +(S.zoom + d).toFixed(2)));
+  S.zoom = Math.max(0.25 * ZOOM_UNIT, Math.min(4 * ZOOM_UNIT, +(S.zoom + d * ZOOM_UNIT).toFixed(3)));
   applyTransform(true);
-  document.getElementById('zoom-lbl').textContent = Math.round(S.zoom * 100) + '%';
+  updateZoomLabel();
 }
 document.getElementById('canvas-wrap').addEventListener('wheel', e => {
   e.preventDefault();
@@ -3372,7 +3384,7 @@ document.getElementById('canvas-wrap').addEventListener('wheel', e => {
     S.panY -= (e.clientY - originY) * (scaleRatio - 1);
     S.zoom = newZoom;
     applyTransform(false);
-    document.getElementById('zoom-lbl').textContent = Math.round(S.zoom * 100) + '%';
+    updateZoomLabel();
   }
 }, { passive: false });
 function fitZoom() {
@@ -3387,10 +3399,10 @@ function fitZoom() {
   const availW = Math.max(50, area.clientWidth - PAD * 2);
   const availH = Math.max(50, area.clientHeight - headerFootprint - barFootprint - PAD * 2);
   const logW = S.cols * CELL, logH = S.rows * CELL;
-  S.zoom = Math.min(2, availW / logW, availH / logH); // fills the space, up to 200%
+  S.zoom = Math.min(2 * ZOOM_UNIT, availW / logW, availH / logH); // fills the space, up to 200% on the readout
   S.panX = 0; S.panY = 0;
   applyTransform(true);
-  document.getElementById('zoom-lbl').textContent = Math.round(S.zoom * 100) + '%';
+  updateZoomLabel();
 }
 
 // ═══════════════════════════════════════════════════
