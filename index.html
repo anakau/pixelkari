@@ -34,7 +34,7 @@
     @font-face { font-family: 'ABC Areal'; src: url('public/fonts/ABCAreal-Medium.ttf') format('truetype'); font-weight: 500; font-display: swap; }
     @font-face { font-family: 'ABC Areal'; src: url('public/fonts/ABCAreal-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
     :root { --font-body: 'ABC Areal', 'Helvetica Neue', Arial, sans-serif; --font-display: 'Bricolage Grotesque', sans-serif; }
-    .logo-title, .logo-sub, .s-h1, .s-section h2, .s-cta h2 { font-family: var(--font-display); }
+    .logo-sub, .s-h1, .s-section h2, .s-cta h2 { font-family: var(--font-display); }
     body { font-family: var(--font-body); color: var(--text); font-size: 14px; -webkit-tap-highlight-color: transparent; }
     ::selection { background: #D4A827; color: #0d0d0d; }
 
@@ -506,7 +506,7 @@
        the top and bottom halves of a Pixelkari grid cell. Sized to the cap
        height so it sits on the baseline like the letters around it. */
     .logo-x { display: inline-block; height: 0.72em; width: 0.66em; fill: currentColor; vertical-align: baseline; margin: 0 0.02em; }
-    .logo-title { font-size: 28px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #ffffff; line-height: 1; }
+    .logo-title { font-family: var(--font-body); font-size: 20px; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; color: #ffffff; line-height: 1; } /* ABC Areal, regular */
     .logo-sub   { font-size: 28px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; line-height: 1; margin-top: 3px; }
 
     /* hot tip panel — Billo the mascot + her chat bubble */
@@ -894,13 +894,15 @@
       #story-box { border-radius: 0; max-width: none; }
       .story-close { display: none; }
     }
+    /* the pop-up's Start Creating: the selected-button look — bright pink on deep pink */
     .snav-cta {
-      padding: 9px 22px; background: var(--accent); color: #111; border: none; cursor: pointer;
-      font-size: 10px; font-weight: 400; letter-spacing: 0.04em;
+      display: block; margin: 0 auto;
+      padding: 12px 28px; background: var(--pink-deep); color: var(--pink); border: none; border-radius: 8px; cursor: pointer;
+      font-size: 12px; font-weight: 400; letter-spacing: 0.04em;
       font-family: var(--font-body); transition: background 0.15s, color 0.15s;
       flex-shrink: 0;
     }
-    .snav-cta:hover { background: #F72585; color: #fff; }
+    .snav-cta:hover { background: #3d1229; color: var(--pink); }
     .mobile-only-msg { display: none; }
     @media (max-width: 900px) {
       .snav-cta { display: none !important; }
@@ -1085,7 +1087,7 @@
       .icon-btn { width: 26px; height: 26px; font-size: 12px; }
       .zoom-lbl { font-size: 12px; }
       .bb-divider { margin: 0 10px; }
-      .logo-title { font-size: 24px; letter-spacing: 0.05em; }
+      .logo-title { font-size: 18px; letter-spacing: 0.05em; }
       .logo-sub   { font-size: 24px; }
       .export-btn { height: 32px; padding: 0 11px; font-size: 11px; letter-spacing: 0.04em; }
       .motif-create-btn { width: 60px !important; }
@@ -1097,7 +1099,7 @@
       .sym-btn { height: 30px; }
       .chk-btn { height: 30px; padding: 0 7px; }
       .bb-divider { margin: 0 8px; }
-      .logo-title { font-size: 20px; letter-spacing: 0.04em; }
+      .logo-title { font-size: 16px; letter-spacing: 0.04em; }
       .logo-sub   { font-size: 20px; }
       .export-btn { height: 30px; padding: 0 10px; font-size: 10px; letter-spacing: 0.04em; }
       .motif-create-btn { width: 60px !important; }
@@ -1112,7 +1114,7 @@
       .icon-btn { width: 22px; height: 22px; font-size: 11px; }
       .zoom-lbl { font-size: 11px; min-width: 26px; }
       .bb-divider { margin: 0 7px; height: 20px; }
-      .logo-title { font-size: 16px; letter-spacing: 0.03em; }
+      .logo-title { font-size: 14px; letter-spacing: 0.03em; }
       .logo-sub   { font-size: 16px; }
       .export-btn { height: 27px; padding: 0 8px; font-size: 9px; letter-spacing: 0.04em; }
       .motif-create-btn { width: 60px !important; }
@@ -1143,7 +1145,7 @@
         -webkit-overflow-scrolling: touch; scrollbar-width: none;
       }
       #bb-tools::-webkit-scrollbar { display: none; }
-      .logo-title, .logo-sub { font-size: 15px; }
+      .logo-title, .logo-sub { font-size: 14px; }
       /* Billo's speech-bubble panel floats above the bottom bar and, in
          portrait at this width, has nowhere to sit without overlapping the
          toolbar or the canvas — hidden here, restored below for landscape
@@ -1169,7 +1171,7 @@
     @media (max-width: 560px) {
       :root { --hdr-h: 26px; }
       .page-header { height: 50px; padding: 0 10px; }
-      .logo-title, .logo-sub { font-size: 14px; }
+      .logo-title, .logo-sub { font-size: 13px; }
       .fit-btn span:not(.hover-tip), .page-zoom-row .fit-btn { font-size: 11px; padding: 0 7px; }
       #pan-btn svg { margin-right: 2px; }
       .export-btn { padding: 0 10px; font-size: 10px; }
@@ -1300,7 +1302,7 @@
     .text-swatch.on { outline-color: var(--pink) !important; }
     .color-wheel-btn.on { border-color: var(--pink) !important; box-shadow: 0 0 0 2px var(--pink) !important; }
     .saved-row.current .saved-row-name, .saved-row:hover .saved-row-name { color: var(--pink); }
-    .export-btn:not(.save-btn):hover, .btn-pri:hover, .btn-feature:hover, .snav-cta:hover, .mm-save:hover { background: var(--pink) !important; color: #111 !important; }
+    .export-btn:not(.save-btn):hover, .btn-pri:hover, .btn-feature:hover, .mm-save:hover { background: var(--pink) !important; color: #111 !important; }
 
     /* Buttons that never had a radius of their own get the same 8px
        rounding as the rest: header icon buttons, the motif controls and
@@ -1714,7 +1716,6 @@
       <div class="logo-title" aria-label="Pixelkari">Pi<svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg>elkari</div>
     </div>
     <div class="story-head-actions">
-      <button class="snav-cta" onclick="closeStoryPage()">Start Creating →</button>
       <button class="story-close" onclick="closeStoryPage()" aria-label="Close">✕</button>
     </div>
     <span class="mobile-only-msg" style="font-size:9px;font-family:var(--font-body);letter-spacing:0.12em;text-transform:uppercase;color:#888;font-weight:500;">Desktop only</span>
@@ -1723,7 +1724,6 @@
 
     <!-- Hero -->
     <div class="s-hero">
-      <canvas id="hero-pat-canvas" aria-hidden="true" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0.16;"></canvas>
       <div class="s-hero-inner">
         <div class="s-eyebrow">A digital design tool</div>
         <h1 class="s-h1">Phulkari,<br>pixel by pixel.</h1>
@@ -1796,7 +1796,6 @@
 
     <!-- CTA -->
     <div class="s-cta">
-      <canvas id="footer-pat-canvas" aria-hidden="true" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0.16;z-index:0;"></canvas>
       <h2>Create your first Pixelkari.</h2>
       <p>Runs entirely in your browser. No account, no installation.</p>
       <button class="snav-cta" onclick="closeStoryPage()">Start Creating →</button>
@@ -3759,53 +3758,9 @@ let _storyTrailRaf = null;
 let _storyMoveHandler = null;
 let _storyResizeHandler = null;
 
-function _drawTaraTileAt(ctx, ox, oy, C) {
-  const cells = [
-    [0,-1,"l","#D4A827"],[0,-1,"b","#D4A827"],[0,0,"t","#D4A827"],[0,-1,"r","#D4A827"],
-    [1,0,"t","#F72585"],[1,0,"l","#F72585"],[0,0,"r","#F72585"],[1,0,"b","#F72585"],
-    [0,1,"r","#D4A827"],[0,1,"t","#D4A827"],[0,0,"b","#D4A827"],[0,1,"l","#D4A827"],
-    [-1,0,"b","#F72585"],[-1,0,"r","#F72585"],[0,0,"l","#F72585"],[-1,0,"t","#F72585"]
-  ];
-  for (const [dc,dr,tri,color] of cells) {
-    const x = ox+(1+dc)*C, y = oy+(1+dr)*C;
-    const mx = x+C/2, my = y+C/2;
-    ctx.fillStyle = color; ctx.beginPath();
-    if      (tri==='t') { ctx.moveTo(x,y);     ctx.lineTo(x+C,y);     ctx.lineTo(mx,my); }
-    else if (tri==='r') { ctx.moveTo(x+C,y);   ctx.lineTo(x+C,y+C);   ctx.lineTo(mx,my); }
-    else if (tri==='b') { ctx.moveTo(x+C,y+C); ctx.lineTo(x,y+C);     ctx.lineTo(mx,my); }
-    else                { ctx.moveTo(x,y+C);   ctx.lineTo(x,y);       ctx.lineTo(mx,my); }
-    ctx.closePath(); ctx.fill();
-  }
-}
-
-function _drawPatternCanvas(canvasEl, fromBottom) {
-  const C = 20, TILE = 3 * C;
-  const el = canvasEl.parentElement;
-  const W = el.offsetWidth || window.innerWidth;
-  const H = el.offsetHeight || 300;
-  canvasEl.width = W; canvasEl.height = H;
-  const ctx = canvasEl.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
-  const numCols = Math.ceil(W / TILE) + 1;
-  const maxRows = Math.floor(H / TILE);
-  for (let tc = 0; tc < numCols; tc++) {
-    const baseRows = 5 + Math.floor(Math.sin(tc * 1.7 + 0.3) * 2.5 + Math.cos(tc * 0.9) * 1.5 + 3);
-    const numRows = Math.min(maxRows, baseRows);
-    for (let tr = 0; tr < numRows; tr++) {
-      const x = tc * TILE;
-      const y = fromBottom ? (H - (numRows - tr) * TILE) : tr * TILE;
-      _drawTaraTileAt(ctx, x, y, C);
-    }
-  }
-}
-
 function showStoryPage() {
   document.getElementById('story-page').classList.add('on');
   document.body.classList.add('story-open');
-  const heroCanvas = document.getElementById('hero-pat-canvas');
-  if (heroCanvas) { _drawPatternCanvas(heroCanvas, false); }
-  const footerCanvas = document.getElementById('footer-pat-canvas');
-  if (footerCanvas) { _drawPatternCanvas(footerCanvas, true); }
   document.getElementById('story-box').scrollTop = 0;
   _initStoryTrail();
 }
