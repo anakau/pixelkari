@@ -6567,7 +6567,8 @@ const SOUND = {
 };
 try { SOUND.on = localStorage.getItem('pkSound') === '1'; } catch (e) {}
 const SA = 293.66;                // Sa on D4, as the export chime
-const BEAT = 0.62;                // seconds per beat — slowed right down
+const BEAT = 1.6;                 // seconds per beat — meditative, an alap's pace
+const DRONE_BEAT = 1.25;          // tanpura keeps its own unhurried cycle
 // [semitones from Sa, beats]. Pahadi moves on Sa Re Ga Pa Dha, dips to the
 // lower Pa / Dha, touches Ma, and keeps coming home to Sa.
 const MELODY = [
@@ -6607,11 +6608,11 @@ function _soundBus(ac) {
 // (glide) up or down from the previous note.
 function _sarangi(freq, from, t, dur, vol) {
   const ac = _audio;
-  const glide = Math.min(0.2, dur * 0.3);
-  const lfo = ac.createOscillator(); lfo.frequency.value = 5.2;
+  const glide = Math.min(0.5, dur * 0.3);
+  const lfo = ac.createOscillator(); lfo.frequency.value = 4.2;
   const depth = ac.createGain();
   depth.gain.setValueAtTime(0, t);
-  depth.gain.linearRampToValueAtTime(freq * 0.007, t + Math.min(0.45, dur * 0.6));
+  depth.gain.linearRampToValueAtTime(freq * 0.006, t + Math.min(1, dur * 0.5));
   lfo.connect(depth);
   const oscs = [['sawtooth', 0], ['sawtooth', 5], ['triangle', 0]].map(([type, cents]) => {
     const o = ac.createOscillator(); o.type = type; o.detune.value = cents;
@@ -6624,13 +6625,13 @@ function _sarangi(freq, from, t, dur, vol) {
   const nasal = ac.createBiquadFilter(); nasal.type = 'peaking'; nasal.frequency.value = 1150; nasal.Q.value = 1.4; nasal.gain.value = 7;
   const g = ac.createGain();
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(vol, t + 0.09);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.28);
   g.gain.setValueAtTime(vol, t + dur * 0.7);
   g.gain.exponentialRampToValueAtTime(vol * 0.6, t + dur);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.4);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 1.2);
   oscs.forEach(o => o.connect(lp));
   lp.connect(nasal).connect(g).connect(_soundBus(ac));
-  const end = t + dur + 0.45;
+  const end = t + dur + 1.25;
   oscs.forEach(o => { o.start(t); o.stop(end); });
   lfo.start(t); lfo.stop(end);
 }
@@ -6682,7 +6683,7 @@ function _runSequencer() {
   while (SOUND.nextDroneAt < horizon) {
     _tanpura(TANPURA[SOUND.droneBeat % 4], SOUND.nextDroneAt);
     SOUND.droneBeat++;
-    SOUND.nextDroneAt += BEAT;
+    SOUND.nextDroneAt += DRONE_BEAT;
   }
   while (SOUND.nextAt < horizon) {
     if (SOUND.nextAt > SOUND.activeUntil) {   // drawing stopped — hold here, let it ring out
