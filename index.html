@@ -1231,11 +1231,19 @@
     /* Motif controls (Flip / Rotate / Size / Export) as a 2×2 grid,
        filling the same 73px height as Create Motif and the thumbnails. */
     .motif-ctrls {
-      display: grid !important; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; /* equal columns: − / + match Flip / Export */
+      display: grid !important; grid-template-columns: repeat(6, 1fr); grid-template-rows: 1fr 1fr; /* − 1× + in thirds, Flip / Rotate in halves */
       gap: var(--btn-gap); height: 73px; flex-direction: unset;
     }
     .motif-ctrls .motif-rot-btn { height: auto; padding: 0 10px; display: flex; align-items: center; justify-content: center; }
     .motif-ctrls .motif-step { font-size: 14px; }
+    .motif-ctrls > :nth-child(-n+3) { grid-column: span 2; }
+    .motif-ctrls > :nth-child(n+4) { grid-column: span 3; }
+    .lib-export-btn {
+      height: 28px; padding: 0 14px; border: none; border-radius: 8px; cursor: pointer;
+      background: var(--accent-deep); color: var(--accent); font: 11px var(--font-body);
+      transition: background 0.12s, color 0.12s;
+    }
+    .lib-export-btn:hover { background: var(--pink-deep); color: var(--pink); }
     .motif-size-val {
       display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--muted);
       background: none; min-width: 34px; /* a readout, like zoom %, not a button */
@@ -1637,9 +1645,8 @@
             <button class="motif-rot-btn motif-step tip-host" onclick="stepMotifScale(-1)" aria-label="Smaller motif">−<span class="hover-tip">Smaller motif</span></button>
             <span class="motif-size-val" id="motif-size-lbl">1×</span>
             <button class="motif-rot-btn motif-step tip-host" onclick="stepMotifScale(1)" aria-label="Bigger motif">+<span class="hover-tip">Bigger motif (up to 4×)</span></button>
-            <button class="motif-rot-btn tip-host" id="motif-flip-btn" onclick="toggleMotifFlip()">↔ Flip<span class="hover-tip">Mirror motif horizontally</span></button>
-            <button class="motif-rot-btn tip-host" id="motif-rot-btn" onclick="cycleMotifRotation()">↻&nbsp;<span id="motif-rot-lbl">Rotate</span><span class="hover-tip">Rotate motif 90° clockwise</span></button>
-            <button class="motif-rot-btn tip-host" id="motif-export-btn" onclick="copyMotifsToClipboard()">⬆ Export<span class="hover-tip">Copy all motifs as JSON</span></button>
+            <button class="motif-rot-btn tip-host" id="motif-flip-btn" onclick="toggleMotifFlip()">Flip<span class="hover-tip">Mirror motif horizontally</span></button>
+            <button class="motif-rot-btn tip-host" id="motif-rot-btn" onclick="cycleMotifRotation()"><span id="motif-rot-lbl">Rotate</span><span class="hover-tip">Rotate motif 90° clockwise</span></button>
           </div>
         </div>
       </div>
@@ -1690,7 +1697,10 @@
   <div class="lib-box">
     <div class="finish-head">
       <span class="finish-head-title">Motif Library</span>
-      <button class="finish-close" onclick="closeMotifLibrary()">✕</button>
+      <div class="finish-head-actions">
+        <button class="lib-export-btn" id="motif-export-btn" onclick="copyMotifsToClipboard()" title="Copy all motifs as JSON">Export</button>
+        <button class="finish-close" onclick="closeMotifLibrary()">✕</button>
+      </div>
     </div>
     <div class="library-grid" id="library-grid"></div>
   </div>
@@ -4969,11 +4979,10 @@ function toggleMotifFlip() {
 
 function copyMotifsToClipboard() {
   const btn = document.getElementById('motif-export-btn');
-  const label = btn.firstChild; // text node before the .hover-tip span
   navigator.clipboard.writeText(JSON.stringify(MOTIFS, null, 2)).then(function() {
-    label.textContent = '✓ Copied!';
+    btn.textContent = 'Copied!';
     sfxSuccess();
-    setTimeout(function() { label.textContent = '⬆ Export'; }, 2000);
+    setTimeout(function() { btn.textContent = 'Export'; }, 2000);
   }).catch(function() {
     prompt('Copy this JSON:', JSON.stringify(MOTIFS));
   });
@@ -6727,15 +6736,6 @@ setTimeout(function() {
   if (!last || Date.now() - last > INTRO_AGAIN_AFTER_DAYS * 864e5) showStoryPage();
   try { localStorage.setItem('pkLastVisit', String(Date.now())); } catch(e) {}
 }, 0);
-(function() {
-  if (new URLSearchParams(window.location.search).has('tools')) {
-    try { localStorage.setItem('pkTools', '1'); } catch(e) {}
-  }
-  if (readStorage('pkTools') === '1') {
-    var btn = document.getElementById('motif-export-btn');
-    if (btn) btn.style.display = '';
-  }
-})();
 
 // Geo map lightbox — wrapped in setTimeout so #geo-lightbox is in DOM
 document.getElementById('geo-map-thumb').addEventListener('click', function() {
