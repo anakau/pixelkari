@@ -22,6 +22,7 @@
       --text: #D4A827; --muted: #555; /* UI text is the yellow accent — no white in the interface */
       --pink: #E91E8C;                  /* hover + selected */
       --pink-deep: #2A0D1C;             /* selected fill — near-black deep pink */
+      --accent-deep: #221D0E;           /* resting fill — the same near-black, toward a dull yellow */
       --accent: #D4A827; --accent-dim: rgba(212,168,39,0.10);
       --bar-h: 144px;
     }
@@ -190,7 +191,7 @@
     .nav-row   { display: flex; gap: 3px; }
     .preset-select {
       flex: 1 1 0; width: 100%; min-width: 0; padding: 0 22px 0 8px !important; letter-spacing: 0.06em;
-      background: #1d1d1d url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="%23D4A827" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat right 9px center !important; /* same chevron as Save's ▾ */ /* solid so a zoomed canvas can't show through */
+      background: var(--accent-deep) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="%23D4A827" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat right 9px center !important; /* same chevron as Save's ▾ */ /* solid so a zoomed canvas can't show through */
       border: none !important; appearance: none; -webkit-appearance: none; -moz-appearance: none; cursor: pointer;
     }
     .preset-select:hover { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="%23E91E8C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important; background-color: #292929 !important; color: var(--accent); }
@@ -468,7 +469,7 @@
     .saved-empty { font-size: 11px; color: var(--muted); padding: 6px 2px; line-height: 1.5; }
     .saved-menu-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 8px; }
     .saved-all-btn {
-      background: rgba(255,255,255,0.06); border: none; border-radius: 10px; color: #ddd; cursor: pointer;
+      background: var(--accent-deep); border: none; border-radius: 10px; color: #ddd; cursor: pointer;
       font-size: 10px; padding: 7px; font-family: var(--font-body); transition: background 0.12s, color 0.12s;
     }
     .saved-all-btn:hover { background: rgba(255,255,255,0.12); color: var(--accent); }
@@ -1166,12 +1167,12 @@
        pre-blended over the #111 page), and disabled buttons dim their text
        instead of the whole button. */
     .page-header .fit-btn, .page-header .icon-btn,
-    #bottombar .tbtn, #bottombar .sym-btn, #bottombar .chk-btn { background-color: #1f1f1f; }
+    #bottombar .tbtn, #bottombar .sym-btn, #bottombar .chk-btn { background-color: var(--accent-deep); }
     .page-header .fit-btn:hover, .page-header .icon-btn:hover,
     #bottombar .tbtn:hover, #bottombar .sym-btn:hover, #bottombar .chk-btn:hover { background-color: #292929; }
-    .page-header .feedback-btn, #bottombar .motif-rot-btn { background-color: #1d1d1d; }
+    .page-header .feedback-btn, #bottombar .motif-rot-btn { background-color: var(--accent-deep); }
     .page-header .feedback-btn:hover, #bottombar .motif-rot-btn:hover { background-color: #292929; }
-    .page-header .export-btn.save-btn { background-color: #242424; }
+    .page-header .export-btn.save-btn { background-color: var(--accent-deep); }
     .page-header .export-btn.save-btn:hover, .save-split.open .save-caret { background-color: #323232; }
     .page-header .zoom-lbl {
       background: none; height: var(--hdr-h); /* a readout, not a button — no fill */
@@ -1285,7 +1286,7 @@
     .tool-icon-btn.on ~ .tool-size { display: flex; }
     .tool-size button {
       width: 18px; height: 18px; border-radius: 50%; border: none; padding: 0; cursor: pointer;
-      background: #1f1f1f; color: var(--accent); font-family: var(--font-body); font-size: 13px; line-height: 1;
+      background: var(--accent-deep); color: var(--accent); font-family: var(--font-body); font-size: 13px; line-height: 1;
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 1px 4px rgba(0,0,0,0.6); transition: color 0.12s, background 0.12s;
     }
@@ -1349,6 +1350,54 @@
       #sym-group .sym-btn { width: 52px; height: var(--block-h); }
       #text-icon-btn { font-size: 50px; }
     }
+
+    /* ── Layers panel ── floats at the canvas's right edge, styled like the
+       Saved / Finish dropdowns; rows like saved rows. */
+    #layers-panel {
+      display: none; position: fixed; right: 20px; top: 104px; z-index: 150;
+      width: 260px; max-height: calc(100vh - 104px - var(--bar-h) - 40px);
+      background: #000; border-radius: 16px; padding: 12px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.7); flex-direction: column; gap: 8px;
+    }
+    #layers-panel.open { display: flex; }
+    .layers-head { display: flex; align-items: center; justify-content: space-between; }
+    .layers-close {
+      background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px;
+      width: 22px; height: 22px; border-radius: 8px; font-family: var(--font-body);
+    }
+    .layers-close:hover { background: var(--pink-deep); color: var(--pink); }
+    .layers-list { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; min-height: 0; }
+    .layer-row { gap: 8px; }
+    .layer-row canvas { width: 36px; height: 36px; }
+    .layer-row.hidden canvas { opacity: 0.35; }
+    .layer-name { font-size: 12px; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+    .layer-row.current .layer-name, .layer-row:hover .layer-name { color: var(--pink); }
+    .layer-name-input {
+      flex: 1; min-width: 0; font: 12px var(--font-body); color: var(--pink); background: #111;
+      border: none; border-bottom: 1px solid var(--pink); outline: none; padding: 2px 0;
+    }
+    .layer-tog {
+      width: 26px; height: 26px; flex-shrink: 0; border: none; border-radius: 8px; cursor: pointer;
+      background: var(--accent-deep); color: var(--accent); display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+    .layer-tog svg { width: 14px; height: 14px; }
+    .layer-tog.off { color: #6a5a2a; }
+    .layer-tog.on { background: var(--pink-deep); color: var(--pink); }
+    .layer-tog:hover { background: var(--pink-deep); color: var(--pink); }
+    .layers-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--btn-gap); border-top: 1px solid rgba(255,255,255,0.07); padding-top: 8px; }
+    .layers-act {
+      height: 30px; border: none; border-radius: 8px; cursor: pointer; font: 11px var(--font-body);
+      background: var(--accent-deep); color: var(--accent); transition: background 0.12s, color 0.12s;
+    }
+    .layers-act:hover { background: var(--pink-deep); color: var(--pink); }
+    .layers-act:disabled { color: #4a4a4a; cursor: default; pointer-events: none; }
+    .page-header #layers-btn.on { background: var(--pink-deep) !important; color: var(--pink) !important; }
+    @media (max-width: 1400px) {
+      #layers-panel { right: 10px; top: 86px; max-height: calc(100vh - 86px - var(--bar-h) - 30px); }
+    }
+    @media (max-width: 560px) {
+      #layers-panel { left: 10px; right: 10px; width: auto; top: 70px; max-height: 50vh; }
+    }
 </style>
 </head>
 <body>
@@ -1368,9 +1417,10 @@
       <span class="zoom-lbl" id="zoom-lbl">100%</span>
       <button class="icon-btn tip-host" onclick="doZoom(0.25)">+<span class="hover-tip hover-tip-below">Zoom in (+)</span></button>
       <button class="fit-btn tip-host" id="pan-btn" onclick="togglePan()"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-1px"><path d="M9 3.5C9 2.67 9.67 2 10.5 2S12 2.67 12 3.5V11h1V5.5C13 4.67 13.67 4 14.5 4S16 4.67 16 5.5V11h1V7.5C17 6.67 17.67 6 18.5 6S20 6.67 20 7.5V15c0 3.31-2.69 6-6 6h-2c-2.1 0-3.96-1.09-5.03-2.75L3.5 13c-.56-.97-.23-2.22.75-2.78.97-.56 2.22-.23 2.78.75L9 13V3.5Z"/></svg>Drag<span class="hover-tip hover-tip-below">Press space bar to drag canvas</span></button>
+      <button class="fit-btn tip-host" id="layers-btn" onclick="toggleLayersPanel()" aria-expanded="false"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-1px"><path d="M12 3 21 8 12 13 3 8Z"/><path d="M3 12.5 12 17.5 21 12.5"/><path d="M3 16.5 12 21.5 21 16.5"/></svg>Layers<span class="hover-tip hover-tip-below">Layers (L)</span></button>
       <button class="fit-btn tip-host" id="undo-btn" onclick="undo()" disabled>↩ Undo<span class="hover-tip hover-tip-below">Undo (⌘Z)</span></button>
       <button class="fit-btn tip-host" id="redo-btn" onclick="redo()" disabled>↪ Redo<span class="hover-tip hover-tip-below">Redo (⌘⇧Z)</span></button>
-      <button class="fit-btn tip-host danger" onclick="clearCanvas()">✕ Clear<span class="hover-tip hover-tip-below">Clear the whole canvas</span></button>
+      <button class="fit-btn tip-host danger" onclick="clearCanvas()">✕ Clear<span class="hover-tip hover-tip-below">Clear the whole canvas (every layer)</span></button>
     </div>
     <div class="header-actions">
       <div class="feedback-group">
@@ -1438,6 +1488,24 @@
         <span id="billo-tip">Click and drag across triangles to fill them with your selected thread colour.</span>
       </div>
     </div>
+  </div>
+
+  <!-- LAYERS PANEL (floats at the canvas's right edge) -->
+  <div id="layers-panel" role="dialog" aria-label="Layers">
+    <div class="layers-head">
+      <span class="saved-menu-head">Layers</span>
+      <button class="layers-close" onclick="toggleLayersPanel(false)" aria-label="Close layers">✕</button>
+    </div>
+    <div class="layers-list" id="layers-list"></div>
+    <div class="layers-actions">
+      <button class="layers-act" onclick="addLayer()">+ New</button>
+      <button class="layers-act" onclick="duplicateLayer()">Duplicate</button>
+      <button class="layers-act" id="layer-del-btn" onclick="deleteLayer()">Delete</button>
+      <button class="layers-act" id="layer-up-btn" onclick="moveLayer(1)">↑ Up</button>
+      <button class="layers-act" id="layer-down-btn" onclick="moveLayer(-1)">↓ Down</button>
+      <button class="layers-act" id="layer-merge-btn" onclick="mergeLayerDown()">Merge ↓</button>
+    </div>
+    <span class="saved-note">Double-click a name to rename. On an A5 / A4 / A3 canvas, Finish → Riso by layer prints each visible layer as its own plate.</span>
   </div>
 
   <!-- CANVAS -->
@@ -1867,14 +1935,12 @@ const S = {
   panY:      0,
   cols:      0,
   rows:      0,
-  cells:     {},
-  lines:     [],
-  texts:     [],   // {text, font, size (in cells), color, col, row} — a real-font layer drawn above the stitches
+  // cells / lines / texts / order live on each layer — see LAYERS below.
+  // texts: {text, font, size (in cells), color, col, row} — real-font objects drawn above the stitches
   // Drawing history for Motion's Timelapse: every action (a brush dab, a
   // fill, a motif stamp, a stitch line, a text) takes the next step number;
   // order maps each painted triangle to the step that last painted it, and
   // lines/texts carry their own .seq.
-  order:     {},
   seq:       0,
   selectedText: null,
   textDraft: { text: '', font: 'Playfair Display', size: 3, color: '#F5C518' },
@@ -1911,6 +1977,217 @@ const S = {
 };
 
 // ═══════════════════════════════════════════════════
+// LAYERS
+// ═══════════════════════════════════════════════════
+// Each layer holds its own weave, stitches and text, drawn bottom (index 0)
+// to top. S.cells / S.lines / S.texts / S.order point at the active layer,
+// so every tool, fill and eraser works on that layer alone.
+let _layerUid = 0;
+function newLayer(name) {
+  _layerUid++;
+  return { id: _layerUid, name: name || _nextLayerName(), visible: true, locked: false, cells: {}, lines: [], texts: [], order: {} };
+}
+function _nextLayerName() {
+  const nums = (S.layers || []).map(L => +(/^Layer (\d+)$/.exec(L.name) || [])[1] || 0);
+  return `Layer ${Math.max(0, ...nums) + 1}`;
+}
+S.layers = [newLayer('Layer 1')];
+S.activeLayer = 0;
+for (const k of ['cells', 'lines', 'texts', 'order']) {
+  Object.defineProperty(S, k, {
+    get() { return S.layers[S.activeLayer][k]; },
+    set(v) { S.layers[S.activeLayer][k] = v; },
+  });
+}
+function activeLayer() { return S.layers[S.activeLayer]; }
+// The visible layers squashed into one, as seen: a triangle keeps its
+// topmost colour. Used by motif capture, colour separations and GIFs.
+function flatDesign() {
+  const out = { cells: {}, lines: [], texts: [], order: {} };
+  for (const L of S.layers) {
+    if (!L.visible) continue;
+    for (const [k, v] of Object.entries(L.cells)) {
+      out.cells[k] = v;
+      if (k in L.order) out.order[k] = L.order[k]; else delete out.order[k];
+    }
+    out.lines.push(...L.lines);
+    out.texts.push(...L.texts);
+  }
+  return out;
+}
+function drawLayers(g) {
+  for (const L of S.layers) {
+    if (!L.visible) continue;
+    for (const [key, color] of Object.entries(L.cells)) {
+      const p = key.split(',');
+      drawTriangle(+p[0], +p[1], p[2], color, g);
+    }
+    for (const line of L.lines) drawLine(line, g);
+    for (const t of L.texts) drawTextObj(t, g);
+  }
+}
+function resetLayers() {
+  _layerUid = 0;
+  S.layers = [newLayer('Layer 1')];
+  S.activeLayer = 0;
+  refreshLayersPanel();
+}
+
+// ── Layers panel ──
+const EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><path d="M4 4l16 16"/></svg>';
+const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+const UNLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>';
+
+function layersPanelOpen() {
+  const p = document.getElementById('layers-panel');
+  return !!p && p.classList.contains('open');
+}
+function toggleLayersPanel(force) {
+  const p = document.getElementById('layers-panel');
+  const open = force === undefined ? !p.classList.contains('open') : force;
+  p.classList.toggle('open', open);
+  const btn = document.getElementById('layers-btn');
+  btn.classList.toggle('on', open);
+  btn.setAttribute('aria-expanded', String(open));
+  if (open) refreshLayersPanel();
+}
+
+function refreshLayersPanel() {
+  if (!layersPanelOpen()) return;
+  const list = document.getElementById('layers-list');
+  if (list.querySelector('.layer-name-input')) return; // mid-rename — don't rebuild under the cursor
+  list.innerHTML = '';
+  for (let i = S.layers.length - 1; i >= 0; i--) { // top layer first, like a stack
+    const L = S.layers[i];
+    const row = document.createElement('div');
+    row.className = 'saved-row layer-row' + (i === S.activeLayer ? ' current' : '') + (L.visible ? '' : ' hidden');
+    row.onclick = () => selectLayer(i);
+    row.appendChild(_drawProjectThumb({ cols: S.cols, rows: S.rows, base: S.base, cells: L.cells, lines: L.lines, texts: L.texts }, 72));
+    const name = document.createElement('span');
+    name.className = 'layer-name';
+    name.textContent = L.name;
+    name.ondblclick = e => { e.stopPropagation(); _startRenameLayer(name, i); };
+    row.appendChild(name);
+    const eye = document.createElement('button');
+    eye.className = 'layer-tog' + (L.visible ? '' : ' off');
+    eye.innerHTML = L.visible ? EYE_SVG : EYE_OFF_SVG;
+    eye.title = L.visible ? 'Hide layer' : 'Show layer';
+    eye.onclick = e => { e.stopPropagation(); L.visible = !L.visible; render(); refreshLayersPanel(); };
+    row.appendChild(eye);
+    const lock = document.createElement('button');
+    lock.className = 'layer-tog' + (L.locked ? ' on' : ' off');
+    lock.innerHTML = L.locked ? LOCK_SVG : UNLOCK_SVG;
+    lock.title = L.locked ? 'Unlock layer' : 'Lock layer';
+    lock.onclick = e => { e.stopPropagation(); L.locked = !L.locked; refreshLayersPanel(); };
+    row.appendChild(lock);
+    list.appendChild(row);
+  }
+  document.getElementById('layer-del-btn').disabled = S.layers.length < 2;
+  document.getElementById('layer-up-btn').disabled = S.activeLayer >= S.layers.length - 1;
+  document.getElementById('layer-down-btn').disabled = S.activeLayer <= 0;
+  document.getElementById('layer-merge-btn').disabled = S.activeLayer <= 0;
+}
+
+// Thumbnails follow edits, but at most every 200ms rather than every frame.
+let _layerThumbTimer = null;
+function queueLayerThumbs() {
+  if (!layersPanelOpen() || _layerThumbTimer) return;
+  _layerThumbTimer = setTimeout(() => { _layerThumbTimer = null; refreshLayersPanel(); }, 200);
+}
+
+function _startRenameLayer(span, i) {
+  const inp = document.createElement('input');
+  inp.className = 'layer-name-input';
+  inp.value = S.layers[i].name;
+  inp.maxLength = 40;
+  inp.onclick = e => e.stopPropagation();
+  let done = false;
+  const finish = save => {
+    if (done) return;
+    done = true;
+    if (save && inp.value.trim()) S.layers[i].name = inp.value.trim();
+    inp.remove();
+    refreshLayersPanel();
+  };
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') finish(true);
+    if (e.key === 'Escape') { e.stopPropagation(); finish(false); }
+  });
+  inp.addEventListener('blur', () => finish(true));
+  span.replaceWith(inp);
+  inp.focus();
+  inp.select();
+}
+
+// Switching layers drops anything mid-gesture on the old one.
+function _leaveLayer() {
+  deselectText();
+  S.stitchAnchor = null; S.stitchPreview = null; S.stitchPath = null;
+}
+function selectLayer(i) {
+  if (i === S.activeLayer) return;
+  _leaveLayer();
+  S.activeLayer = i;
+  render();
+  refreshLayersPanel();
+}
+function addLayer() {
+  snap();
+  _leaveLayer();
+  S.layers.splice(S.activeLayer + 1, 0, newLayer());
+  S.activeLayer++;
+  render();
+  refreshLayersPanel();
+}
+function duplicateLayer() {
+  snap();
+  _leaveLayer();
+  const copy = JSON.parse(JSON.stringify(activeLayer()));
+  copy.id = ++_layerUid;
+  copy.name = `${copy.name} copy`;
+  copy.locked = false;
+  S.layers.splice(S.activeLayer + 1, 0, copy);
+  S.activeLayer++;
+  render();
+  refreshLayersPanel();
+}
+function deleteLayer() {
+  if (S.layers.length < 2) return;
+  snap();
+  _leaveLayer();
+  S.layers.splice(S.activeLayer, 1);
+  S.activeLayer = Math.max(0, S.activeLayer - 1);
+  render();
+  refreshLayersPanel();
+}
+function moveLayer(d) { // +1 up the stack, −1 down
+  const j = S.activeLayer + d;
+  if (j < 0 || j >= S.layers.length) return;
+  snap();
+  [S.layers[S.activeLayer], S.layers[j]] = [S.layers[j], S.layers[S.activeLayer]];
+  S.activeLayer = j;
+  render();
+  refreshLayersPanel();
+}
+function mergeLayerDown() {
+  if (S.activeLayer <= 0) return;
+  snap();
+  _leaveLayer();
+  const top = activeLayer(), below = S.layers[S.activeLayer - 1];
+  for (const [k, v] of Object.entries(top.cells)) {
+    below.cells[k] = v;
+    if (k in top.order) below.order[k] = top.order[k]; else delete below.order[k];
+  }
+  below.lines.push(...top.lines);
+  below.texts.push(...top.texts);
+  S.layers.splice(S.activeLayer, 1);
+  S.activeLayer--;
+  render();
+  refreshLayersPanel();
+}
+
+// ═══════════════════════════════════════════════════
 // CANVAS
 // ═══════════════════════════════════════════════════
 const canvas = document.getElementById('mc');
@@ -1934,79 +2211,37 @@ function initCanvas() {
   render();
 }
 
-function shiftLines(dc, dr) {
-  S.lines = S.lines.map(l => ({ ...l, points: l.points.map(p => ({ col: p.col + dc, row: p.row + dr })) }));
-  S.texts = S.texts.map(t => ({ ...t, col: t.col + dc, row: t.row + dr })); // text moves with the design too
-  const no = {};
-  for (const [k, v] of Object.entries(S.order)) {
-    const [c, r, t] = k.split(',');
-    no[`${+c + dc},${+r + dr},${t}`] = v;
+// Moves the whole design (every layer) by dc columns / dr rows.
+function shiftDesign(dc, dr) {
+  for (const L of S.layers) {
+    const nc = {}, no = {};
+    for (const [k, v] of Object.entries(L.cells)) { const [c, r, t] = k.split(','); nc[`${+c + dc},${+r + dr},${t}`] = v; }
+    for (const [k, v] of Object.entries(L.order)) { const [c, r, t] = k.split(','); no[`${+c + dc},${+r + dr},${t}`] = v; }
+    L.cells = nc; L.order = no;
+    L.lines = L.lines.map(l => ({ ...l, points: l.points.map(p => ({ col: p.col + dc, row: p.row + dr })) }));
+    L.texts = L.texts.map(t => ({ ...t, col: t.col + dc, row: t.row + dr })); // text moves with the design too
   }
-  S.order = no;
 }
 
 function isCanvasEmpty() {
-  return !Object.keys(S.cells).length && !S.lines.length && !S.texts.length;
+  return S.layers.every(L => !Object.keys(L.cells).length && !L.lines.length && !L.texts.length);
 }
 
 function resizeCanvas(axis, action, side) {
   const MIN = 3;
-  if (axis === 'row') {
-    if (action === 'del' && S.rows <= MIN) return;
-    snap();
-    if (action === 'add') {
-      if (side === 'top') {
-        const nc = {};
-        for (const [k, v] of Object.entries(S.cells)) {
-          const [c, r, t] = k.split(',');
-          nc[`${c},${+r + 1},${t}`] = v;
-        }
-        S.cells = nc;
-        shiftLines(0, 1);
-      }
-      S.rows++;
-    } else {
-      const edge = side === 'top' ? 0 : S.rows - 1;
-      for (const k of Object.keys(S.cells)) { if (+k.split(',')[1] === edge) delete S.cells[k]; }
-      if (side === 'top') {
-        const nc = {};
-        for (const [k, v] of Object.entries(S.cells)) {
-          const [c, r, t] = k.split(',');
-          nc[`${c},${+r - 1},${t}`] = v;
-        }
-        S.cells = nc;
-        shiftLines(0, -1);
-      }
-      S.rows--;
-    }
+  const isRow = axis === 'row';
+  if (action === 'del' && (isRow ? S.rows : S.cols) <= MIN) return;
+  snap();
+  const lead = side === 'top' || side === 'left';
+  const dc = isRow ? 0 : 1, dr = isRow ? 1 : 0;
+  if (action === 'add') {
+    if (lead) shiftDesign(dc, dr);
+    if (isRow) S.rows++; else S.cols++;
   } else {
-    if (action === 'del' && S.cols <= MIN) return;
-    snap();
-    if (action === 'add') {
-      if (side === 'left') {
-        const nc = {};
-        for (const [k, v] of Object.entries(S.cells)) {
-          const [c, r, t] = k.split(',');
-          nc[`${+c + 1},${r},${t}`] = v;
-        }
-        S.cells = nc;
-        shiftLines(1, 0);
-      }
-      S.cols++;
-    } else {
-      const edge = side === 'left' ? 0 : S.cols - 1;
-      for (const k of Object.keys(S.cells)) { if (+k.split(',')[0] === edge) delete S.cells[k]; }
-      if (side === 'left') {
-        const nc = {};
-        for (const [k, v] of Object.entries(S.cells)) {
-          const [c, r, t] = k.split(',');
-          nc[`${+c - 1},${r},${t}`] = v;
-        }
-        S.cells = nc;
-        shiftLines(-1, 0);
-      }
-      S.cols--;
-    }
+    const i = isRow ? 1 : 0, edge = lead ? 0 : (isRow ? S.rows : S.cols) - 1;
+    for (const L of S.layers) for (const k of Object.keys(L.cells)) { if (+k.split(',')[i] === edge) delete L.cells[k]; }
+    if (lead) shiftDesign(-dc, -dr);
+    if (isRow) S.rows--; else S.cols--;
   }
   initCanvas();
   _updatePresetBtns(null);
@@ -2050,15 +2285,8 @@ function _doRender() {
     ctx.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
   }
 
-  // painted triangles
-  for (const [key, color] of Object.entries(S.cells)) {
-    const parts = key.split(',');
-    drawTriangle(+parts[0], +parts[1], parts[2], color);
-  }
-
-  // stitch lines
-  for (const line of S.lines) drawLine(line);
-  for (const t of S.texts) drawTextObj(t);
+  // each visible layer's triangles, stitches and text, bottom to top
+  drawLayers(ctx);
   if (S.stitchAnchor && S.stitchPath) {
     symPaths(S.stitchPath).forEach(pts => {
       drawLine({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, size: S.stitchSize }, ctx, true);
@@ -2066,6 +2294,7 @@ function _doRender() {
   }
 
   if (S.grid) drawGrid();
+  queueLayerThumbs();
 }
 
 // Dash length scales with the actual stroke width in use (thumbnails/
@@ -2160,8 +2389,16 @@ function drawGrid() {
 // ═══════════════════════════════════════════════════
 // UNDO
 // ═══════════════════════════════════════════════════
+function _snapshot() { return JSON.stringify({ layers: S.layers, active: S.activeLayer }); }
+function _restoreSnapshot(json) {
+  const snap = JSON.parse(json);
+  S.layers = snap.layers;
+  S.activeLayer = Math.min(snap.active || 0, S.layers.length - 1);
+  refreshLayersPanel();
+}
+
 function snap() {
-  S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts, order: S.order }));
+  S.history.push(_snapshot());
   if (S.history.length > MAX_H) S.history.shift();
   // A fresh edit invalidates whatever branch redo would have restored.
   S.redoHistory = [];
@@ -2171,13 +2408,9 @@ function snap() {
 
 function undo() {
   if (!S.history.length) return;
-  S.redoHistory.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts, order: S.order }));
+  S.redoHistory.push(_snapshot());
   if (S.redoHistory.length > MAX_H) S.redoHistory.shift();
-  const snapshot = JSON.parse(S.history.pop());
-  S.cells = snapshot.cells;
-  S.lines = snapshot.lines || [];
-  S.texts = snapshot.texts || [];
-  S.order = snapshot.order || {};
+  _restoreSnapshot(S.history.pop());
   deselectText();
   document.getElementById('undo-btn').disabled = S.history.length === 0;
   document.getElementById('redo-btn').disabled = false;
@@ -2186,13 +2419,9 @@ function undo() {
 
 function redo() {
   if (!S.redoHistory.length) return;
-  S.history.push(JSON.stringify({ cells: S.cells, lines: S.lines, texts: S.texts, order: S.order }));
+  S.history.push(_snapshot());
   if (S.history.length > MAX_H) S.history.shift();
-  const snapshot = JSON.parse(S.redoHistory.pop());
-  S.cells = snapshot.cells;
-  S.lines = snapshot.lines || [];
-  S.texts = snapshot.texts || [];
-  S.order = snapshot.order || {};
+  _restoreSnapshot(S.redoHistory.pop());
   deselectText();
   document.getElementById('undo-btn').disabled = false;
   document.getElementById('redo-btn').disabled = S.redoHistory.length === 0;
@@ -2202,10 +2431,8 @@ function redo() {
 function clearCanvas() {
   if (isCanvasEmpty()) return;
   snap();
-  S.cells = {};
-  S.lines = [];
-  S.texts = [];
-  S.order = {};
+  // empties every layer but keeps the layer stack itself
+  for (const L of S.layers) { L.cells = {}; L.lines = []; L.texts = []; L.order = {}; }
   deselectText();
   render();
 }
@@ -2650,6 +2877,12 @@ canvas.addEventListener('pointerdown', e => {
     drawCaptureOverlay();
     return;
   }
+  const panIntent = S.spaceDown || e.button === 1 || S.tool === 'pan';
+  if (!panIntent && (!activeLayer().visible || activeLayer().locked)) {
+    e.preventDefault();
+    showHint(activeLayer().locked ? `"${activeLayer().name}" is locked — unlock it in Layers to draw` : `"${activeLayer().name}" is hidden — show it in Layers to draw`);
+    return;
+  }
   if (S.activeMotif) {
     e.preventDefault();
     safeSetPointerCapture(e.pointerId);
@@ -3008,10 +3241,7 @@ function _updatePresetBtns(active) {
 function newGridPreset(preset) {
   if (!confirm('Start a new canvas? Your current design will be cleared.')) return;
   const { cols, rows, paper } = GRID_PRESETS[preset];
-  S.cells = {};
-  S.lines = [];
-  S.texts = [];
-  S.order = {};
+  resetLayers();
   deselectText();
   S.cols = cols;
   S.rows = rows;
@@ -3041,10 +3271,7 @@ function setOrientation(mode) {
   const isLandscape = S.cols >= S.rows;
   if (wantLandscape === isLandscape) return;
   if (!confirm('Rotate canvas? Your current design will be cleared.')) return;
-  S.cells = {};
-  S.lines = [];
-  S.texts = [];
-  S.order = {};
+  resetLayers();
   deselectText();
   const oldCols = S.cols, oldRows = S.rows;
   S.cols = oldRows;
@@ -3089,6 +3316,7 @@ function buildFinishMenu() {
     <div class="finish-list">
       ${row('Print PDF', 'full colour', 'id="pdf-download-btn" onclick="downloadPrintPDF()"', !!sizeId)}
       ${row('Riso separations', 'ZIP · one PDF per ink', 'id="riso-download-btn" onclick="downloadRisoPack()"', !!sizeId)}
+      ${row('Riso by layer', 'ZIP · one PDF per layer', 'id="riso-layer-download-btn" onclick="downloadRisoPack(true)"', !!sizeId)}
     </div>
     ${sizeId ? '' : '<span class="saved-note">Switch to an A5 / A4 / A3 canvas for print files.</span>'}`;
 }
@@ -3163,78 +3391,88 @@ function downloadWallpaper(presetId) {
 // RISO PRINT — colour separations
 // ═══════════════════════════════════════════════════
 function _getUsedColors() {
-  const set = new Set(Object.values(S.cells));
-  S.lines.forEach(l => set.add(l.color));
-  S.texts.forEach(t => set.add(t.color));
+  const F = flatDesign();
+  const set = new Set(Object.values(F.cells));
+  F.lines.forEach(l => set.add(l.color));
+  F.texts.forEach(t => set.add(t.color));
   const known = THREAD.filter(hex => set.has(hex));
   const unknown = [...set].filter(hex => !THREAD.includes(hex));
   return [...known, ...unknown];
 }
 
+// A print page: the canvas scaled to fit EW × EH, centred on white, with
+// draw(ec) painting into canvas coordinates.
+function _plateCanvas(EW, EH, draw) {
+  const logW = S.cols * CELL, logH = S.rows * CELL;
+  const scale = Math.min(EW / logW, EH / logH);
+  const dw = Math.round(logW * scale), dh = Math.round(logH * scale);
+  const dx = Math.round((EW - dw) / 2), dy = Math.round((EH - dh) / 2);
+
+  const exp = document.createElement('canvas');
+  exp.width = EW; exp.height = EH;
+  const ec = exp.getContext('2d');
+  ec.fillStyle = '#fff';
+  ec.fillRect(0, 0, EW, EH);
+  ec.translate(dx, dy);
+  ec.scale(scale, scale);
+  draw(ec);
+  return exp;
+}
+
+// One ink's stencil, from the visible layers as seen (a triangle covered by
+// a higher layer doesn't print underneath it).
 function _buildSeparationCanvas(color, EW, EH) {
-  const logW = S.cols * CELL, logH = S.rows * CELL;
-  const scale = Math.min(EW / logW, EH / logH);
-  const dw = Math.round(logW * scale), dh = Math.round(logH * scale);
-  const dx = Math.round((EW - dw) / 2), dy = Math.round((EH - dh) / 2);
-
-  const exp = document.createElement('canvas');
-  exp.width = EW; exp.height = EH;
-  const ec = exp.getContext('2d');
-  ec.fillStyle = '#fff';
-  ec.fillRect(0, 0, EW, EH);
-  ec.translate(dx, dy);
-  ec.scale(scale, scale);
-  for (const [key, c] of Object.entries(S.cells)) {
-    if (c !== color) continue;
-    const parts = key.split(',');
-    drawTriangle(+parts[0], +parts[1], parts[2], '#000', ec);
-  }
-  for (const l of S.lines) {
-    if (l.color !== color) continue;
-    drawLine({ ...l, color: '#000' }, ec);
-  }
-  for (const t of S.texts) {
-    if (t.color === color) drawTextObj({ ...t, color: '#000' }, ec);
-  }
-  return exp;
+  const F = flatDesign();
+  return _plateCanvas(EW, EH, ec => {
+    for (const [key, c] of Object.entries(F.cells)) {
+      if (c !== color) continue;
+      const parts = key.split(',');
+      drawTriangle(+parts[0], +parts[1], parts[2], '#000', ec);
+    }
+    for (const l of F.lines) if (l.color === color) drawLine({ ...l, color: '#000' }, ec);
+    for (const t of F.texts) if (t.color === color) drawTextObj({ ...t, color: '#000' }, ec);
+  });
 }
 
-// Same centered scale-to-fit as _buildSeparationCanvas, but full colour and
-// unmasked — a plain print-ready page rather than a per-ink stencil.
+// One layer as its own plate: everything on it prints, whatever its colours —
+// the layer is the ink.
+function _buildLayerPlateCanvas(L, EW, EH) {
+  return _plateCanvas(EW, EH, ec => {
+    for (const key of Object.keys(L.cells)) {
+      const parts = key.split(',');
+      drawTriangle(+parts[0], +parts[1], parts[2], '#000', ec);
+    }
+    for (const l of L.lines) drawLine({ ...l, color: '#000' }, ec);
+    for (const t of L.texts) drawTextObj({ ...t, color: '#000' }, ec);
+  });
+}
+
+// Same centered scale-to-fit, but full colour and unmasked — a plain
+// print-ready page rather than a per-ink stencil.
 function _buildFullColorCanvas(EW, EH) {
-  const logW = S.cols * CELL, logH = S.rows * CELL;
-  const scale = Math.min(EW / logW, EH / logH);
-  const dw = Math.round(logW * scale), dh = Math.round(logH * scale);
-  const dx = Math.round((EW - dw) / 2), dy = Math.round((EH - dh) / 2);
-
-  const exp = document.createElement('canvas');
-  exp.width = EW; exp.height = EH;
-  const ec = exp.getContext('2d');
-  ec.fillStyle = '#fff';
-  ec.fillRect(0, 0, EW, EH);
-  ec.translate(dx, dy);
-  ec.scale(scale, scale);
-  ec.fillStyle = S.base;
-  ec.fillRect(0, 0, logW, logH);
-  for (const [key, c] of Object.entries(S.cells)) {
-    const parts = key.split(',');
-    drawTriangle(+parts[0], +parts[1], parts[2], c, ec);
-  }
-  for (const l of S.lines) drawLine(l, ec);
-  for (const t of S.texts) drawTextObj(t, ec);
-  return exp;
+  return _plateCanvas(EW, EH, ec => {
+    ec.fillStyle = S.base;
+    ec.fillRect(0, 0, S.cols * CELL, S.rows * CELL);
+    drawLayers(ec);
+  });
 }
 
-async function downloadRisoPack() {
+// byLayer: one plate per visible layer (the user's own separations) rather
+// than one per ink colour.
+async function downloadRisoPack(byLayer = false) {
   const sizeId = _currentRisoSizeId();
   if (!sizeId) { showHint('Switch to an A5/A4/A3 paper canvas to export riso separations'); return; }
-  const colors = _getUsedColors();
-  if (!colors.length) { showHint('Paint something before exporting separations'); return; }
+  const slug = str => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'layer';
+  const plates = byLayer
+    ? S.layers.filter(L => L.visible && (Object.keys(L.cells).length || L.lines.length || L.texts.length))
+        .map(L => ({ tag: `layer-%n-${slug(L.name)}`, build: (EW, EH) => _buildLayerPlateCanvas(L, EW, EH) }))
+    : _getUsedColors().map(hex => ({ tag: `separation-%n-${hex.replace('#', '')}`, build: (EW, EH) => _buildSeparationCanvas(hex, EW, EH) }));
+  if (!plates.length) { showHint(byLayer ? 'No visible layers with anything on them to export' : 'Paint something before exporting separations'); return; }
   if (typeof JSZip === 'undefined' || typeof jspdf === 'undefined') {
     showHint('Riso export tools still loading — try again in a moment');
     return;
   }
-  const btn = document.getElementById('riso-download-btn');
+  const btn = document.getElementById(byLayer ? 'riso-layer-download-btn' : 'riso-download-btn');
   const label = btn.textContent;
   btn.disabled = true;
   btn.textContent = 'Generating…';
@@ -3243,16 +3481,16 @@ async function downloadRisoPack() {
     const [mmW, mmH] = _matchOrientation(preset.mmW, preset.mmH);
     const [EW, EH] = _matchOrientation(preset.w, preset.h);
     const zip = new JSZip();
-    colors.forEach((hex, i) => {
-      const canvas2 = _buildSeparationCanvas(hex, EW, EH);
+    plates.forEach((plate, i) => {
+      const canvas2 = plate.build(EW, EH);
       const pdf = new jspdf.jsPDF({ orientation: mmW > mmH ? 'landscape' : 'portrait', unit: 'mm', format: [mmW, mmH] });
       pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, mmW, mmH, undefined, 'MEDIUM');
-      const fname = `pixelkari-${sizeId}-separation-${String(i + 1).padStart(2, '0')}-${hex.replace('#', '')}.pdf`;
+      const fname = `pixelkari-${sizeId}-${plate.tag.replace('%n', String(i + 1).padStart(2, '0'))}.pdf`;
       zip.file(fname, pdf.output('blob'));
     });
     const blob = await zip.generateAsync({ type: 'blob' });
     const a = document.createElement('a');
-    a.download = `pixelkari-${sizeId}-riso-separations.zip`;
+    a.download = `pixelkari-${sizeId}-riso-${byLayer ? 'layers' : 'separations'}.zip`;
     a.href = URL.createObjectURL(blob);
     a.click();
     sfxSuccess();
@@ -3437,6 +3675,7 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('finish-split').classList.contains('open')) { closeFinishMenu(); return; }
     if (document.getElementById('motif-library-modal').classList.contains('on')) { closeMotifLibrary(); return; }
     if (S.capturingMotif) { stopCaptureMode(); return; }
+    if (layersPanelOpen()) { toggleLayersPanel(false); return; }
     if (S.selectedText !== null) { deselectText(); return; }
     if (S.stitchAnchor) { S.stitchAnchor = null; S.stitchPreview = null; S.stitchPath = null; render(); return; }
     if (S.activeMotif) { S.activeMotif = null; clearGhost(); showHint('Motif cancelled'); } return;
@@ -3446,6 +3685,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 't') { e.preventDefault(); setTool('text'); openTextPopup(); }
   if (e.key === 'f') { setTool('paint'); setFillMode(!S.fillMode); showHint(S.fillMode ? 'Fill mode' : 'Brush mode'); }
   if (e.key === 'g') toggleGrid();
+  if (e.key === 'l') toggleLayersPanel();
   if (e.key === '+' || e.key === '=') doZoom(0.25);
   if (e.key === '-') doZoom(-0.25);
   if (e.key === '0') fitZoom();
@@ -4335,15 +4575,16 @@ function showCapturePreview() {
   const maxC = Math.max(S.captureStart.col, S.captureEnd.col);
   const minR = Math.min(S.captureStart.row, S.captureEnd.row);
   const maxR = Math.max(S.captureStart.row, S.captureEnd.row);
+  const F = flatDesign(); // capture what's visible, across layers
   const captured = {};
-  for (const [key, color] of Object.entries(S.cells)) {
+  for (const [key, color] of Object.entries(F.cells)) {
     const p = key.split(',');
     const c = +p[0], r = +p[1];
     if (c >= minC && c <= maxC && r >= minR && r <= maxR) captured[key] = color;
   }
   // A line only counts as captured if ALL of its points are inside the
   // selection — half-included lines would otherwise get silently clipped.
-  const capturedLines = S.lines.filter(l =>
+  const capturedLines = F.lines.filter(l =>
     l.points.every(p => p.col >= minC && p.col <= maxC && p.row >= minR && p.row <= maxR)
   );
   if (!Object.keys(captured).length && !capturedLines.length) {
@@ -4875,7 +5116,11 @@ function _drawProjectThumb(project, px) {
   tctx.fillStyle = '#000000'; tctx.fillRect(0, 0, px, px);
   tctx.fillStyle = project.base;
   tctx.fillRect(offX, offY, spanW, spanH);
-  for (const [key, color] of Object.entries(project.cells)) {
+  // a saved project draws its visible layers; anything else (a single layer,
+  // an older save) is one layer's worth of cells / lines / texts
+  const layers = project.layers ? project.layers.filter(L => L.visible !== false) : [project];
+  for (const L of layers) {
+  for (const [key, color] of Object.entries(L.cells || {})) {
     const p = key.split(',');
     const c = +p[0], r = +p[1], tri = p[2];
     const x = offX + c * tCell, y = offY + r * tCell;
@@ -4888,7 +5133,7 @@ function _drawProjectThumb(project, px) {
     else                { tctx.moveTo(x,y+tCell);        tctx.lineTo(x,y);             tctx.lineTo(mx,my); }
     tctx.closePath(); tctx.fill();
   }
-  for (const l of (project.lines || [])) {
+  for (const l of (L.lines || [])) {
     tctx.save();
     tctx.strokeStyle = l.color;
     tctx.lineWidth = Math.max(1, lineWidthOf(l) * (tCell / CELL));
@@ -4901,7 +5146,8 @@ function _drawProjectThumb(project, px) {
     tctx.stroke();
     tctx.restore();
   }
-  for (const t of (project.texts || [])) drawTextObj(t, tctx, tCell, offX, offY);
+  for (const t of (L.texts || [])) drawTextObj(t, tctx, tCell, offX, offY);
+  }
   return tc;
 }
 
@@ -4914,10 +5160,8 @@ function saveProject() {
   const name = existing ? existing.name : `Phulkari ${PROJECTS.length + 1}`;
   const project = {
     name,
-    cells: { ...S.cells },
-    lines: S.lines.map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed, size: l.size, seq: l.seq })),
-    texts: S.texts.map(t => ({ ...t })),
-    order: { ...S.order },
+    layers: JSON.parse(JSON.stringify(S.layers)),
+    activeLayer: S.activeLayer,
     base: S.base,
     cols: S.cols,
     rows: S.rows,
@@ -4940,12 +5184,22 @@ function loadProject(idx) {
   const project = PROJECTS[idx];
   if (!project) return;
   snap();
-  S.cells = { ...project.cells };
-  S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed, size: l.size, seq: l.seq }));
-  S.texts = (project.texts || []).map(t => ({ ...t }));
-  S.order = { ...(project.order || {}) };
+  if (project.layers) {
+    S.layers = JSON.parse(JSON.stringify(project.layers));
+    S.activeLayer = Math.min(project.activeLayer || 0, S.layers.length - 1);
+    _layerUid = Math.max(0, ...S.layers.map(L => L.id || 0));
+  } else { // saved before layers: everything goes on one
+    resetLayers();
+    S.cells = { ...project.cells };
+    S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed, size: l.size, seq: l.seq }));
+    S.texts = (project.texts || []).map(t => ({ ...t }));
+    S.order = { ...(project.order || {}) };
+  }
+  refreshLayersPanel();
   // keep numbering after the loaded piece's steps so new work replays after it
-  S.seq = Math.max(S.seq, ...Object.values(S.order), ...S.lines.map(l => l.seq || 0), ...S.texts.map(t => t.seq || 0));
+  for (const L of S.layers) {
+    S.seq = Math.max(S.seq, ...Object.values(L.order), ...L.lines.map(l => l.seq || 0), ...L.texts.map(t => t.seq || 0));
+  }
   deselectText();
   S.cols = project.cols;
   S.rows = project.rows;
@@ -5608,8 +5862,9 @@ function _triVerts(c, r, tri) {
 // Snapshot of the design with the per-triangle values each style needs.
 function _prepareMotion() {
   const cx = S.cols / 2, cy = S.rows / 2, maxD = Math.hypot(cx, cy);
-  MOTION.colors = [...new Set(Object.values(S.cells))];
-  MOTION.tris = Object.entries(S.cells).map(([key, color]) => {
+  const F = MOTION.flat = flatDesign(); // the visible layers, as seen
+  MOTION.colors = [...new Set(Object.values(F.cells))];
+  MOTION.tris = Object.entries(F.cells).map(([key, color]) => {
     const [c, r, tri] = key.split(',');
     const v = _triVerts(+c, +r, tri);
     const gx = (v[0][0] + v[1][0] + v[2][0]) / 3, gy = (v[0][1] + v[1][1] + v[2][1]) / 3;
@@ -5618,7 +5873,7 @@ function _prepareMotion() {
       v, gx, gy, color, d,
       ci: MOTION.colors.indexOf(color),
       diag: (gx + gy) / (S.cols + S.rows),
-      c: +c, r: +r, tri, seq: S.order[key],
+      c: +c, r: +r, tri, seq: F.order[key],
     };
   });
 
@@ -5641,13 +5896,13 @@ function _prepareMotion() {
   const base = unordered.length;
   // Unrecorded lines and texts go after everything else, as before.
   const seqs = [...new Set([
-    ...MOTION.tris.map(p => p.seq), ...S.lines.map(l => l.seq), ...S.texts.map(t => t.seq),
+    ...MOTION.tris.map(p => p.seq), ...F.lines.map(l => l.seq), ...F.texts.map(t => t.seq),
   ].filter(v => v !== undefined))].sort((a, b) => a - b);
   const stepOf = new Map(seqs.map((v, i) => [v, base + i]));
   MOTION.tris.forEach(p => { if (p.seq !== undefined) p.step = stepOf.get(p.seq); });
   let n = base + seqs.length;
-  MOTION.lineSteps = S.lines.map(l => l.seq !== undefined ? stepOf.get(l.seq) : n++);
-  MOTION.textSteps = S.texts.map(t => t.seq !== undefined ? stepOf.get(t.seq) : n++);
+  MOTION.lineSteps = F.lines.map(l => l.seq !== undefined ? stepOf.get(l.seq) : n++);
+  MOTION.textSteps = F.texts.map(t => t.seq !== undefined ? stepOf.get(t.seq) : n++);
   MOTION.steps = Math.max(1, n);
 }
 
@@ -5718,12 +5973,12 @@ function drawMotionFrame(g, k, style, t) {
       g.fillStyle = '#fff';
       g.beginPath(); g.arc(newest.gx * CELL, newest.gy * CELL, CELL * 0.22, 0, Math.PI * 2); g.fill();
     }
-    S.lines.forEach((l, i) => {      // each line sews itself point by point within its beat
+    MOTION.flat.lines.forEach((l, i) => {      // each line sews itself point by point within its beat
       const f = Math.min(1, at - MOTION.lineSteps[i]);
       if (f <= 0) return;
       drawLine({ ...l, points: l.points.slice(0, Math.floor(f * (l.points.length - 1)) + 1) }, g);
     });
-    S.texts.forEach((tx, i) => {     // text fades in within its beat
+    MOTION.flat.texts.forEach((tx, i) => {     // text fades in within its beat
       const f = Math.min(1, at - MOTION.textSteps[i]);
       if (f <= 0) return;
       g.globalAlpha = f; drawTextObj(tx, g); g.globalAlpha = 1;
@@ -5743,8 +5998,8 @@ function drawMotionFrame(g, k, style, t) {
 
   if (overlayAlpha > 0) {
     g.globalAlpha = overlayAlpha;
-    if (!linesDrawn) for (const l of S.lines) drawLine(l, g);
-    for (const tx of S.texts) drawTextObj(tx, g);
+    if (!linesDrawn) for (const l of MOTION.flat.lines) drawLine(l, g);
+    for (const tx of MOTION.flat.texts) drawTextObj(tx, g);
     g.globalAlpha = 1;
   }
 }
