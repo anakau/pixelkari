@@ -35,7 +35,7 @@
     @font-face { font-family: 'ABC Areal'; src: url('public/fonts/ABCAreal-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
     :root { --font-body: 'ABC Areal', 'Helvetica Neue', Arial, sans-serif; --font-display: 'Bricolage Grotesque', sans-serif; }
     .logo-sub { font-family: var(--font-display); }
-    #story-page, #story-page * { font-family: var(--font-body); } /* the intro pop-up is set entirely in ABC Areal */
+    #story-page, #story-page * { font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; } /* the intro pop-up is set entirely in Arial */
     body { font-family: var(--font-body); color: var(--text); font-size: 14px; -webkit-tap-highlight-color: transparent; }
     ::selection { background: #D4A827; color: #0d0d0d; }
 
@@ -886,7 +886,7 @@
     .story-close:hover { background: var(--pink-deep); color: var(--pink); }
     /* the full-bleed bands span the pop-up, not the whole window */
     #story-box { container-type: inline-size; }
-    #story-box .s-hero, #story-box .s-app-shot, #story-box .s-collage, #story-box .s-cta {
+    #story-box .s-hero, #story-box .s-collage, #story-box .s-cta {
       width: 100cqw; margin-left: -50cqw;
     }
     #story-box .s-hero { padding-top: 120px; }
@@ -966,20 +966,6 @@
     .s-lead {
       font-size: 17px; color: #ffffff; line-height: 1.7; max-width: 500px; margin: 0;
       position: relative; z-index: 1;
-    }
-    .s-app-shot {
-      width: 100vw; position: relative; left: 50%; margin-left: -50vw;
-      padding: 56px 40px 64px; background: #0d0d0d;
-    }
-    .s-app-shot img {
-      display: block; width: 100%; max-width: 1100px; margin: 0 auto;
-      box-shadow: 0 0 48px rgba(0,0,0,0.5);
-      border: 1px solid #D4A827;
-    }
-    .s-app-shot-label {
-      text-align: center; margin-top: 14px;
-      font-size: 9px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
-      color: #D4A827; font-family: var(--font-body);
     }
     .s-section { padding: 40px 0; }
     .s-section .s-eyebrow { margin-bottom: 16px; }
@@ -1455,6 +1441,22 @@
     @media (max-width: 560px) {
       #layers-panel { left: 10px; right: 10px; width: auto; top: 70px; max-height: 50vh; }
     }
+
+    /* ── Intro pop-up colour scheme ── the selected-button look: everything
+       bright pink on deep pink, photos and buttons with rounded corners. */
+    #story-box { background: var(--pink-deep); }
+    #story-box, #story-box * { color: var(--pink) !important; }
+    #story-header { background: rgba(42,13,28,0.92); }
+    #story-box .s-footer-note { background: transparent; }
+    #story-box .s-sources, #story-box .s-sources a, #story-box .s-photo-credit, #story-box .s-photo-credit a,
+    #story-box .s-collage-credits, #story-box .s-collage-credits a, #story-box .s-footer-note { opacity: 0.75; }
+    #story-box .s-sources a, #story-box .s-photo-credit a, #story-box .s-collage-credits a { opacity: 1; }
+    #story-box .s-dedication-motif { fill: currentColor; }
+    #story-box .snav-cta, #story-box .story-close { background: #45142f; }
+    #story-box .snav-cta:hover, #story-box .story-close:hover { background: #5a1a3d; }
+    #story-box img { border-radius: 12px; }
+    #story-box .sc-pair figure, #story-box .s-photo-expandable { border-radius: 12px; overflow: hidden; }
+    #story-box ::selection { background: var(--pink); color: var(--pink-deep) !important; }
 </style>
 </head>
 <body>
@@ -1741,12 +1743,6 @@
         <h1 class="s-h1">Phulkari,<br>pixel by pixel.</h1>
         <p class="s-lead">Pixelkari is a browser-based drawing tool inspired by the patterns of Phulkari, a traditional embroidery practice from Punjab. Create motifs, stamp patterns, explore old forms through new ways, and watch a new language emerge.</p>
       </div>
-    </div>
-
-    <!-- App Screenshot -->
-    <div class="s-app-shot">
-      <img src="public/Screenshot.png" alt="Pixelkari — design Phulkari embroidery patterns in your browser" />
-      <p class="s-app-shot-label">The tool — runs entirely in your browser</p>
     </div>
 
     <!-- The Tool -->
