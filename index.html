@@ -25,6 +25,7 @@
       --accent-deep: #221D0E;           /* resting fill — the same near-black, toward a dull yellow */
       --accent: #D4A827; --accent-dim: rgba(212,168,39,0.10);
       --bar-h: 144px;
+      --bar-bottom: 10px;               /* bottom bar's gap from the window edge */
     }
     html, body { width: 100%; height: 100%; background: var(--bg); overflow: hidden; overscroll-behavior: none; }
     /* Areal for all body text and UI; Bricolage only for the logo and
@@ -61,7 +62,7 @@
       flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
       overflow: auto; background: #0d0d0d; position: relative;
       padding-top: calc(64px + 20px);
-      padding-bottom: calc(var(--bar-h) + 20px);
+      padding-bottom: calc(var(--bar-h) + var(--bar-bottom));
       touch-action: none;
     }
     #canvas-wrap { position: relative; transform-origin: center center; transition: transform 0.15s; }
@@ -101,7 +102,7 @@
       border-top: none;
       display: flex; flex-direction: row; align-items: center;
       padding: 0 20px 22px; overflow: visible;
-      position: fixed; left: 20px; right: 20px; bottom: 20px; z-index: 100;
+      position: fixed; left: 20px; right: 20px; bottom: var(--bar-bottom); z-index: 100;
     }
     #bar-logo { flex-shrink: 0; }
     #bb-tools {
@@ -251,6 +252,7 @@
     .text-swatches { display: flex; flex-wrap: wrap; gap: 4px; }
     .text-swatch { width: 18px; height: 18px; border-radius: 8px; border: none; cursor: pointer; padding: 0; transition: transform 0.1s; }
     .text-swatch:hover { transform: scale(1.15); }
+    .text-swatch[data-color="#000000"] { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35); } /* black would vanish on the dark popup */
     .text-swatch.on { outline: 2px solid #fff; outline-offset: 1px; }
     .text-del-btn {
       background: rgba(255,255,255,0.06); border: none; border-radius: 10px; color: #e57373;
@@ -515,7 +517,7 @@
          window edge, and the icons are 68px tall — which lands their base at
          --bar-h/2 − 1px. Her artwork has ~6px of empty canvas below her feet,
          hence the extra −6px. */
-      position: fixed; left: 24px; bottom: calc(var(--bar-h) / 2 - 7px);
+      position: fixed; left: 24px; bottom: calc(var(--bar-h) / 2 - 27px + var(--bar-bottom));
       display: flex; flex-direction: column-reverse; align-items: flex-start;
       gap: 8px; z-index: 300;
       /* The wrap is as wide as the tip bubbles (272px) but Billo is only
@@ -1227,7 +1229,7 @@
     /* Motif controls (Flip / Rotate / Size / Export) as a 2×2 grid,
        filling the same 73px height as Create Motif and the thumbnails. */
     .motif-ctrls {
-      display: grid !important; grid-template-columns: repeat(3, auto); grid-template-rows: 1fr 1fr;
+      display: grid !important; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; /* equal columns: − / + match Flip / Export */
       gap: var(--btn-gap); height: 73px; flex-direction: unset;
     }
     .motif-ctrls .motif-rot-btn { height: auto; padding: 0 10px; display: flex; align-items: center; justify-content: center; }
@@ -1634,7 +1636,7 @@
             <span class="motif-size-val" id="motif-size-lbl">1×</span>
             <button class="motif-rot-btn motif-step tip-host" onclick="stepMotifScale(1)" aria-label="Bigger motif">+<span class="hover-tip">Bigger motif (up to 4×)</span></button>
             <button class="motif-rot-btn tip-host" id="motif-flip-btn" onclick="toggleMotifFlip()">↔ Flip<span class="hover-tip">Mirror motif horizontally</span></button>
-            <button class="motif-rot-btn tip-host" id="motif-rot-btn" onclick="cycleMotifRotation()">↻ <span id="motif-rot-lbl">0°</span><span class="hover-tip">Rotate motif 90° clockwise</span></button>
+            <button class="motif-rot-btn tip-host" id="motif-rot-btn" onclick="cycleMotifRotation()">↻&nbsp;<span id="motif-rot-lbl">Rotate</span><span class="hover-tip">Rotate motif 90° clockwise</span></button>
             <button class="motif-rot-btn tip-host" id="motif-export-btn" onclick="copyMotifsToClipboard()">⬆ Export<span class="hover-tip">Copy all motifs as JSON</span></button>
           </div>
         </div>
@@ -3368,16 +3370,17 @@ document.getElementById('canvas-wrap').addEventListener('wheel', e => {
 }, { passive: false });
 function fitZoom() {
   const area = document.getElementById('canvas-area');
-  const PAD = 48;
+  const PAD = 32;
   // canvas-area now spans the full viewport (both bars float above it via
   // position:fixed), so its own footprint has to be subtracted explicitly
   // instead of relying on clientHeight already excluding them.
   const headerFootprint = 64 + 20;
-  const barFootprint = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar-h')) + 20;
+  const rootCss = getComputedStyle(document.documentElement);
+  const barFootprint = parseFloat(rootCss.getPropertyValue('--bar-h')) + parseFloat(rootCss.getPropertyValue('--bar-bottom'));
   const availW = Math.max(50, area.clientWidth - PAD * 2);
   const availH = Math.max(50, area.clientHeight - headerFootprint - barFootprint - PAD * 2);
   const logW = S.cols * CELL, logH = S.rows * CELL;
-  S.zoom = Math.min(1, availW / logW, availH / logH);
+  S.zoom = Math.min(2, availW / logW, availH / logH); // fills the space, up to 200%
   S.panX = 0; S.panY = 0;
   applyTransform(true);
   document.getElementById('zoom-lbl').textContent = Math.round(S.zoom * 100) + '%';
@@ -5024,8 +5027,7 @@ function copyMotifsToClipboard() {
 function cycleMotifRotation() {
   if (!S.activeMotif) return;
   S.motifRotation = (S.motifRotation + 90) % 360;
-  const lbl = document.getElementById('motif-rot-lbl');
-  if (lbl) lbl.textContent = S.motifRotation + '°';
+  showHint(S.motifRotation ? `Motif rotated ${S.motifRotation}°` : 'Motif: original rotation'); // the label stays "Rotate" so the buttons don't resize
   const btn = document.getElementById('motif-rot-btn');
   if (btn) btn.classList.toggle('active', S.motifRotation !== 0);
   S.motifBounds = getMotifBounds();
@@ -5049,7 +5051,7 @@ function selectMotif(motif) {
   S.motifRotation = 0;
   S.motifFlipH = false;
   const lbl = document.getElementById('motif-rot-lbl');
-  if (lbl) lbl.textContent = '0°';
+  if (lbl) lbl.textContent = 'Rotate';
   const btn = document.getElementById('motif-rot-btn');
   if (btn) btn.classList.remove('active');
   const flipBtn = document.getElementById('motif-flip-btn');
@@ -5974,7 +5976,7 @@ function initTextPopup() {
         <button type="button" class="cp-brush-btn" data-step="1" aria-label="Bigger text">+</button>
       </div>
     </div>
-    <div class="text-swatches">${THREAD.map(hex =>
+    <div class="text-swatches">${['#000000', ...THREAD.filter(h => h !== '#000000')].map(hex =>
       `<button type="button" class="text-swatch" data-color="${hex}" style="background:${hex}" aria-label="${hex}"></button>`).join('')}</div>
     <span class="text-hint" id="text-hint"></span>
     <button type="button" class="text-logo-btn" id="text-logo-btn" onclick="addLogoText()">
