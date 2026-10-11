@@ -2653,8 +2653,7 @@ canvas.addEventListener('pointerdown', e => {
   if (S.activeMotif) {
     e.preventDefault();
     safeSetPointerCapture(e.pointerId);
-    let {col, row} = triAt(e);
-    ({ col, row } = clampMotifPos(col, row));
+    const {col, row} = triAt(e);
     snap();
     S.motifDrawing    = true;
     S.stampOriginCol  = col;
@@ -2759,8 +2758,7 @@ canvas.addEventListener('pointermove', e => {
     return;
   }
   if (S.activeMotif) {
-    let {col, row} = triAt(e);
-    ({ col, row } = clampMotifPos(col, row));
+    const {col, row} = triAt(e);
 
     if (S.motifDrawing && S.motifBounds) {
       const { w, h } = S.motifBounds;
@@ -4586,17 +4584,6 @@ function stepMotifScale(delta) {
   showHint(S.motifScale === 1 ? 'Motif: original size' : `Motif: ${S.motifScale}× bigger`);
 }
 
-function clampMotifPos(col, row) {
-  if (!S.activeMotif) return { col, row };
-  const keys = Object.keys(getActiveCells());
-  const lines = getActiveLines();
-  const dcs = [...keys.map(k => +k.split(',')[0]), ...lines.flatMap(l => l.points.map(p => p.col))];
-  const drs = [...keys.map(k => +k.split(',')[1]), ...lines.flatMap(l => l.points.map(p => p.row))];
-  col = Math.max(-Math.min(...dcs), Math.min(col, S.cols - 1 - Math.max(...dcs)));
-  row = Math.max(-Math.min(...drs), Math.min(row, S.rows - 1 - Math.max(...drs)));
-  return { col, row };
-}
-
 function selectMotif(motif) {
   S.activeMotif = motif;
   S.motifRotation = 0;
@@ -4634,7 +4621,6 @@ function getMotifBounds() {
 }
 
 function placeMotif(col, row) {
-  ({ col, row } = clampMotifPos(col, row));
   const seq = ++S.seq; // one stamp = one timelapse step
   for (const [key, color] of Object.entries(getActiveCells())) {
     const p = key.split(',');
@@ -4650,14 +4636,21 @@ function placeMotif(col, row) {
   }
   for (const line of getActiveLines()) {
     const points = line.points.map(p => ({ col: Math.round(col + p.col), row: Math.round(row + p.row) }));
-    if (points.every(p => p.col >= 0 && p.col <= S.cols && p.row >= 0 && p.row <= S.rows)) {
-      for (const pts of symPaths(points)) S.lines.push({ points: pts, color: line.color, dashed: line.dashed, size: line.size, seq });
+    // A motif hanging off the edge keeps only its on-canvas stitches: split
+    // the line into runs of in-bounds points rather than dropping it whole.
+    const runs = [[]];
+    for (const p of points) {
+      if (p.col >= 0 && p.col <= S.cols && p.row >= 0 && p.row <= S.rows) runs[runs.length - 1].push(p);
+      else if (runs[runs.length - 1].length) runs.push([]);
+    }
+    for (const run of runs) {
+      if (run.length < 2) continue;
+      for (const pts of symPaths(run)) S.lines.push({ points: pts, color: line.color, dashed: line.dashed, size: line.size, seq });
     }
   }
 }
 
 function eraseMotif(col, row) {
-  ({ col, row } = clampMotifPos(col, row));
   for (const key of Object.keys(getActiveCells())) {
     const p = key.split(',');
     const c = Math.round(col + +p[0]);
@@ -4671,7 +4664,6 @@ function eraseMotif(col, row) {
 }
 
 function drawGhost(col, row) {
-  ({ col, row } = clampMotifPos(col, row));
   const gc = document.getElementById('ghost-canvas');
   if (!gc || !S.activeMotif) return;
   const ctx = gc.getContext('2d');
