@@ -1345,6 +1345,8 @@
     .finish-row-name { flex: 1; }
     .finish-row-dims { font-size: 10px; color: var(--muted); }
     .finish-row-dl { font-size: 12px; }
+    .finish-ig { text-decoration: none; border-top: 1px solid rgba(255,255,255,0.07); border-radius: 0 0 10px 10px; margin-top: 2px; padding-top: 11px; }
+    .finish-ig-icon { width: 15px; height: 15px; flex-shrink: 0; }
     .finish-split .export-btn { border-radius: 8px !important; }
 
     /* Grid and Border share the row's spare width equally (next to the two
@@ -1473,22 +1475,6 @@
           </svg>
           <span class="feedback-tip" id="sound-tip">Turn on drawing sounds</span>
         </button>
-        <a href="https://tally.so/r/dWgeVA" target="_blank" rel="noopener" class="feedback-btn" aria-label="Suggestions?">
-          <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 18h6"/>
-            <path d="M10 22h4"/>
-            <path d="M12 2a7 7 0 0 0-4 12.7c.5.4.9 1 1 1.6l.3 1.2a1 1 0 0 0 1 .8h3.4a1 1 0 0 0 1-.8l.3-1.2c.1-.6.5-1.2 1-1.6A7 7 0 0 0 12 2Z"/>
-          </svg>
-          <span class="feedback-tip">Suggestions?</span>
-        </a>
-        <a href="https://www.instagram.com/pixelkari.art?igsh=MjNwNXF3dHNpaXR0&utm_source=qr" target="_blank" rel="noopener" class="feedback-btn" aria-label="Follow us">
-          <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="5"/>
-            <circle cx="12" cy="12" r="4"/>
-            <circle cx="17.3" cy="6.7" r="0.6" fill="currentColor" stroke="none"/>
-          </svg>
-          <span class="feedback-tip">Follow us</span>
-        </a>
       </div>
       <button class="export-btn save-btn" id="motion-btn" onclick="openMotionModal()" style="line-height:1;">GIF</button>
       <!-- Save split button: save now, or ▾ to open a saved Pixelkari -->
@@ -3547,7 +3533,11 @@ function buildFinishMenu() {
       ${row('Riso separations', 'ZIP · one PDF per ink', 'id="riso-download-btn" onclick="downloadRisoPack()"', !!sizeId)}
       ${row('Riso by layer', 'ZIP · one PDF per layer', 'id="riso-layer-download-btn" onclick="downloadRisoPack(true)"', !!sizeId)}
     </div>
-    ${sizeId ? '' : '<span class="saved-note">Switch to an A5 / A4 / A3 canvas for print files.</span>'}`;
+    ${sizeId ? '' : '<span class="saved-note">Switch to an A5 / A4 / A3 canvas for print files.</span>'}
+    <a class="finish-row finish-ig" href="https://www.instagram.com/pixelkari.art" target="_blank" rel="noopener">
+      <svg class="finish-ig-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="0.6" fill="currentColor" stroke="none"/></svg>
+      <span class="finish-row-name">Instagram</span><span class="finish-row-dims">@pixelkari.art</span><span class="finish-row-dl">↗</span>
+    </a>`;
 }
 function toggleFinishMenu(e) {
   if (e) e.stopPropagation();
