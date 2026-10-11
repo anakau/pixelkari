@@ -544,7 +544,7 @@
        the same line — her artwork has ~6px of empty canvas below her feet,
        so it's 6px less offset than the tool labels' -14px. */
     .logo-tip-avatar-slot::after {
-      content: 'Billo'; position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%);
+      content: attr(data-name); position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%);
       font-family: var(--font-body); font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--muted); white-space: nowrap; pointer-events: none;
     }
@@ -1421,8 +1421,8 @@
     .layer-tog.on { background: var(--pink-deep); color: var(--pink); }
     .layer-tog:hover { background: var(--pink-deep); color: var(--pink); }
     .layers-actions { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--btn-gap); border-top: 1px solid rgba(255,255,255,0.07); padding-top: 8px; }
-    .layers-act:nth-child(-n+3) { grid-column: span 2; }
-    .layers-act:nth-child(n+4) { grid-column: span 3; }
+    .layers-actions .layers-act:nth-child(-n+3) { grid-column: span 2; }
+    .layers-actions .layers-act:nth-child(n+4) { grid-column: span 3; }
     .layer-row { touch-action: none; user-select: none; }
     .layer-row { cursor: grab; }
     .layer-row.lifted {
@@ -1451,27 +1451,50 @@
     /* ── Intro pop-up colour scheme ── the app's resting-button look: yellow
        on dull dark yellow, turning pink on hover like every control. Photos
        sit tinted in the background tone and come into colour on hover. */
-    #story-box { background: var(--accent-deep); }
+    #story-box { background: #120F07; } /* near-black, just warmed toward yellow */
     #story-box, #story-box * { color: var(--accent); }
-    #story-header { background: rgba(34,29,14,0.92); }
+    #story-header { background: rgba(18,15,7,0.92); }
     #story-box .s-footer-note { background: transparent; }
     #story-box .s-sources, #story-box .s-photo-credit, #story-box .s-collage-credits, #story-box .s-footer-note { opacity: 0.75; }
     #story-box a:hover, #story-box a:hover * { color: var(--pink); }
     #story-box .s-dedication-motif { fill: currentColor; }
-    #story-box .snav-cta, #story-box .story-close { background: #322a14; color: var(--accent); }
+    #story-box .snav-cta, #story-box .story-close { background: var(--accent-deep); color: var(--accent); }
     #story-box .snav-cta:hover, #story-box .story-close:hover { background: var(--pink-deep); color: var(--pink); }
     #story-box img { border-radius: 12px; }
     #story-box .sc-1, #story-box .sc-pair figure, #story-box .s-photo-expandable { position: relative; border-radius: 12px; overflow: hidden; }
     #story-box .sc-1 img, #story-box .sc-pair img, #story-box .s-photo-expandable img { filter: grayscale(0.55) brightness(0.85); transition: filter 0.35s ease; }
     #story-box .sc-1::after, #story-box .sc-pair figure::after, #story-box .s-photo-expandable::after {
       content: ''; position: absolute; inset: 0; pointer-events: none;
-      background: #4a3d16; mix-blend-mode: color; opacity: 0.85; transition: opacity 0.35s ease;
+      background: #3a3012; mix-blend-mode: color; opacity: 0.85; transition: opacity 0.35s ease;
     }
     #story-box .sc-1:hover img, #story-box .sc-pair figure:hover img, #story-box .s-photo-expandable:hover img { filter: none; }
     #story-box .sc-1:hover::after, #story-box .sc-pair figure:hover::after, #story-box .s-photo-expandable:hover::after { opacity: 0; }
     #story-box .s-photo-expand-hint { z-index: 1; }
     #story-box .s-hero .snav-cta { margin: 28px 0 0; } /* the early Start Creating sits under the intro, left-aligned with it */
     #story-box ::selection { background: var(--accent); color: var(--accent-deep); }
+
+    /* ── Mascot customiser ── sits right above the mascot, in the tips
+       bubble's place (the bubble steps aside while it's open). */
+    .mascot-panel {
+      display: none; width: 272px; flex-direction: column; gap: 6px;
+      background: #000; border-radius: 16px; padding: 12px 14px 14px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+    }
+    .billo-wrap.customising .mascot-panel { display: flex; }
+    .billo-wrap.customising .logo-tip { display: none; }
+    .mascot-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+    .mascot-label { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+    .mascot-name {
+      height: 30px; border: none; border-radius: 8px; padding: 0 10px; outline: none;
+      background: var(--accent-deep); color: var(--accent); font: 12px var(--font-body);
+    }
+    .mascot-name:focus { box-shadow: 0 0 0 1px var(--pink); color: var(--pink); }
+    .mascot-swatches { display: flex; flex-wrap: wrap; gap: 5px; }
+    .mascot-swatch { width: 20px; height: 20px; border-radius: 8px; border: none; padding: 0; cursor: pointer; transition: transform 0.1s; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12); }
+    .mascot-swatch:hover { transform: scale(1.15); }
+    .mascot-swatch.on { outline: 2px solid var(--pink); outline-offset: 1px; }
+    .mascot-actions { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: var(--btn-gap); margin-top: 8px; }
+    #mascot-tips-btn.on { background: var(--pink-deep); color: var(--pink); }
 </style>
 </head>
 <body>
@@ -1544,6 +1567,23 @@
       <div class="logo-tip-hint">
         <span class="logo-tip-hint-label">Tool Tip</span>
         <span id="billo-tip">Click and drag across triangles to fill them with your selected thread colour.</span>
+      </div>
+    </div>
+    <!-- Mascot customiser: opens from a click on the mascot, in the bubble's place -->
+    <div class="mascot-panel" id="mascot-panel" role="dialog" aria-label="Customise your mascot">
+      <div class="mascot-head">
+        <span class="saved-menu-head">Your mascot</span>
+        <button class="layers-close" onclick="toggleMascotPanel(false)" aria-label="Close">✕</button>
+      </div>
+      <label class="mascot-label" for="mascot-name">Name</label>
+      <input id="mascot-name" class="mascot-name" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Billo">
+      <div class="mascot-label">Hair</div><div class="mascot-swatches" data-part="hair"></div>
+      <div class="mascot-label">Clothes</div><div class="mascot-swatches" data-part="clothes"></div>
+      <div class="mascot-label">Shoes</div><div class="mascot-swatches" data-part="shoes"></div>
+      <div class="mascot-actions">
+        <button class="layers-act" onclick="shuffleMascot()">Surprise me</button>
+        <button class="layers-act" onclick="resetMascot()">Reset</button>
+        <button class="layers-act" id="mascot-tips-btn" onclick="toggleMascotTips()">Tips</button>
       </div>
     </div>
   </div>
@@ -5561,6 +5601,36 @@ const BILLO_EYES_OPEN = 'eyes open';
 const BILLO_EYES_CLOSED = 'eyes close';
 let billoEyesClosed = false;
 
+// ── Mascot look + name ──
+// Everyone can rename the mascot and recolour her hair, clothes and shoes;
+// her look is the Billo motif with those colours swapped in. Saved per browser.
+const MASCOT_DEFAULT = { name: 'Billo', hair: '#6B4C9A', clothes: '#F4C430', shoes: '#2d5a35' };
+const MASCOT_SWATCHES = {
+  hair:    ['#6B4C9A', '#1E1A1A', '#5A3825', '#9A3B26', '#D9B26B', '#9C9C9C', '#E91E8C', '#3A6FD8'],
+  clothes: ['#F4C430', '#E91E8C', '#D93030', '#F0920A', '#40C070', '#28B8B8', '#48A8F0', '#6B4C9A', '#F5F0E6', '#222222'],
+  shoes:   ['#2d5a35', '#111111', '#B0203A', '#D4A827', '#3A6FD8', '#E91E8C', '#F0F0F0', '#6B3E26'],
+};
+let MASCOT = { ...MASCOT_DEFAULT };
+try { MASCOT = { ...MASCOT_DEFAULT, ...JSON.parse(localStorage.getItem('pkMascot') || '{}') }; } catch (e) {}
+function saveMascot() { try { localStorage.setItem('pkMascot', JSON.stringify(MASCOT)); } catch (e) {} }
+function mascotName() { return (MASCOT.name || '').trim() || MASCOT_DEFAULT.name; }
+function _shade(hex, f) { // f < 0 darkens toward black
+  const [r, g, b] = hexToRgbTuple(hex);
+  return '#' + [r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v * (1 + f)))).toString(16).padStart(2, '0')).join('');
+}
+// The motif's own colours for each part (the clothes have a light and a shaded tone).
+function _mascotMotif(motif) {
+  const swap = {
+    '#6B4C9A': MASCOT.hair,
+    '#F4C430': MASCOT.clothes,
+    '#D4A017': _shade(MASCOT.clothes, -0.18),
+    '#2d5a35': MASCOT.shoes,
+  };
+  const cells = {};
+  for (const [k, c] of Object.entries(motif.cells)) cells[k] = swap[c] || c;
+  return { ...motif, cells };
+}
+
 function renderBilloAvatar() {
   const slot = document.getElementById('billo-avatar-slot');
   if (!slot) return;
@@ -5568,13 +5638,65 @@ function renderBilloAvatar() {
   const motif = MOTIFS.find(m => m.name === name) || MOTIFS.find(m => m.name === BILLO_EYES_OPEN);
   if (!motif) return;
   const dpr = window.devicePixelRatio || 1;
-  const canvas = _drawMotifThumb(motif, Math.round(102 * dpr), null);
+  const canvas = _drawMotifThumb(_mascotMotif(motif), Math.round(102 * dpr), null);
   slot.innerHTML = '';
   slot.appendChild(canvas);
+  slot.dataset.name = mascotName();
+  slot.setAttribute('aria-label', `${mascotName()} — click to customise`);
+}
+
+function mascotPanelOpen() { return document.getElementById('billo-wrap').classList.contains('customising'); }
+function toggleMascotPanel(force) {
+  const open = force === undefined ? !mascotPanelOpen() : force;
+  document.getElementById('billo-wrap').classList.toggle('customising', open);
+  if (open) syncMascotPanel();
+}
+function syncMascotPanel() {
+  const inp = document.getElementById('mascot-name');
+  if (document.activeElement !== inp) inp.value = MASCOT.name === MASCOT_DEFAULT.name ? '' : MASCOT.name;
+  inp.placeholder = MASCOT_DEFAULT.name;
+  document.querySelectorAll('.mascot-swatches').forEach(row => {
+    const part = row.dataset.part;
+    if (!row.children.length) {
+      row.innerHTML = MASCOT_SWATCHES[part].map(hex =>
+        `<button type="button" class="mascot-swatch" data-color="${hex}" style="background:${hex}" aria-label="${part} ${hex}"></button>`).join('');
+      row.querySelectorAll('.mascot-swatch').forEach(b => b.addEventListener('click', () => setMascot({ [part]: b.dataset.color })));
+    }
+    row.querySelectorAll('.mascot-swatch').forEach(b => b.classList.toggle('on', b.dataset.color.toLowerCase() === MASCOT[part].toLowerCase()));
+  });
+  const bubble = document.getElementById('logo-tip');
+  document.getElementById('mascot-tips-btn').classList.toggle('on', !!bubble && !bubble.classList.contains('hidden'));
+}
+function setMascot(patch) {
+  MASCOT = { ...MASCOT, ...patch };
+  saveMascot();
+  renderBilloAvatar();
+  syncMascotPanel();
+}
+function shuffleMascot() {
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  setMascot({ hair: pick(MASCOT_SWATCHES.hair), clothes: pick(MASCOT_SWATCHES.clothes), shoes: pick(MASCOT_SWATCHES.shoes) });
+  spawnBilloConfetti();
+}
+function resetMascot() { setMascot({ ...MASCOT_DEFAULT, name: MASCOT.name }); }
+// The tips bubble is out of the way while customising; this sets whether it
+// comes back when the panel closes.
+function toggleMascotTips() {
+  const bubble = document.getElementById('logo-tip');
+  setBubbleHidden(!bubble.classList.contains('hidden'));
+  syncMascotPanel();
+}
+function initMascotPanel() {
+  const inp = document.getElementById('mascot-name');
+  inp.addEventListener('input', () => setMascot({ name: inp.value.slice(0, 16) }));
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') { inp.blur(); if (e.key === 'Escape') toggleMascotPanel(false); } });
+  document.addEventListener('pointerdown', e => { // a click anywhere else closes it
+    if (mascotPanelOpen() && !e.target.closest('#mascot-panel, #billo-avatar-slot')) toggleMascotPanel(false);
+  }, true);
 }
 
 // Whether Billo's chat bubble is dismissed persists across reloads — closing
-// it (dismiss button or clicking the mascot) should stay closed on refresh,
+// it (its dismiss button, or Tips in the mascot customiser) should stay closed on refresh,
 // and stay open if it was left open.
 function setBubbleHidden(hidden) {
   const bubble = document.getElementById('logo-tip');
@@ -5641,8 +5763,7 @@ function initBilloEyes() {
     billoEyesClosed = !billoEyesClosed;
     renderBilloAvatar();
     pickBilloFact();
-    const bubble = document.getElementById('logo-tip');
-    setBubbleHidden(bubble ? !bubble.classList.contains('hidden') : false);
+    toggleMascotPanel();
   });
 }
 
@@ -6631,6 +6752,7 @@ buildMotifPal();
 buildProjectPal();
 renderBilloAvatar();
 initBilloEyes();
+initMascotPanel();
 pickBilloFact();
 wireBilloContextTips();
 initBubbleVisibility();
