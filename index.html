@@ -886,9 +886,16 @@
     .story-close:hover { background: var(--pink-deep); color: var(--pink); }
     /* the full-bleed bands span the pop-up, not the whole window */
     #story-box { container-type: inline-size; }
-    #story-box .s-hero, #story-box .s-collage, #story-box .s-cta {
+    #story-box .s-hero, #story-box .s-cta {
       width: 100cqw; margin-left: -50cqw;
     }
+    /* the photo collage sits in the text column, as wide as the map */
+    #story-box .s-collage { width: auto; left: auto; margin-left: 0; padding: 0; margin-top: 28px; }
+    #story-box .s-collage-inner { max-width: none; padding-bottom: 28px; }
+    #story-box .sc-1 img { height: 340px; }
+    #story-box .sc-pair { height: 220px; }
+    #story-box .s-section .s-collage-credits, #story-box .s-section .s-sources, #story-box .s-photo-credit { font-size: 9px; line-height: 1.6; }
+    #story-box .s-collage-credits { margin-top: 10px; }
     #story-box .s-hero { padding-top: 100px; padding-bottom: 48px; }
     #story-box .s-h1 { font-size: clamp(30px, 3.6vw, 42px); margin-bottom: 20px; }
     #story-box .s-lead { font-size: 14px; line-height: 1.65; font-weight: 400; }
