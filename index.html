@@ -28,14 +28,13 @@
       --bar-bottom: 10px;               /* bottom bar's gap from the window edge */
     }
     html, body { width: 100%; height: 100%; background: var(--bg); overflow: hidden; overscroll-behavior: none; }
-    /* Areal for all body text and UI; Bricolage only for the logo and
-       headlines (see the display rule just below). */
-    @font-face { font-family: 'ABC Areal'; src: url('public/fonts/ABCAreal-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
-    @font-face { font-family: 'ABC Areal'; src: url('public/fonts/ABCAreal-Medium.ttf') format('truetype'); font-weight: 500; font-display: swap; }
-    @font-face { font-family: 'ABC Areal'; src: url('public/fonts/ABCAreal-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
-    :root { --font-body: 'ABC Areal', 'Helvetica Neue', Arial, sans-serif; --font-display: 'Bricolage Grotesque', sans-serif; }
+    /* The interface is Arial, regular weight, throughout. (Bricolage is still
+       loaded above, but only for artwork: the Text tool's Grotesque face and
+       the Pixelkari logo stamp.) */
+    :root { --font-body: Arial, 'Helvetica Neue', Helvetica, sans-serif; --font-display: var(--font-body); }
+    body, body *:not(.text-font-opt):not(.tlb-mark) { font-weight: 400 !important; }
     .logo-sub { font-family: var(--font-display); }
-    #story-page, #story-page * { font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; } /* the intro pop-up is set entirely in Arial */
+    #story-page, #story-page * { font-family: var(--font-body); }
     body { font-family: var(--font-body); color: var(--text); font-size: 14px; -webkit-tap-highlight-color: transparent; }
     ::selection { background: #D4A827; color: #0d0d0d; }
 
@@ -507,7 +506,7 @@
        the top and bottom halves of a Pixelkari grid cell. Sized to the cap
        height so it sits on the baseline like the letters around it. */
     .logo-x { display: inline-block; height: 0.72em; width: 0.66em; fill: currentColor; vertical-align: baseline; margin: 0 0.02em; }
-    .logo-title { font-family: var(--font-body); font-size: 20px; font-weight: 400; letter-spacing: 0.02em; text-transform: lowercase; color: var(--accent); line-height: 1; } /* ABC Areal, regular, lowercase */
+    .logo-title { font-family: var(--font-body); font-size: 20px; font-weight: 400; letter-spacing: 0.02em; text-transform: lowercase; color: var(--accent); line-height: 1; } /* Arial, regular, lowercase */
     .logo-title .logo-x { height: 0.52em; width: 0.5em; } /* the bowtie x at lowercase x-height */
     .logo-sub   { font-size: 28px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; line-height: 1; margin-top: 3px; }
 
