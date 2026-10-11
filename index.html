@@ -6762,8 +6762,13 @@ window.addEventListener('resize', () => {
   _updatePresetBtns(match || null);
   _updateOrientBtns();
 })();
+// The intro pop-up greets first-time visitors, and anyone returning after a
+// long time away; a refresh or a regular visit goes straight to the tool.
+const INTRO_AGAIN_AFTER_DAYS = 30;
 setTimeout(function() {
-  showStoryPage(); // the intro pop-up greets every visit
+  const last = +readStorage('pkLastVisit') || 0;
+  if (!last || Date.now() - last > INTRO_AGAIN_AFTER_DAYS * 864e5) showStoryPage();
+  try { localStorage.setItem('pkLastVisit', String(Date.now())); } catch(e) {}
 }, 0);
 (function() {
   if (new URLSearchParams(window.location.search).has('tools')) {
