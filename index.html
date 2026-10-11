@@ -1384,7 +1384,11 @@
     .layer-tog.off { color: #6a5a2a; }
     .layer-tog.on { background: var(--pink-deep); color: var(--pink); }
     .layer-tog:hover { background: var(--pink-deep); color: var(--pink); }
-    .layers-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--btn-gap); border-top: 1px solid rgba(255,255,255,0.07); padding-top: 8px; }
+    .layers-actions { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--btn-gap); border-top: 1px solid rgba(255,255,255,0.07); padding-top: 8px; }
+    .layers-act:nth-child(-n+3) { grid-column: span 2; }
+    .layers-act:nth-child(n+4) { grid-column: span 3; }
+    .layer-row { touch-action: none; user-select: none; }
+    .layer-row.dragging { background: var(--pink-deep); box-shadow: 0 4px 14px rgba(0,0,0,0.6); cursor: grabbing; z-index: 1; }
     .layers-act {
       height: 30px; border: none; border-radius: 8px; cursor: pointer; font: 11px var(--font-body);
       background: var(--accent-deep); color: var(--accent); transition: background 0.12s, color 0.12s;
@@ -1416,8 +1420,8 @@
       <button class="icon-btn tip-host" onclick="doZoom(-0.25)">−<span class="hover-tip hover-tip-below">Zoom out (-)</span></button>
       <span class="zoom-lbl" id="zoom-lbl">100%</span>
       <button class="icon-btn tip-host" onclick="doZoom(0.25)">+<span class="hover-tip hover-tip-below">Zoom in (+)</span></button>
-      <button class="fit-btn tip-host" id="pan-btn" onclick="togglePan()"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-1px"><path d="M9 3.5C9 2.67 9.67 2 10.5 2S12 2.67 12 3.5V11h1V5.5C13 4.67 13.67 4 14.5 4S16 4.67 16 5.5V11h1V7.5C17 6.67 17.67 6 18.5 6S20 6.67 20 7.5V15c0 3.31-2.69 6-6 6h-2c-2.1 0-3.96-1.09-5.03-2.75L3.5 13c-.56-.97-.23-2.22.75-2.78.97-.56 2.22-.23 2.78.75L9 13V3.5Z"/></svg>Drag<span class="hover-tip hover-tip-below">Press space bar to drag canvas</span></button>
-      <button class="fit-btn tip-host" id="layers-btn" onclick="toggleLayersPanel()" aria-expanded="false"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-1px"><path d="M12 3 21 8 12 13 3 8Z"/><path d="M3 12.5 12 17.5 21 12.5"/><path d="M3 16.5 12 21.5 21 16.5"/></svg>Layers<span class="hover-tip hover-tip-below">Layers (L)</span></button>
+      <button class="fit-btn tip-host" id="pan-btn" onclick="togglePan()">Drag<span class="hover-tip hover-tip-below">Press space bar to drag canvas</span></button>
+      <button class="fit-btn tip-host" id="layers-btn" onclick="toggleLayersPanel()" aria-expanded="false">Layers<span class="hover-tip hover-tip-below">Layers (L)</span></button>
       <button class="fit-btn tip-host" id="undo-btn" onclick="undo()" disabled>↩ Undo<span class="hover-tip hover-tip-below">Undo (⌘Z)</span></button>
       <button class="fit-btn tip-host" id="redo-btn" onclick="redo()" disabled>↪ Redo<span class="hover-tip hover-tip-below">Redo (⌘⇧Z)</span></button>
       <button class="fit-btn tip-host danger" onclick="clearCanvas()">✕ Clear<span class="hover-tip hover-tip-below">Clear the whole canvas (every layer)</span></button>
@@ -1498,14 +1502,13 @@
     </div>
     <div class="layers-list" id="layers-list"></div>
     <div class="layers-actions">
-      <button class="layers-act" onclick="addLayer()">+ New</button>
+      <button class="layers-act" onclick="addLayer()">+ Layer</button>
+      <button class="layers-act" onclick="addLayer(true)">+ Cloth</button>
       <button class="layers-act" onclick="duplicateLayer()">Duplicate</button>
-      <button class="layers-act" id="layer-del-btn" onclick="deleteLayer()">Delete</button>
-      <button class="layers-act" id="layer-up-btn" onclick="moveLayer(1)">↑ Up</button>
-      <button class="layers-act" id="layer-down-btn" onclick="moveLayer(-1)">↓ Down</button>
       <button class="layers-act" id="layer-merge-btn" onclick="mergeLayerDown()">Merge ↓</button>
+      <button class="layers-act" id="layer-del-btn" onclick="deleteLayer()">Delete</button>
     </div>
-    <span class="saved-note">Double-click a name to rename. On an A5 / A4 / A3 canvas, Finish → Riso by layer prints each visible layer as its own plate.</span>
+    <span class="saved-note">Drag a layer to move it up or down; double-click a name to rename. A cloth layer is its own fabric — Cut on it cuts the cloth away to show what's underneath. On an A5 / A4 / A3 canvas, Finish → Riso by layer prints each visible layer as its own plate.</span>
   </div>
 
   <!-- CANVAS -->
@@ -1791,7 +1794,7 @@
 // ═══════════════════════════════════════════════════
 const CELL   = 12;
 const RATIO  = 148 / 105;  // A6 landscape ratio
-const BORDER = 9;    // fixed 9-cell border zone width
+const BORDER = 9;    // 9-cell border zone width (rounded up to whole grid squares — see borderCells)
 const MAX_H  = 60;
 
 // Seasonal palette — each season pairs 2 fabric base tones with 4 thread colours
@@ -1986,7 +1989,9 @@ const S = {
 let _layerUid = 0;
 function newLayer(name) {
   _layerUid++;
-  return { id: _layerUid, name: name || _nextLayerName(), visible: true, locked: false, cells: {}, lines: [], texts: [], order: {} };
+  // cloth: a hex when the layer is its own fabric (null = see-through);
+  // cut: the triangles of that cloth cut away, as keys like cells
+  return { id: _layerUid, name: name || _nextLayerName(), visible: true, locked: false, cloth: null, cut: {}, cells: {}, lines: [], texts: [], order: {} };
 }
 function _nextLayerName() {
   const nums = (S.layers || []).map(L => +(/^Layer (\d+)$/.exec(L.name) || [])[1] || 0);
@@ -2007,6 +2012,16 @@ function flatDesign() {
   const out = { cells: {}, lines: [], texts: [], order: {} };
   for (const L of S.layers) {
     if (!L.visible) continue;
+    if (L.cloth) { // its fabric covers everything below, except where cut
+      const cut = L.cut || {};
+      for (let c = 0; c < S.cols; c++) for (let r = 0; r < S.rows; r++) for (const t of 'tblr') {
+        const k = `${c},${r},${t}`;
+        if (cut[k]) continue;
+        out.cells[k] = L.cloth;
+        delete out.order[k];
+      }
+      out.lines = []; out.texts = []; // stitches and text below are under the cloth
+    }
     for (const [k, v] of Object.entries(L.cells)) {
       out.cells[k] = v;
       if (k in L.order) out.order[k] = L.order[k]; else delete out.order[k];
@@ -2016,9 +2031,59 @@ function flatDesign() {
   }
   return out;
 }
-function drawLayers(g) {
+// Path for one triangle of the cell whose top-left is (x, y), size w.
+function _triPath(g, x, y, w, tri) {
+  const mx = x + w / 2, my = y + w / 2;
+  if      (tri === 't') { g.moveTo(x, y);         g.lineTo(x + w, y);     }
+  else if (tri === 'r') { g.moveTo(x + w, y);     g.lineTo(x + w, y + w); }
+  else if (tri === 'b') { g.moveTo(x + w, y + w); g.lineTo(x, y + w);     }
+  else                  { g.moveTo(x, y + w);     g.lineTo(x, y);         }
+  g.lineTo(mx, my);
+  g.closePath();
+}
+// A cloth layer's fabric: the whole canvas minus its cut triangles, as one
+// path so neighbouring pieces meet without seams. border: give it the same
+// darkened border zone as the base cloth on the live canvas.
+function drawLayerCloth(L, g, cols = S.cols, rows = S.rows, border = false) {
+  const cut = L.cut || {};
+  const W = cols * CELL, H = rows * CELL;
+  g.beginPath();
+  const cutKeys = Object.keys(cut);
+  if (!cutKeys.length) g.rect(0, 0, W, H);
+  else {
+    const cutCells = new Set(cutKeys.map(k => k.slice(0, k.lastIndexOf(','))));
+    for (let c = 0; c < cols; c++) {
+      for (let r = 0; r < rows; r++) {
+        const x = c * CELL, y = r * CELL;
+        if (!cutCells.has(`${c},${r}`)) { g.rect(x, y, CELL, CELL); continue; }
+        for (const t of 'trbl') if (!cut[`${c},${r},${t}`]) _triPath(g, x, y, CELL, t);
+      }
+    }
+  }
+  g.fillStyle = L.cloth;
+  g.fill();
+  if (border && !S.paper && S.showBorder) {
+    const bpx = borderCells() * CELL;
+    g.save();
+    g.clip();
+    g.fillStyle = 'rgba(0,0,0,0.42)'; g.fillRect(0, 0, W, H);
+    g.fillStyle = L.cloth;            g.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
+    g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
+    g.restore();
+  }
+}
+// Cloth colour the Cloth tool shows and sets: the active layer's own cloth,
+// else the base fabric.
+function clothColor() { return activeLayer().cloth || S.base; }
+function setClothColor(hex) {
+  if (activeLayer().cloth) activeLayer().cloth = hex; else S.base = hex;
+  render();
+}
+
+function drawLayers(g, border = false) {
   for (const L of S.layers) {
     if (!L.visible) continue;
+    if (L.cloth) drawLayerCloth(L, g, S.cols, S.rows, border);
     for (const [key, color] of Object.entries(L.cells)) {
       const p = key.split(',');
       drawTriangle(+p[0], +p[1], p[2], color, g);
@@ -2057,14 +2122,15 @@ function toggleLayersPanel(force) {
 function refreshLayersPanel() {
   if (!layersPanelOpen()) return;
   const list = document.getElementById('layers-list');
-  if (list.querySelector('.layer-name-input')) return; // mid-rename — don't rebuild under the cursor
+  if (list.querySelector('.layer-name-input, .pressed')) return; // mid-rename / mid-press — don't rebuild under the pointer
   list.innerHTML = '';
   for (let i = S.layers.length - 1; i >= 0; i--) { // top layer first, like a stack
     const L = S.layers[i];
     const row = document.createElement('div');
     row.className = 'saved-row layer-row' + (i === S.activeLayer ? ' current' : '') + (L.visible ? '' : ' hidden');
-    row.onclick = () => selectLayer(i);
-    row.appendChild(_drawProjectThumb({ cols: S.cols, rows: S.rows, base: S.base, cells: L.cells, lines: L.lines, texts: L.texts }, 72));
+    row.dataset.id = L.id;
+    _wireLayerDrag(row, i);
+    row.appendChild(_drawProjectThumb({ cols: S.cols, rows: S.rows, base: S.base, cells: L.cells, lines: L.lines, texts: L.texts, cloth: L.cloth, cut: L.cut }, 72));
     const name = document.createElement('span');
     name.className = 'layer-name';
     name.textContent = L.name;
@@ -2085,9 +2151,50 @@ function refreshLayersPanel() {
     list.appendChild(row);
   }
   document.getElementById('layer-del-btn').disabled = S.layers.length < 2;
-  document.getElementById('layer-up-btn').disabled = S.activeLayer >= S.layers.length - 1;
-  document.getElementById('layer-down-btn').disabled = S.activeLayer <= 0;
-  document.getElementById('layer-merge-btn').disabled = S.activeLayer <= 0;
+  // a cloth layer covers everything below it, so it can't fold into the layer underneath
+  document.getElementById('layer-merge-btn').disabled = S.activeLayer <= 0 || !!activeLayer().cloth;
+  // the Cloth tool's colour follows the active layer — redraw its icon only when that changes
+  if (clothColor() !== _clothIconHex) { _clothIconHex = clothColor(); renderToolIcon('cloth'); refreshColorLabels(); }
+}
+let _clothIconHex = null;
+
+// Press a row to pick that layer; drag it to move it up or down the stack.
+// Pointer events rather than HTML drag-and-drop so it works on touch too.
+function _wireLayerDrag(row, i) {
+  row.addEventListener('pointerdown', e => {
+    if (e.button > 0 || e.target.closest('button, input')) return;
+    const list = row.parentElement, startY = e.clientY;
+    let dragging = false;
+    row.classList.add('pressed');
+    const move = ev => {
+      if (!dragging && Math.abs(ev.clientY - startY) < 5) return;
+      if (!dragging) { dragging = true; row.classList.add('dragging'); }
+      const prev = row.previousElementSibling, next = row.nextElementSibling;
+      if (prev && ev.clientY < prev.getBoundingClientRect().top + prev.offsetHeight / 2) list.insertBefore(row, prev);
+      else if (next && ev.clientY > next.getBoundingClientRect().top + next.offsetHeight / 2) list.insertBefore(next, row);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      row.classList.remove('dragging', 'pressed');
+      if (!dragging) { selectLayer(i); return; }
+      reorderLayers([...list.children].map(r => +r.dataset.id).reverse()); // the list shows the top layer first
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  });
+}
+function reorderLayers(ids) { // bottom → top
+  const now = S.layers.map(L => L.id);
+  if (ids.join() === now.join()) { refreshLayersPanel(); return; }
+  snap();
+  const activeId = activeLayer().id;
+  S.layers = ids.map(id => S.layers.find(L => L.id === id));
+  S.activeLayer = S.layers.findIndex(L => L.id === activeId);
+  render();
+  refreshLayersPanel();
 }
 
 // Thumbnails follow edits, but at most every 200ms rather than every frame.
@@ -2133,10 +2240,12 @@ function selectLayer(i) {
   render();
   refreshLayersPanel();
 }
-function addLayer() {
+function addLayer(withCloth = false) {
   snap();
   _leaveLayer();
-  S.layers.splice(S.activeLayer + 1, 0, newLayer());
+  const L = newLayer(withCloth ? `Cloth ${S.layers.filter(l => l.cloth).length + 1}` : undefined);
+  if (withCloth) { L.cloth = clothColor(); showHint('Cloth layer added — use Cut on it to cut the cloth away'); }
+  S.layers.splice(S.activeLayer + 1, 0, L);
   S.activeLayer++;
   render();
   refreshLayersPanel();
@@ -2162,17 +2271,8 @@ function deleteLayer() {
   render();
   refreshLayersPanel();
 }
-function moveLayer(d) { // +1 up the stack, −1 down
-  const j = S.activeLayer + d;
-  if (j < 0 || j >= S.layers.length) return;
-  snap();
-  [S.layers[S.activeLayer], S.layers[j]] = [S.layers[j], S.layers[S.activeLayer]];
-  S.activeLayer = j;
-  render();
-  refreshLayersPanel();
-}
 function mergeLayerDown() {
-  if (S.activeLayer <= 0) return;
+  if (S.activeLayer <= 0 || activeLayer().cloth) return;
   snap();
   _leaveLayer();
   const top = activeLayer(), below = S.layers[S.activeLayer - 1];
@@ -2198,6 +2298,13 @@ function initCanvas() {
   const dpr  = window.devicePixelRatio || 1;
   if (!S.cols) S.cols = 80;
   if (!S.rows) S.rows = 45;
+  // With a bigger grid showing, grow the canvas (right / bottom, so nothing
+  // moves) to whole grid squares — the edges then land on grid lines. Paper
+  // canvases keep their exact A-size.
+  if (S.grid && S.gridSize > 1 && !S.paper) {
+    S.cols = Math.ceil(S.cols / S.gridSize) * S.gridSize;
+    S.rows = Math.ceil(S.rows / S.gridSize) * S.gridSize;
+  }
   const logW = S.cols * CELL;
   const logH = S.rows * CELL;
   canvas.width  = logW * dpr;
@@ -2218,7 +2325,9 @@ function shiftDesign(dc, dr) {
     const nc = {}, no = {};
     for (const [k, v] of Object.entries(L.cells)) { const [c, r, t] = k.split(','); nc[`${+c + dc},${+r + dr},${t}`] = v; }
     for (const [k, v] of Object.entries(L.order)) { const [c, r, t] = k.split(','); no[`${+c + dc},${+r + dr},${t}`] = v; }
-    L.cells = nc; L.order = no;
+    const ncut = {};
+    for (const k of Object.keys(L.cut || {})) { const [c, r, t] = k.split(','); ncut[`${+c + dc},${+r + dr},${t}`] = 1; }
+    L.cells = nc; L.order = no; L.cut = ncut;
     L.lines = L.lines.map(l => ({ ...l, points: l.points.map(p => ({ col: p.col + dc, row: p.row + dr })) }));
     L.texts = L.texts.map(t => ({ ...t, col: t.col + dc, row: t.row + dr })); // text moves with the design too
   }
@@ -2228,21 +2337,28 @@ function isCanvasEmpty() {
   return S.layers.every(L => !Object.keys(L.cells).length && !L.lines.length && !L.texts.length);
 }
 
+// Adds or removes one row / column — or one whole grid square's worth while
+// a bigger grid is showing, so the edges stay on grid lines.
 function resizeCanvas(axis, action, side) {
-  const MIN = 3;
   const isRow = axis === 'row';
-  if (action === 'del' && (isRow ? S.rows : S.cols) <= MIN) return;
+  const n = S.grid ? S.gridSize : 1;
+  const MIN = Math.max(3, n);
+  if (action === 'del' && (isRow ? S.rows : S.cols) - n < MIN) return;
   snap();
   const lead = side === 'top' || side === 'left';
-  const dc = isRow ? 0 : 1, dr = isRow ? 1 : 0;
+  const dc = isRow ? 0 : n, dr = isRow ? n : 0;
   if (action === 'add') {
     if (lead) shiftDesign(dc, dr);
-    if (isRow) S.rows++; else S.cols++;
+    if (isRow) S.rows += n; else S.cols += n;
   } else {
-    const i = isRow ? 1 : 0, edge = lead ? 0 : (isRow ? S.rows : S.cols) - 1;
-    for (const L of S.layers) for (const k of Object.keys(L.cells)) { if (+k.split(',')[i] === edge) delete L.cells[k]; }
+    const i = isRow ? 1 : 0, size = isRow ? S.rows : S.cols;
+    const gone = v => lead ? v < n : v >= size - n;
+    for (const L of S.layers) {
+      for (const k of Object.keys(L.cells)) { if (gone(+k.split(',')[i])) delete L.cells[k]; }
+      for (const k of Object.keys(L.cut || {})) { if (gone(+k.split(',')[i])) delete L.cut[k]; }
+    }
     if (lead) shiftDesign(-dc, -dr);
-    if (isRow) S.rows--; else S.cols--;
+    if (isRow) S.rows -= n; else S.cols -= n;
   }
   initCanvas();
   _updatePresetBtns(null);
@@ -2251,9 +2367,16 @@ function resizeCanvas(axis, action, side) {
 // ═══════════════════════════════════════════════════
 // RENDER
 // ═══════════════════════════════════════════════════
+// With a bigger grid showing, the border rounds up to whole grid squares
+// (9 → 12 at 6×) so its edge sits on a grid line.
+function borderCells() {
+  const g = S.grid ? S.gridSize : 1;
+  return Math.ceil(BORDER / g) * g;
+}
 function isInner(col, row) {
-  return col >= BORDER && col < S.cols - BORDER &&
-         row >= BORDER && row < S.rows - BORDER;
+  const B = borderCells();
+  return col >= B && col < S.cols - B &&
+         row >= B && row < S.rows - B;
 }
 
 let _rafPending = false;
@@ -2269,7 +2392,7 @@ function _doRender() {
   _shadowKey = null; // the canvas changed (edit, undo, load…), so the hover shadow must be recomputed on the next move
   const W   = S.cols * CELL;   // logical pixels
   const H   = S.rows * CELL;
-  const bpx = BORDER * CELL;
+  const bpx = borderCells() * CELL;
 
   ctx.fillStyle = S.base;
   ctx.fillRect(0, 0, W, H);
@@ -2286,8 +2409,8 @@ function _doRender() {
     ctx.fillRect(bpx, bpx, W - bpx * 2, H - bpx * 2);
   }
 
-  // each visible layer's triangles, stitches and text, bottom to top
-  drawLayers(ctx);
+  // each visible layer's cloth, triangles, stitches and text, bottom to top
+  drawLayers(ctx, true);
   if (S.stitchAnchor && S.stitchPath) {
     symPaths(S.stitchPath).forEach(pts => {
       drawLine({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, size: S.stitchSize }, ctx, true);
@@ -2628,8 +2751,10 @@ function paint(col, row, tri) {
   }
   const seq = ++S.seq;
   for (const key of brushKeys(col, row, tri)) {
-    if (S.tool === 'erase') { delete S.cells[key]; delete S.order[key]; }
-    else                    { S.cells[key] = S.color; S.order[key] = seq; }
+    if (S.tool === 'erase') {
+      delete S.cells[key]; delete S.order[key];
+      if (activeLayer().cloth) activeLayer().cut[key] = 1; // Cut goes through the layer's cloth too
+    } else { S.cells[key] = S.color; S.order[key] = seq; }
   }
 }
 
@@ -3196,7 +3321,7 @@ function toggleGrid() {
   else S.gridSize = S.gridSize === 1 ? 3 : S.gridSize + 3;
   updateGridBtn();
   showHint(!S.grid ? 'Grid off' : S.gridSize === 1 ? 'Grid: fine' : `Grid: ${S.gridSize}× — each triangle is ${S.gridSize} small ones across`);
-  render();
+  initCanvas(); // fits the canvas to whole grid squares, then renders
 }
 function updateBorderBtn() {
   document.getElementById('tog-border').classList.toggle('on', S.showBorder);
@@ -3451,6 +3576,7 @@ function _buildSeparationCanvas(color, EW, EH) {
 // the layer is the ink.
 function _buildLayerPlateCanvas(L, EW, EH) {
   return _plateCanvas(EW, EH, ec => {
+    if (L.cloth) drawLayerCloth({ ...L, cloth: '#000' }, ec);
     for (const key of Object.keys(L.cells)) {
       const parts = key.split(',');
       drawTriangle(+parts[0], +parts[1], parts[2], '#000', ec);
@@ -3477,7 +3603,7 @@ async function downloadRisoPack(byLayer = false) {
   if (!sizeId) { showHint('Switch to an A5/A4/A3 paper canvas to export riso separations'); return; }
   const slug = str => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'layer';
   const plates = byLayer
-    ? S.layers.filter(L => L.visible && (Object.keys(L.cells).length || L.lines.length || L.texts.length))
+    ? S.layers.filter(L => L.visible && (L.cloth || Object.keys(L.cells).length || L.lines.length || L.texts.length))
         .map(L => ({ tag: `layer-%n-${slug(L.name)}`, build: (EW, EH) => _buildLayerPlateCanvas(L, EW, EH) }))
     : _getUsedColors().map(hex => ({ tag: `separation-%n-${hex.replace('#', '')}`, build: (EW, EH) => _buildSeparationCanvas(hex, EW, EH) }));
   if (!plates.length) { showHint(byLayer ? 'No visible layers with anything on them to export' : 'Paint something before exporting separations'); return; }
@@ -3866,7 +3992,7 @@ function _iconSvg(key, hex) {
 function renderToolIcon(key) {
   const btn = document.getElementById(`${key}-icon-btn`);
   if (!btn) return;
-  const hex = key === 'weave' ? S.color : key === 'stitch' ? S.stitchColor : key === 'cloth' ? S.base : null;
+  const hex = key === 'weave' ? S.color : key === 'stitch' ? S.stitchColor : key === 'cloth' ? clothColor() : null;
   btn.innerHTML = _iconSvg(key, hex || '#cfcfcf');
   if (hex) btn.title = formatColor(hex);
 }
@@ -4268,7 +4394,7 @@ function initCustomColorPicker() {
     updateValueDisplays(hex);
     if      (cpTarget === 'weave')  { S.color = hex; setTool('paint'); }
     else if (cpTarget === 'stitch') { S.stitchColor = hex; setTool('stitch'); }
-    else                            { S.base = hex; render(); } // cloth
+    else                            { setClothColor(hex); } // cloth — the active cloth layer's, else the base
     renderToolIcon(cpTarget);
     refreshColorLabels();
     return hex;
@@ -4294,7 +4420,7 @@ function initCustomColorPicker() {
   window._cpSelectColor = selectColor;
 
   function currentHexFor(target) {
-    return target === 'weave' ? S.color : target === 'stitch' ? S.stitchColor : S.base;
+    return target === 'weave' ? S.color : target === 'stitch' ? S.stitchColor : clothColor();
   }
   window._cpRefreshValues = () => updateValueDisplays(currentHexFor(cpTarget));
 
@@ -4487,7 +4613,7 @@ function refreshColorLabels() {
   const clothBtn = document.getElementById('cloth-icon-btn');
   if (weaveBtn) weaveBtn.title = formatColor(S.color);
   if (stitchBtn) stitchBtn.title = formatColor(S.stitchColor);
-  if (clothBtn) clothBtn.title = formatColor(S.base);
+  if (clothBtn) clothBtn.title = formatColor(clothColor());
   if (window._cpRefreshValues) window._cpRefreshValues();
 }
 
@@ -4913,6 +5039,7 @@ function eraseMotif(col, row) {
     for (const m of symTris(c, r, p[2])) {
       delete S.cells[`${m.col},${m.row},${m.tri}`];
       delete S.order[`${m.col},${m.row},${m.tri}`];
+      if (activeLayer().cloth) activeLayer().cut[`${m.col},${m.row},${m.tri}`] = 1;
     }
   }
 }
@@ -5133,6 +5260,13 @@ function _drawProjectThumb(project, px) {
   // an older save) is one layer's worth of cells / lines / texts
   const layers = project.layers ? project.layers.filter(L => L.visible !== false) : [project];
   for (const L of layers) {
+  if (L.cloth) {
+    tctx.save();
+    tctx.translate(offX, offY);
+    tctx.scale(tCell / CELL, tCell / CELL);
+    drawLayerCloth(L, tctx, cols, rows);
+    tctx.restore();
+  }
   for (const [key, color] of Object.entries(L.cells || {})) {
     const p = key.split(',');
     const c = +p[0], r = +p[1], tri = p[2];
@@ -5941,7 +6075,7 @@ function _fillTri(g, v, color, scale = 1, gx = 0, gy = 0) {
 // zone's darkening compounding.
 let _clothCache = null;
 function _clothLayer(k) {
-  const W = S.cols * CELL, H = S.rows * CELL, bpx = BORDER * CELL;
+  const W = S.cols * CELL, H = S.rows * CELL, bpx = borderCells() * CELL;
   const key = [k, W, H, S.base, S.paper, S.showBorder].join('|');
   if (_clothCache && _clothCache.key === key) return _clothCache.cv;
   const cv = document.createElement('canvas');
