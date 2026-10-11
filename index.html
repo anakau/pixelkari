@@ -51,8 +51,9 @@
       display: flex; align-items: center; gap: 6px; z-index: 1;
     }
     #story-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 40px; height: 64px; position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 0 32px; height: 64px; position: sticky; top: 0; z-index: 10;
+      background: rgba(13,13,13,0.92); backdrop-filter: blur(6px);
     }
 
     /* ── CANVAS AREA ── */
@@ -858,12 +859,39 @@
     }
     .btn-sec:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
 
-    /* ── STORY PAGE ── */
+    /* ── INTRO POP-UP ── (what used to be the home page) opens over the tool
+       on every visit and from the logo. */
     #story-page {
-      position: fixed; inset: 0; z-index: 400;
-      background: #0d0d0d; overflow-y: auto; overflow-x: hidden; display: none;
+      position: fixed; inset: 0; z-index: 400; display: none;
+      background: rgba(0,0,0,0.72); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 40px;
     }
-    #story-page.on { display: block; }
+    #story-page.on { display: flex; }
+    #story-box {
+      position: relative; width: 100%; max-width: 940px; height: 100%;
+      background: #0d0d0d; border-radius: 16px; overflow-y: auto; overflow-x: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+      animation: story-in 0.32s cubic-bezier(.2,.8,.3,1);
+    }
+    @keyframes story-in { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: none; } }
+    .story-head-actions { display: flex; align-items: center; gap: 8px; }
+    .story-close {
+      width: 30px; height: 30px; border: none; border-radius: 8px; cursor: pointer;
+      background: var(--accent-deep); color: var(--accent); font: 13px var(--font-body);
+    }
+    .story-close:hover { background: var(--pink-deep); color: var(--pink); }
+    /* the full-bleed bands span the pop-up, not the whole window */
+    #story-box { container-type: inline-size; }
+    #story-box .s-hero, #story-box .s-app-shot, #story-box .s-collage, #story-box .s-cta {
+      width: 100cqw; margin-left: -50cqw;
+    }
+    #story-box .s-hero { padding-top: 120px; }
+    #story-box .s-cta { padding: 100px 40px 120px; }
+    @media (max-width: 900px) {
+      #story-page { padding: 0; }
+      #story-box { border-radius: 0; max-width: none; }
+      .story-close { display: none; }
+    }
     .snav-cta {
       padding: 9px 22px; background: var(--accent); color: #111; border: none; cursor: pointer;
       font-size: 10px; font-weight: 400; letter-spacing: 0.04em;
@@ -1388,7 +1416,16 @@
     .layers-act:nth-child(-n+3) { grid-column: span 2; }
     .layers-act:nth-child(n+4) { grid-column: span 3; }
     .layer-row { touch-action: none; user-select: none; }
-    .layer-row.dragging { background: var(--pink-deep); box-shadow: 0 4px 14px rgba(0,0,0,0.6); cursor: grabbing; z-index: 1; }
+    .layer-row { cursor: grab; }
+    .layer-row.lifted {
+      z-index: 1000; pointer-events: none; cursor: grabbing;
+      background: #1a1a1a; transform: rotate(3deg) scale(1.04);
+      box-shadow: 0 14px 30px rgba(0,0,0,0.75), 0 0 0 1px var(--pink);
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
+    }
+    .layer-row.settling { z-index: 1000; pointer-events: none; transition: left 0.18s ease, top 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; }
+    .layer-gap { border-radius: 10px; background: rgba(233,30,140,0.08); outline: 1px dashed rgba(233,30,140,0.45); outline-offset: -1px; flex-shrink: 0; }
+    body:has(.layer-row.lifted), body:has(.layer-row.lifted) * { cursor: grabbing !important; }
     .layers-act {
       height: 30px; border: none; border-radius: 8px; cursor: pointer; font: 11px var(--font-body);
       background: var(--accent-deep); color: var(--accent); transition: background 0.12s, color 0.12s;
@@ -1682,12 +1719,16 @@
 
 
 <!-- STORY PAGE -->
-<div id="story-page">
+<div id="story-page" onclick="if (event.target === this) closeStoryPage()">
+ <div id="story-box" role="dialog" aria-modal="true" aria-label="About Pixelkari">
   <div id="story-header">
     <div style="cursor:pointer;" onclick="closeStoryPage()">
       <div class="logo-title" aria-label="Pixelkari">Pi<svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg>elkari</div>
     </div>
-    <button class="snav-cta" onclick="closeStoryPage()">Start Creating →</button>
+    <div class="story-head-actions">
+      <button class="snav-cta" onclick="closeStoryPage()">Start Creating →</button>
+      <button class="story-close" onclick="closeStoryPage()" aria-label="Close">✕</button>
+    </div>
     <span class="mobile-only-msg" style="font-size:9px;font-family:var(--font-body);letter-spacing:0.12em;text-transform:uppercase;color:#888;font-weight:500;">Desktop only</span>
   </div>
   <div id="story-body">
@@ -1777,6 +1818,7 @@
   </div>
 
   <div class="s-footer-note">Made with 🩷 for all phulkari lovers. Built with AI. © pixelkari 2026. <a href="https://anahat.studio" target="_blank" rel="noopener" class="s-footer-link">anahat.studio</a></div>
+ </div>
 </div>
 
 <!-- GEO MAP LIGHTBOX -->
@@ -2158,28 +2200,77 @@ function refreshLayersPanel() {
 }
 let _clothIconHex = null;
 
-// Press a row to pick that layer; drag it to move it up or down the stack.
-// Pointer events rather than HTML drag-and-drop so it works on touch too.
+// Press a row to pick that layer; drag it to move it up or down the stack,
+// Trello-style: the row lifts out of the list, tilted, and rides with the
+// pointer while a gap opens where it will land; the other rows slide out of
+// its way, and on release it settles into the gap. Pointer events rather
+// than HTML drag-and-drop so it works on touch too.
 function _wireLayerDrag(row, i) {
   row.addEventListener('pointerdown', e => {
     if (e.button > 0 || e.target.closest('button, input')) return;
-    const list = row.parentElement, startY = e.clientY;
-    let dragging = false;
+    const list = row.parentElement, startX = e.clientX, startY = e.clientY;
+    let dragging = false, gap = null, grabX = 0, grabY = 0;
     row.classList.add('pressed');
-    const move = ev => {
-      if (!dragging && Math.abs(ev.clientY - startY) < 5) return;
-      if (!dragging) { dragging = true; row.classList.add('dragging'); }
-      const prev = row.previousElementSibling, next = row.nextElementSibling;
-      if (prev && ev.clientY < prev.getBoundingClientRect().top + prev.offsetHeight / 2) list.insertBefore(row, prev);
-      else if (next && ev.clientY > next.getBoundingClientRect().top + next.offsetHeight / 2) list.insertBefore(next, row);
+
+    // Slide the other rows from where they were to where they now are (FLIP).
+    const slideRows = mutate => {
+      const others = [...list.children].filter(r => r !== row && r !== gap);
+      const before = new Map(others.map(r => [r, r.getBoundingClientRect().top]));
+      mutate();
+      for (const r of others) {
+        const dy = before.get(r) - r.getBoundingClientRect().top;
+        if (!dy) continue;
+        r.style.transition = 'none';
+        r.style.transform = `translateY(${dy}px)`;
+        requestAnimationFrame(() => { r.style.transition = 'transform 0.16s ease'; r.style.transform = ''; });
+      }
     };
+
+    const lift = () => {
+      const rect = row.getBoundingClientRect();
+      grabX = startX - rect.left; grabY = startY - rect.top;
+      gap = document.createElement('div');
+      gap.className = 'layer-gap';
+      gap.style.height = rect.height + 'px';
+      list.insertBefore(gap, row);
+      Object.assign(row.style, { position: 'fixed', left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', margin: '0' });
+      row.classList.add('lifted');
+    };
+
+    const move = ev => {
+      if (!dragging) {
+        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 5) return;
+        dragging = true;
+        lift();
+      }
+      row.style.left = (ev.clientX - grabX) + 'px';
+      row.style.top = (ev.clientY - grabY) + 'px';
+      // the gap goes before the first resting row whose middle is below the pointer
+      const rest = [...list.children].filter(r => r !== row && r !== gap);
+      const next = rest.find(r => { const b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; }) || null;
+      if (gap.nextElementSibling !== next || (next === null && gap !== list.lastElementChild)) {
+        slideRows(() => list.insertBefore(gap, next));
+      }
+    };
+
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
-      row.classList.remove('dragging', 'pressed');
-      if (!dragging) { selectLayer(i); return; }
-      reorderLayers([...list.children].map(r => +r.dataset.id).reverse()); // the list shows the top layer first
+      if (!dragging) { row.classList.remove('pressed'); selectLayer(i); return; }
+      // settle: glide into the gap and straighten, then take its place
+      const to = gap.getBoundingClientRect();
+      row.classList.add('settling');
+      row.style.left = to.left + 'px';
+      row.style.top = to.top + 'px';
+      row.classList.remove('lifted');
+      setTimeout(() => {
+        list.insertBefore(row, gap);
+        gap.remove();
+        row.removeAttribute('style');
+        row.classList.remove('settling', 'pressed');
+        reorderLayers([...list.children].map(r => +r.dataset.id).reverse()); // the list shows the top layer first
+      }, 180);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
@@ -3722,7 +3813,7 @@ function showStoryPage() {
   if (heroCanvas) { _drawPatternCanvas(heroCanvas, false); }
   const footerCanvas = document.getElementById('footer-pat-canvas');
   if (footerCanvas) { _drawPatternCanvas(footerCanvas, true); }
-  try { localStorage.setItem('pkPage', 'story'); } catch(e) {}
+  document.getElementById('story-box').scrollTop = 0;
   _initStoryTrail();
 }
 
@@ -3730,7 +3821,6 @@ function closeStoryPage() {
   if (window.innerWidth <= 900) return;
   document.getElementById('story-page').classList.remove('on');
   document.body.classList.remove('story-open');
-  try { localStorage.setItem('pkPage', 'tool'); } catch(e) {}
   _stopStoryTrail();
 }
 
@@ -6683,11 +6773,7 @@ window.addEventListener('resize', () => {
   _updateOrientBtns();
 })();
 setTimeout(function() {
-  if (readStorage('pkPage') === 'tool') {
-    // returning user was in the tool — stay there
-  } else {
-    showStoryPage();
-  }
+  showStoryPage(); // the intro pop-up greets every visit
 }, 0);
 (function() {
   if (new URLSearchParams(window.location.search).has('tools')) {
