@@ -1519,18 +1519,19 @@
     body.light .theme-sun { display: block; }
     body.light .theme-moon { display: none; }
     body.light {                         /* light mode = the studio dashboard's palette: white, soft greys, ink text, lime green for selected */
-      --bg: #FFFFFF; --muted: #8A8A84;   /* page white, muted grey text */
+      --bg: #EFEFEF; --muted: #8A8A84;   /* page: light grey, muted grey text */
       --accent: #1C1C1A; --accent-dim: rgba(28,28,26,0.06); /* text: near-black ink instead of yellow */
       --pink: #1C1C1A;                   /* hover / selected text stays ink */
-      --accent-deep: #F2F2F2;            /* resting button: soft grey */
+      --accent-deep: #FFFFFF;            /* resting button: white on the grey page */
       --pink-deep: #D5FEAF;              /* hover / selected: the dashboard's lime green */
       --panel: #FFFFFF;                  /* menus, panels, bubbles, pop-up */
       background: var(--bg);
     }
-    html:has(body.light) { background: #FFFFFF; }
+    html:has(body.light) { background: #EFEFEF; }
+    body.light .tool-icon-btn.on { filter: none; } /* no drop shadow under the lifted tool icon */
     body.light .export-btn:not(.save-btn):not(.save-caret) { background: #D5FEAF; color: #1C1C1A; } /* Finish: the dashboard's green primary button */
     body.light .export-btn:not(.save-btn):not(.save-caret):hover { background: #C3F28F; color: #1C1C1A; }
-    body.light #canvas-area { background: #F2F2F2; } /* a soft grey around the artwork, so the canvas edge still reads */
+    body.light #canvas-area { background: #EFEFEF; } /* same grey as the page around the artwork */
     body.light .saved-menu, body.light #layers-panel, body.light .mascot-panel,
     body.light .logo-tip-fact, body.light .logo-tip-hint, body.light #cp-popup, body.light #text-popup,
     body.light .cp-box, body.light .lib-box, body.light .finish-box, body.light .layer-row.lifted,
