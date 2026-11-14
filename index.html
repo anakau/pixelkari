@@ -1955,6 +1955,7 @@ const S = {
   stitchColor: THREAD[0],
   base:      BASES[Math.floor(Math.random() * BASES.length)],
   paper:     false,
+  printMode: (() => { try { return localStorage.getItem('pkPrintMode') === 'riso' ? 'riso' : 'cmyk'; } catch (e) { return 'cmyk'; } })(),
   sym:       null,
   brushSize: 1,
   fillMode:  false, // Weave only — a click floods the connected region instead of painting one triangle
@@ -2373,6 +2374,20 @@ function mergeLayerDown() {
 // ═══════════════════════════════════════════════════
 const canvas = document.getElementById('mc');
 const ctx    = canvas.getContext('2d');
+// CMYK soft proof: on a paper canvas in CMYK mode, every hex colour drawn on
+// the main canvas is shown as it would print (see cmykProof). Screen only —
+// exports and thumbnails draw on their own canvases with the real colours.
+(function installProof(g) {
+  const proto = CanvasRenderingContext2D.prototype;
+  for (const prop of ['fillStyle', 'strokeStyle']) {
+    const d = Object.getOwnPropertyDescriptor(proto, prop);
+    Object.defineProperty(g, prop, {
+      configurable: true,
+      get() { return d.get.call(this); },
+      set(v) { d.set.call(this, typeof v === 'string' && proofActive() ? cmykProof(v) : v); },
+    });
+  }
+})(ctx);
 
 function initCanvas() {
   const dpr  = window.devicePixelRatio || 1;
@@ -2465,7 +2480,7 @@ function render() {
 }
 function _doRender() {
   _inkCache = null;
-  if (S.paper && window._cpRefreshInks) window._cpRefreshInks();
+  if (isRiso() && window._cpRefreshInks) window._cpRefreshInks();
   _shadowKey = null; // the canvas changed (edit, undo, load…), so the hover shadow must be recomputed on the next move
   const W   = S.cols * CELL;   // logical pixels
   const H   = S.rows * CELL;
@@ -4305,6 +4320,12 @@ function initCustomColorPicker() {
   // canvas (a print run can only actually reproduce real ink colours).
   // Paper only: how many of the riso inks the design uses, with the colour
   // being picked shown as a dashed dot when it would add a new one.
+  const printRow = document.createElement('div');
+  printRow.className = 'cp-value-row';
+  printRow.innerHTML = `<span class="cp-value-lbl" style="width:auto;">Print</span>
+    <div style="display:flex;gap:4px;margin-left:auto;">${[['cmyk', 'CMYK'], ['riso', 'Riso']].map(([m, l]) =>
+      `<button type="button" class="cp-dash-btn" data-print="${m}" onclick="setPrintMode('${m}')">${l}</button>`).join('')}</div>`;
+  left.appendChild(printRow);
   const inkLimitRow = document.createElement('div');
   inkLimitRow.className = 'cp-value-row';
   inkLimitRow.innerHTML = `<span class="cp-value-lbl" style="width:auto;">Max inks</span>
@@ -4315,8 +4336,10 @@ function initCustomColorPicker() {
   inkMeter.className = 'ink-meter';
   left.appendChild(inkMeter);
   function renderInkMeter() {
-    inkMeter.style.display = inkLimitRow.style.display = S.paper ? '' : 'none';
-    if (!S.paper) return;
+    printRow.style.display = S.paper ? '' : 'none';
+    printRow.querySelectorAll('[data-print]').forEach(b => b.classList.toggle('on', b.dataset.print === (isRiso() ? 'riso' : 'cmyk')));
+    inkMeter.style.display = inkLimitRow.style.display = isRiso() ? '' : 'none';
+    if (!isRiso()) return;
     inkLimitRow.querySelectorAll('[data-inks]').forEach(b => b.classList.toggle('on', +b.dataset.inks === RISO_MAX_INKS));
     const used = [...usedRisoInks()];
     const cur = currentHexFor(cpTarget);
@@ -4343,13 +4366,13 @@ function initCustomColorPicker() {
     const makeSwatch = (hex, label) => {
       const b = document.createElement('button');
       b.className = 'cp-swatch';
-      b.style.background = hex;
+      b.style.background = proofActive() ? cmykProof(hex) : hex; // CMYK: show the swatch as it prints
       b.title = label || formatColor(hex);
       b.addEventListener('click', () => selectColor(hex));
       return b;
     };
     swatchGrid.classList.remove('cp-swatches-seasons');
-    if (S.paper) {
+    if (isRiso()) {
       RISO_INKS.forEach(ink => {
         const b = swatchGrid.appendChild(makeSwatch(ink.hex, `Riso ${ink.name}`));
         if (!inkFits(ink.hex)) { b.classList.add('ink-off'); b.title += ` (over the ${RISO_MAX_INKS}-ink limit)`; }
@@ -4416,28 +4439,13 @@ function initCustomColorPicker() {
     return '#' + [r, g, b].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
   }
 
-  // Simulates ink printed on paper rather than light from a screen: CMYK
-  // (and especially Riso) inks are semi-transparent, so the substrate
-  // always shows through a little, and that's what actually pulls a print
-  // run toward duller, warmer tones — a plain CMYK round-trip through the
-  // standard formulas is mathematically lossless and changes nothing, so
-  // it can't simulate this on its own.
-  const PRINT_PAPER = [242, 238, 227]; // warm off-white stock
-  const PRINT_OPACITY = 0.86; // fraction of ink strength vs. paper showing through
-  function toCmykSafeHex(hex) {
-    const [r,g,b] = hexToRgbTuple(hex);
-    const mix = (chan, paper) => Math.round(chan * PRINT_OPACITY + paper * (1 - PRINT_OPACITY));
-    return '#' + [mix(r,PRINT_PAPER[0]), mix(g,PRINT_PAPER[1]), mix(b,PRINT_PAPER[2])]
-      .map(x => Math.max(0, Math.min(255, x)).toString(16).padStart(2, '0')).join('');
-  }
-
   function drawHue() {
     const ctx = hueCanvas.getContext('2d');
     const w = hueCanvas.width, h = hueCanvas.height;
     const grad = ctx.createLinearGradient(0, 0, w, 0);
     for (let i = 0; i <= 360; i += 15) {
       const raw = `hsl(${i},100%,50%)`;
-      grad.addColorStop(i / 360, S.paper ? toCmykSafeHex(hsvToHex(i, 1, 1)) : raw);
+      grad.addColorStop(i / 360, proofActive() ? cmykProof(hsvToHex(i, 1, 1)) : raw);
     }
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
@@ -4455,14 +4463,14 @@ function initCustomColorPicker() {
     if (renderedWidth > 0 && specCanvas.width !== renderedWidth) specCanvas.width = renderedWidth;
     const ctx = specCanvas.getContext('2d');
     const w = specCanvas.width, h = specCanvas.height;
-    if (S.paper) {
-      // No closed-form gradient for a subtractive gamut, so it's sampled
-      // on a coarse grid and passed through the same CMYK round-trip.
-      const steps = 26;
+    if (proofActive()) {
+      // No closed-form gradient for a print gamut, so it's sampled on a
+      // coarse grid and passed through the same soft proof as the canvas.
+      const steps = 56;
       for (let yi = 0; yi < steps; yi++) {
         for (let xi = 0; xi < steps; xi++) {
           const s = xi / (steps - 1), v = 1 - yi / (steps - 1);
-          ctx.fillStyle = toCmykSafeHex(hsvToHex(hue, s, v));
+          ctx.fillStyle = cmykProof(hsvToHex(hue, s, v));
           ctx.fillRect(Math.floor(xi * w / steps), Math.floor(yi * h / steps), Math.ceil(w / steps) + 1, Math.ceil(h / steps) + 1);
         }
       }
@@ -4487,11 +4495,11 @@ function initCustomColorPicker() {
     hexRow.style.display = S.paper ? 'none' : '';
     rgbRow.style.display = S.paper ? 'none' : '';
     cmykRow.style.display = S.paper ? '' : 'none';
-    risoRow.style.display = S.paper ? '' : 'none';
+    risoRow.style.display = isRiso() ? '' : 'none';
   }
 
   function updateValueDisplays(hex) {
-    hexDot.style.background = hex;
+    hexDot.style.background = proofActive() ? cmykProof(hex) : hex;
     hexInput.value = hex;
     const [r,g,b] = hexToRgbTuple(hex);
     rgbInput.value = `${r}, ${g}, ${b}`;
@@ -4520,7 +4528,7 @@ function initCustomColorPicker() {
   // on a paper canvas so what you drag to is what actually gets applied.
   function applyFromWheel() {
     const raw = hsvToHex(hue, sat, val);
-    return commitColor(S.paper ? toCmykSafeHex(raw) : raw);
+    return commitColor(raw);
   }
 
   // Any externally-picked hex (swatch, recent, hex/rgb input, eyedropper)
@@ -4540,7 +4548,11 @@ function initCustomColorPicker() {
   }
   window._cpRefreshValues = () => updateValueDisplays(currentHexFor(cpTarget));
   // after edits: recount inks and re-dim swatches (only while the popup is open)
-  window._cpRefreshInks = () => { if (popup.classList.contains('on') && S.paper) { renderInkMeter(); renderSwatchSection(cpTarget); } };
+  window._cpRefreshPrintMode = () => {
+    if (!popup.classList.contains('on')) return;
+    renderInkMeter(); renderSwatchSection(cpTarget); drawHue(); drawSpectrum(); updateFormatAvailability();
+  };
+  window._cpRefreshInks = () => { if (popup.classList.contains('on') && isRiso()) { renderInkMeter(); renderSwatchSection(cpTarget); } };
 
   function positionPopup() {
     const btn = document.getElementById(`${cpTarget}-icon-btn`);
@@ -4756,16 +4768,145 @@ function _newInks(hexes) {
   return new Set([].concat(hexes).map(h => nearestRisoInk(h).name).filter(n => !used.has(n)));
 }
 function inkFits(hexes) {
-  return !S.paper || usedRisoInks().size + _newInks(hexes).size <= RISO_MAX_INKS;
+  return !isRiso() || usedRisoInks().size + _newInks(hexes).size <= RISO_MAX_INKS;
 }
 function inkGuard(hexes) {
   if (inkFits(hexes)) return true;
   showHint(`Riso prints take ${RISO_MAX_INKS} inks at most. Use one of the inks already in your design`);
   return false;
 }
+// ── Print modes ──
+// Paper canvases print in CMYK by default — any colour goes, the printer
+// converts it, and the screen shows a soft proof. Riso is opt-in: drum inks
+// only, with the ink limit.
+function isRiso() { return S.paper && S.printMode === 'riso'; }
+function proofActive() { return S.paper && S.printMode !== 'riso'; }
+function setPrintMode(mode) {
+  S.printMode = mode;
+  try { localStorage.setItem('pkPrintMode', mode); } catch (e) {}
+  if (window._cpRefreshPrintMode) window._cpRefreshPrintMode();
+  syncTextPopup();
+  refreshColorLabels();
+  render();
+  showHint(mode === 'riso'
+    ? `Riso: drum inks only, up to ${RISO_MAX_INKS} per print`
+    : 'CMYK: use any colour. The canvas shows how it will print');
+}
+
+// ── CMYK soft proof ──
+// Approximates a coated-paper CMYK press (FOGRA39-like) without an ICC
+// profile: an overprint model of real process inks gives the printable
+// gamut; each colour keeps its hue, its lightness is squeezed between ink
+// black and paper white, and chroma beyond the gamut is rolled off softly.
+// In-gamut colours barely move; neon RGB blues/greens/oranges dull the way
+// they do on press.
+const PROOF_PAPER = [246, 244, 238];                      // coated stock, slightly warm
+const PROOF_INKS = {                                      // transmittance per channel
+  c: [0.18, 0.682, 0.937], m: [0.925, 0.19, 0.549],       // (floors fitted to real C+M,
+  y: [1, 0.949, 0.14],     k: [0.137, 0.122, 0.125],      //  M+Y, C+Y overprints)
+};
+const _srgbToLin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+const _linToSrgb = v => 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * Math.max(0, v) ** (1 / 2.4) - 0.055);
+function _rgbToLab([r, g, b]) {
+  const R = _srgbToLin(r), G = _srgbToLin(g), B = _srgbToLin(b);
+  const f = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+  const X = f((0.4124 * R + 0.3576 * G + 0.1805 * B) / 0.95047);
+  const Y = f(0.2126 * R + 0.7152 * G + 0.0722 * B);
+  const Z = f((0.0193 * R + 0.1192 * G + 0.9505 * B) / 1.08883);
+  return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)];
+}
+function _labToRgb([L, a, b]) {
+  const fy = (L + 16) / 116, fx = fy + a / 500, fz = fy - b / 200;
+  const inv = t => t ** 3 > 0.008856 ? t ** 3 : (t - 16 / 116) / 7.787;
+  const X = inv(fx) * 0.95047, Y = inv(fy), Z = inv(fz) * 1.08883;
+  return [3.2406 * X - 1.5372 * Y - 0.4986 * Z, -0.9689 * X + 1.8758 * Y + 0.0415 * Z, 0.0557 * X - 0.2040 * Y + 1.0570 * Z]
+    .map(v => Math.round(Math.max(0, Math.min(255, _linToSrgb(v)))));
+}
+// Max printable chroma per hue (10° bins) and lightness (5-unit bins),
+// sampled once from the ink model, plus each hue's cusp (its most saturated
+// printable colour).
+let _gamut = null, _cusp = null, _paperLab = null, _inkBlackL = 0;
+function _buildGamut() {
+  _paperLab = _rgbToLab(PROOF_PAPER);
+  const H = 36, Lb = 21, max = Array.from({ length: H }, () => new Float32Array(Lb));
+  let minL = 100;
+  const steps = Array.from({ length: 21 }, (_, i) => (i / 20) ** 2); // dense at light coverage, where tints live
+  for (const k of [0, 0.25, 0.5, 0.75]) for (const c of steps) for (const m of steps) for (const y of steps) {
+    const rgb = PROOF_PAPER.map((p, i) => p * PROOF_INKS.c[i] ** c * PROOF_INKS.m[i] ** m * PROOF_INKS.y[i] ** y * PROOF_INKS.k[i] ** k);
+    let [L, a, b] = _rgbToLab(rgb);
+    minL = Math.min(minL, L);
+    // measured relative to the paper's own tint, which cmykProof adds back
+    const w = Math.max(0, (L - 16) / (_paperLab[0] - 16)) ** 2;
+    a -= _paperLab[1] * w; b -= _paperLab[2] * w;
+    const C = Math.hypot(a, b), h = ((Math.atan2(b, a) * 180 / Math.PI) + 360) % 360;
+    const hi = Math.floor(h / 10) % H, li = Math.min(Lb - 1, Math.round(L / 5));
+    if (C > max[hi][li]) max[hi][li] = C;
+  }
+  // a hue with no samples borrows from its neighbours
+  for (let i = 0; i < H; i++) if (!max[i].some(v => v > 0)) {
+    const p = max[(i + H - 1) % H], n = max[(i + 1) % H];
+    for (let j = 0; j < Lb; j++) max[i][j] = (p[j] + n[j]) / 2;
+  }
+  // smooth holes inside each hue's lightness range
+  for (const row of max) {
+    const idx = [...row.keys()].filter(i => row[i] > 0);
+    for (let i = idx[0]; i < idx[idx.length - 1]; i++) {
+      if (row[i] > 0) continue;
+      const lo = idx.filter(j => j < i).pop(), hi = idx.find(j => j > i);
+      row[i] = row[lo] + (row[hi] - row[lo]) * (i - lo) / (hi - lo);
+    }
+  }
+  _cusp = max.map(row => { let bi = 0; row.forEach((v, i) => { if (v > row[bi]) bi = i; }); return bi * 5; });
+  _inkBlackL = Math.max(minL, 16); // real rich black on coated stock is around L 16
+  _gamut = max;
+}
+function _maxChroma(h, L) {
+  const hf = h / 10, h0 = Math.floor(hf) % 36, h1 = (h0 + 1) % 36, t = hf - Math.floor(hf);
+  const lf = Math.max(0, Math.min(20, L / 5)), l0 = Math.floor(lf), l1 = Math.min(20, l0 + 1), u = lf - l0;
+  const at = hb => _gamut[hb][l0] * (1 - u) + _gamut[hb][l1] * u;
+  return at(h0) * (1 - t) + at(h1) * t;
+}
+const _proofCache = new Map();
+function cmykProof(color) {
+  if (!/^#[0-9a-f]{6}$/i.test(color)) return color;
+  const hit = _proofCache.get(color);
+  if (hit) return hit;
+  if (!_gamut) _buildGamut();
+  const [L0, a, b] = _rgbToLab(hexToRgbTuple(color));
+  const Lp = _paperLab[0];
+  let L = _inkBlackL + (L0 / 100) * (Lp - _inkBlackL); // ink black → paper white
+  let C = Math.hypot(a, b);
+  const h = ((Math.atan2(b, a) * 180 / Math.PI) + 360) % 360;
+  const maxHere = _maxChroma(h, L);
+  if (C > 3 && C > maxHere + 1.5 && (maxHere >= C * 0.7 || C < 25)) {
+    // just outside, or a soft tint (presses hold light tints better than this
+    // simple ink model predicts): keep the lightness, ease the chroma in
+    C = Math.max(maxHere, C < 25 ? C * 0.8 : 0);
+  } else if (C > 3 && C > maxHere + 1.5) { // greys and near-greys always print
+    // far outside (neons): slide toward the hue's cusp, its richest printable
+    // colour, until it fits — darker but still saturated, as on press
+    const Lc = _cusp[Math.round(h / 10) % 36], Cc = _maxChroma(h, Lc) * 0.98;
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 18; i++) {
+      const t = (lo + hi) / 2;
+      if (C + (Cc - C) * t <= _maxChroma(h, L + (Lc - L) * t)) hi = t; else lo = t;
+    }
+    // move at most 12 L toward the cusp (big jumps read as a different colour), then fit chroma there
+    const L2 = L + Math.max(-12, Math.min(12, (Lc - L) * hi));
+    C = Math.min(C + (Cc - C) * hi, _maxChroma(h, L2)); L = L2;
+  }
+  const w = Math.max(0, (L - 16) / (Lp - 16)) ** 2; // paper tint shows most in light colours (same weight as _buildGamut)
+  const hr = h * Math.PI / 180;
+  const out = _labToRgb([L, C * Math.cos(hr) + _paperLab[1] * w, C * Math.sin(hr) + _paperLab[2] * w]);
+  const hex = '#' + out.map(v => v.toString(16).padStart(2, '0')).join('');
+  if (_proofCache.size > 20000) _proofCache.clear(); // the colour field can mint thousands
+  _proofCache.set(color, hex);
+  return hex;
+}
+
 // A heads-up while picking, once a new ink would use up the budget.
 function inkPickNote(hex) {
-  if (!S.paper || !_newInks(hex).size) return;
+  if (!isRiso() || !_newInks(hex).size) return;
   const n = usedRisoInks().size + 1, left = RISO_MAX_INKS - n, name = nearestRisoInk(hex).name;
   if (left === 0) showHint(`Riso ${name} will be your last ink (${n} of ${RISO_MAX_INKS})`);
   else if (left === 1) showHint(`Riso ${name} will be ink ${n} of ${RISO_MAX_INKS}. One more left after it`);
@@ -4774,7 +4915,7 @@ function inkPickNote(hex) {
 // Toolbar-icon tooltips: hex on screen, print-relevant values on paper —
 // no manual format toggle needed, it just follows the current canvas.
 function formatColor(hex) {
-  return S.paper ? `${hexToCmykLabel(hex)} · ${hexToRisoLabel(hex)}` : hex;
+  return isRiso() ? `${hexToCmykLabel(hex)} · ${hexToRisoLabel(hex)}` : S.paper ? hexToCmykLabel(hex) : hex;
 }
 function refreshColorLabels() {
   const weaveBtn = document.getElementById('weave-icon-btn');
@@ -5481,6 +5622,7 @@ function saveProject() {
     cols: S.cols,
     rows: S.rows,
     paper: S.paper,
+    printMode: S.printMode,
     showBorder: S.showBorder,
     savedAt: Date.now(),
   };
@@ -5519,6 +5661,7 @@ function loadProject(idx) {
   S.cols = project.cols;
   S.rows = project.rows;
   S.paper = !!project.paper;
+  if (project.printMode) S.printMode = project.printMode;
   S.showBorder = project.showBorder !== false;
   S.activeProjectIdx = idx;
   document.body.classList.toggle('paper-mode', S.paper);
