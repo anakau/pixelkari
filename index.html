@@ -1661,7 +1661,7 @@
       <div class="motion-stage"><canvas id="motion-canvas"></canvas></div>
       <div class="motion-styles">
         <button type="button" class="motion-style" data-style="timelapse" onclick="setMotionStyle('timelapse')"><span class="motion-style-name">Timelapse</span><span class="motion-style-desc">Replays your piece in the order you made it</span></button>
-        <button type="button" class="motion-style" data-style="dance" onclick="setMotionStyle('dance')"><span class="motion-style-name">Colour dance</span><span class="motion-style-desc">Thread colours flow into one another</span></button>
+        <button type="button" class="motion-style" data-style="dance" onclick="setMotionStyle('dance')"><span class="motion-style-name">Colour dance</span><span class="motion-style-desc">Pattern colours swap and twinkle</span></button>
       </div>
       <div class="motion-foot">
         <span class="motion-meta" id="motion-meta"></span>
@@ -6477,6 +6477,73 @@ function _prepareMotion() {
   MOTION.lineSteps = F.lines.map(l => l.seq !== undefined ? stepOf.get(l.seq) : n++);
   MOTION.textSteps = F.texts.map(t => t.seq !== undefined ? stepOf.get(t.seq) : n++);
   MOTION.steps = Math.max(1, n);
+  _prepareTwinkle();
+}
+
+// Colour dance = a twinkle. It finds the design's colour patterns — which
+// colours sit next to each other — and makes each patch of pattern blink
+// by swapping those partner colours for a beat, while single triangles
+// glint like catching thread. All hard steps, no gradients. A colour that
+// covers most of the canvas (the cloth / background) stays still.
+const TWINKLE_BEATS = 12;   // swap beats per loop (one every half second)
+const TWINKLE_GLINT = 30;   // a triangle glints once every 30 frames (2s)
+function _hash(n) { n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); return ((n ^ (n >>> 16)) >>> 0) / 4294967296; }
+function _prepareTwinkle() {
+  const tris = MOTION.tris, at = new Map(tris.map(p => [`${p.c},${p.r},${p.tri}`, p]));
+  const neighbours = p => {
+    const { c, r, tri } = p, k = [];
+    if (tri === 't') k.push(`${c},${r - 1},b`, `${c},${r},l`, `${c},${r},r`);
+    if (tri === 'b') k.push(`${c},${r + 1},t`, `${c},${r},l`, `${c},${r},r`);
+    if (tri === 'l') k.push(`${c - 1},${r},r`, `${c},${r},t`, `${c},${r},b`);
+    if (tri === 'r') k.push(`${c + 1},${r},l`, `${c},${r},t`, `${c},${r},b`);
+    return k.map(x => at.get(x)).filter(Boolean);
+  };
+  // background: a colour on more than 40% of the triangles
+  const count = new Map();
+  tris.forEach(p => count.set(p.color, (count.get(p.color) || 0) + 1));
+  const [topColor, topN] = [...count].sort((a, b) => b[1] - a[1])[0] || [];
+  const bg = tris.length > 50 && topN / tris.length > 0.4 ? topColor : null;
+  // partner colour: the one each colour touches most (ignoring the background)
+  const touch = new Map();
+  for (const p of tris) {
+    if (p.color === bg) continue;
+    for (const q of neighbours(p)) {
+      if (q.color === p.color || q.color === bg) continue;
+      const m = touch.get(p.color) || new Map();
+      m.set(q.color, (m.get(q.color) || 0) + 1);
+      touch.set(p.color, m);
+    }
+  }
+  const fg = MOTION.colors.filter(c => c !== bg);
+  const partner = new Map(fg.map((c, i) => {
+    const m = touch.get(c);
+    if (m) return [c, [...m].sort((a, b) => b[1] - a[1])[0][0]];
+    return [c, fg.length > 1 ? fg[(i + 1) % fg.length] : _mixHex(c, '#FFFFFF', 0.55)]; // a loner swaps with the next thread
+  }));
+  // patches: connected pattern (background breaks it), cut into 6×6-cell tiles
+  // so a big motif twinkles in places rather than all at once
+  let id = 0;
+  const patchOf = new Map();
+  for (const p of tris) {
+    if (p.color === bg || patchOf.has(p)) continue;
+    const comp = id++, stack = [p];
+    patchOf.set(p, comp);
+    while (stack.length) for (const q of neighbours(stack.pop())) {
+      if (q.color === bg || patchOf.has(q)) continue;
+      patchOf.set(q, comp); stack.push(q);
+    }
+  }
+  for (const p of tris) {
+    const seed = Math.floor(_hash((p.c * 73856093) ^ (p.r * 19349663)) * 1e9);
+    p.glint = Math.floor(_hash(seed + 7) * TWINKLE_GLINT);
+    if (p.color === bg) { p.beats = null; continue; }
+    const patch = patchOf.get(p) * 1000003 + Math.floor(p.c / 6) * 1009 + Math.floor(p.r / 6);
+    // each patch blinks on 2 or 3 of the 12 beats, never two beats running
+    const b0 = Math.floor(_hash(patch) * TWINKLE_BEATS), n = 2 + (_hash(patch + 1) > 0.5);
+    p.beats = new Set(Array.from({ length: n }, (_, i) => (b0 + Math.round(i * TWINKLE_BEATS / n)) % TWINKLE_BEATS));
+    p.swap = partner.get(p.color);
+    p.shine = _mixHex(p.color, '#FFFFFF', 0.6);
+  }
 }
 
 function _mixHex(a, b, f) {
@@ -6557,15 +6624,15 @@ function drawMotionFrame(g, k, style, t) {
       g.globalAlpha = f; drawTextObj(tx, g); g.globalAlpha = 1;
     });
     linesDrawn = true; overlayAlpha = 0;
-  } else { // dance
-    const K = MOTION.colors.length;
+  } else { // dance — a twinkle (see _prepareTwinkle)
+    const st = MOTION_STYLES.dance;
+    const beat = Math.floor(t * TWINKLE_BEATS) % TWINKLE_BEATS;
+    const frame = Math.floor(t * st.secs * st.fps) % TWINKLE_GLINT;
     for (const p of MOTION.tris) {
-      if (K < 2) { _fillTri(g, p.v, p.color); continue; }
-      // Each thread eases into its neighbouring colour and back once per
-      // loop (not round the whole palette), offset along a soft diagonal
-      // wave — calm rather than strobing, and seamless since it returns.
-      const pos = (p.ci + 0.5 - 0.5 * Math.cos(2 * Math.PI * (t - p.diag * 0.6))) % K, i = Math.floor(pos);
-      _fillTri(g, p.v, _mixHex(MOTION.colors[i], MOTION.colors[(i + 1) % K], pos - i));
+      let col = p.color;
+      if (p.beats && p.beats.has(beat)) col = p.swap;           // the patch blinks into its partner colours
+      else if (p.beats && frame === p.glint) col = p.shine;     // a single-frame glint
+      _fillTri(g, p.v, col);
     }
   }
 
