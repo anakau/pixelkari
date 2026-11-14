@@ -6,7 +6,6 @@
   <title>Pixelkari</title>
   <link rel="icon" type="image/png" href="public/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600&display=swap" rel="stylesheet">
   <!-- Fonts offered by the Text tool -->
   <link href="https://fonts.googleapis.com/css2?family=Baloo+Paaji+2:wght@600&family=Anek+Gurmukhi:wght@600&family=Mukta+Mahee:wght@600&family=Noto+Serif+Gurmukhi:wght@600&display=swap" rel="stylesheet">
   <!-- Cloudflare Web Analytics -->
@@ -29,11 +28,10 @@
       --bar-bottom: 10px;               /* bottom bar's gap from the window edge */
     }
     html, body { width: 100%; height: 100%; background: var(--bg); overflow: hidden; overscroll-behavior: none; }
-    /* The interface is Arial, regular weight, throughout. (Bricolage is still
-       loaded above, but only for artwork: the Text tool's Grotesque face and
-       the Pixelkari logo stamp.) */
+    /* The interface and the Pixelkari logo stamp are Arial, regular weight,
+       throughout. Canvas text uses ABC Areal or the Gurmukhi faces above. */
     :root { --font-body: Arial, 'Helvetica Neue', Helvetica, sans-serif; --font-display: var(--font-body); }
-    body, body *:not(.text-font-opt):not(.tlb-mark) { font-weight: 400 !important; }
+    body, body *:not(.text-font-opt) { font-weight: 400 !important; }
     #story-page, #story-page * { font-family: var(--font-body); }
     body { font-family: var(--font-body); color: var(--text); font-size: 14px; -webkit-tap-highlight-color: transparent; }
     ::selection { background: #D4A827; color: #0d0d0d; }
@@ -244,11 +242,9 @@
       color: #ddd; font-size: 11px; padding: 6px; cursor: pointer; font-family: var(--font-body); transition: background 0.12s, color 0.12s;
     }
     .text-logo-btn:hover { background: rgba(255,255,255,0.12); color: var(--accent); }
-    .tlb-mark {
-      display: inline-flex; align-items: center; background: #000; color: #fff; padding: 3px 5px;
-      font-family: var(--font-display); font-weight: 600; font-size: 10px; letter-spacing: 0.06em; line-height: 1;
-    }
-    .tlb-mark svg { height: 0.72em; width: 0.66em; fill: currentColor; margin: 0 0.02em; }
+    .tlb-mark { display: inline-flex; align-items: center; background: #111; padding: 4px 6px; line-height: 1; }
+    .tlb-mark .logo-title { font-size: 13px !important; }
+    .tlb-mark .logo-title .logo-i { color: #fff; } /* white even in light mode — it sits on the dark box */
     #text-icon-btn {
       --tilt: 4deg; height: 68px; display: flex; align-items: center; justify-content: center;
       gap: 1px; font-weight: 600; font-size: 38px; color: #cfcfcf; line-height: 1;
@@ -3690,7 +3686,7 @@ function _buildSeparationCanvas(hexes, EW, EH, spread) {
     }
   }, spread, ec => {
     for (const l of F.lines) if (hexes.has(l.color)) drawLine({ ...l, color: '#000' }, ec);
-    for (const t of F.texts) if (hexes.has(t.color)) drawTextObj({ ...t, color: '#000' }, ec);
+    for (const t of F.texts) if (hexes.has(t.color)) drawTextObj({ ...t, color: '#000', mono: true }, ec);
   });
 }
 
@@ -3704,7 +3700,7 @@ function _buildLayerPlateCanvas(L, EW, EH) {
       drawTriangle(+parts[0], +parts[1], parts[2], '#000', ec);
     }
     for (const l of L.lines) drawLine({ ...l, color: '#000' }, ec);
-    for (const t of L.texts) drawTextObj({ ...t, color: '#000' }, ec);
+    for (const t of L.texts) drawTextObj({ ...t, color: '#000', mono: true }, ec);
   });
 }
 
@@ -5949,41 +5945,48 @@ function _textLineStep(t) {
   return t.size + Math.max(g, Math.ceil(t.size * 0.5 / g) * g);
 }
 
-// The Pixelkari wordmark as a text-layer object: white letters (with the
-// hourglass X, as in the site logo) on a tight black box. Its colours are
-// fixed; t.color is '#000000' so riso exports put the box on the black
-// plate with the letters knocked out to paper.
-const LOGO_PAD_X = 0.32, LOGO_PAD_Y = 0.26, LOGO_TRACK = 0.06; // in em
+// The Pixelkari wordmark as a stamp: the same lowercase Arial "pi⧗elkari"
+// as the site logo — pink letters, yellow x triangles, white i's, cobalt e,
+// green a — on a tight near-black box. Its colours are fixed; t.color is
+// '#000000' so a riso plate (t.mono) prints the box in black with the
+// letters knocked out to paper.
+const LOGO_PAD_X = 0.3, LOGO_PAD_Y = 0.22, LOGO_TRACK = 0.02; // in em
+const LOGO_BOX = '#111111', LOGO_X_FILL = '#D4A827';
+const LOGO_GLYPHS = [['p', '#E91E8C'], ['i', '#FFFFFF'], ['x', null], ['e', '#4D8DFF'], ['l', '#E91E8C'],
+                     ['k', '#E91E8C'], ['a', '#4CBB17'], ['r', '#E91E8C'], ['i', '#FFFFFF']];
+function _logoFont(em) { return `400 ${em}px Arial, "Helvetica Neue", Helvetica, sans-serif`; }
 function _logoLayout(t, scale, g = ctx) {
   const em = t.size * scale;
   g.save();
-  g.font = `600 ${em}px "Bricolage Grotesque", sans-serif`;
-  const capH = g.measureText('H').actualBoundingBoxAscent || em * 0.72;
-  const glyphs = [...'PI', 'X', ...'ELKARI'].map(ch => ({ ch, w: ch === 'X' ? capH * 0.92 : g.measureText(ch).width }));
+  g.font = _logoFont(em);
+  const asc = g.measureText('k').actualBoundingBoxAscent || em * 0.72;
+  const desc = g.measureText('p').actualBoundingBoxDescent || em * 0.21;
+  const glyphs = LOGO_GLYPHS.map(([ch, color]) => ({ ch, color, w: ch === 'x' ? em * 0.54 : g.measureText(ch).width }));
   g.restore();
   const track = em * LOGO_TRACK;
   const textW = glyphs.reduce((a, gl) => a + gl.w, 0) + track * (glyphs.length - 1);
-  return { em, capH, glyphs, track, w: textW + 2 * em * LOGO_PAD_X, h: capH + 2 * em * LOGO_PAD_Y };
+  return { em, asc, desc, glyphs, track, w: textW + 2 * em * LOGO_PAD_X, h: asc + desc + 2 * em * LOGO_PAD_Y };
 }
 function drawLogoObj(t, g, scale, ox, oy) {
   const L = _logoLayout(t, scale, g);
   const x0 = ox + t.col * scale, y0 = oy + t.row * scale;
   g.save();
-  g.fillStyle = '#000';
+  g.fillStyle = t.mono ? '#000' : LOGO_BOX;
   g.fillRect(x0, y0, L.w, L.h);
-  g.fillStyle = '#fff';
-  g.font = `600 ${L.em}px "Bricolage Grotesque", sans-serif`;
+  g.font = _logoFont(L.em);
   g.textBaseline = 'alphabetic';
   let x = x0 + L.em * LOGO_PAD_X;
-  const base = y0 + L.em * LOGO_PAD_Y + L.capH;
+  const base = y0 + L.em * LOGO_PAD_Y + L.asc;
   for (const gl of L.glyphs) {
-    if (gl.ch === 'X') { // ▼ over ▲, tips meeting at the middle of the cap height
-      const top = base - L.capH, mid = base - L.capH / 2;
+    if (gl.ch === 'x') { // the bowtie: ▼ over ▲ at x-height, tips meeting in the middle
+      const s = L.em * 0.5, left = x + (gl.w - s) / 2, top = base - s, mid = base - s / 2;
+      g.fillStyle = t.mono ? '#fff' : LOGO_X_FILL;
       g.beginPath();
-      g.moveTo(x, top); g.lineTo(x + gl.w, top); g.lineTo(x + gl.w / 2, mid); g.closePath();
-      g.moveTo(x, base); g.lineTo(x + gl.w, base); g.lineTo(x + gl.w / 2, mid); g.closePath();
+      g.moveTo(left, top); g.lineTo(left + s, top); g.lineTo(left + s / 2, mid); g.closePath();
+      g.moveTo(left, base); g.lineTo(left + s, base); g.lineTo(left + s / 2, mid); g.closePath();
       g.fill();
     } else {
+      g.fillStyle = t.mono ? '#fff' : gl.color;
       g.fillText(gl.ch, x, base);
     }
     x += gl.w + L.track;
@@ -6174,7 +6177,7 @@ function initTextPopup() {
       `<button type="button" class="text-swatch" data-color="${hex}" style="background:${hex}" aria-label="${hex}"></button>`).join('')}</div>
     <span class="text-hint" id="text-hint"></span>
     <button type="button" class="text-logo-btn" id="text-logo-btn" onclick="addLogoText()">
-      <span class="tlb-mark">PI<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg>ELKARI</span>
+      <span class="tlb-mark"><span class="logo-title">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span>lk<span class="logo-a">a</span>r<span class="logo-i">i</span></span></span>
       Add Pixelkari logo
     </button>
     <button type="button" class="text-del-btn" id="text-del-btn" onclick="deleteSelectedText()">Delete text</button>
@@ -6199,7 +6202,7 @@ function initTextPopup() {
 // it can be resized (− / +), dragged or deleted like any text.
 function addLogoText() {
   snap();
-  const t = { logo: true, text: 'PIXELKARI', size: 3, color: '#000000', font: 'Bricolage Grotesque' };
+  const t = { logo: true, text: 'pixelkari', size: 3, color: '#000000', font: 'Arial' };
   const L = _logoLayout(t, CELL);
   t.col = (S.cols * CELL - L.w) / 2 / CELL;
   t.row = (S.rows * CELL - L.h) / 2 / CELL;
