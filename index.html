@@ -4298,14 +4298,22 @@ function initCustomColorPicker() {
   // canvas (a print run can only actually reproduce real ink colours).
   // Paper only: how many of the riso inks the design uses, with the colour
   // being picked shown as a dashed dot when it would add a new one.
+  const inkLimitRow = document.createElement('div');
+  inkLimitRow.className = 'cp-value-row';
+  inkLimitRow.innerHTML = `<span class="cp-value-lbl" style="width:auto;">Max inks</span>
+    <div style="display:flex;gap:4px;margin-left:auto;">${[4, 5, 6].map(n =>
+      `<button type="button" class="cp-dash-btn" data-inks="${n}" onclick="setRisoMaxInks(${n})">${n}</button>`).join('')}</div>`;
+  left.appendChild(inkLimitRow);
   const inkMeter = document.createElement('div');
   inkMeter.className = 'ink-meter';
   left.appendChild(inkMeter);
   function renderInkMeter() {
-    inkMeter.style.display = S.paper ? '' : 'none';
+    inkMeter.style.display = inkLimitRow.style.display = S.paper ? '' : 'none';
     if (!S.paper) return;
+    inkLimitRow.querySelectorAll('[data-inks]').forEach(b => b.classList.toggle('on', +b.dataset.inks === RISO_MAX_INKS));
     const used = [...usedRisoInks()];
-    const pending = [..._newInks(currentHexFor(cpTarget))];
+    const cur = currentHexFor(cpTarget);
+    const pending = inkFits(cur) ? [..._newInks(cur)] : []; // a colour that can't be added isn't counted
     const n = used.length + pending.length, left = RISO_MAX_INKS - n;
     const hexOf = name => RISO_INKS.find(i => i.name === name).hex;
     let dots = '';
@@ -4314,7 +4322,7 @@ function initCustomColorPicker() {
       else if (i === used.length && pending.length && left >= 0) dots += `<span class="im-dot next" title="Riso ${pending[0]} (new)" style="background:${hexOf(pending[0])}"></span>`;
       else dots += '<span class="im-dot"></span>';
     }
-    const note = left < 0 ? 'over limit' : left === 0 ? 'last ink' : `${left} left`;
+    const note = left < 0 ? 'over limit' : left === 0 ? (pending.length ? 'last ink' : 'full') : `${left} left`;
     inkMeter.innerHTML = `<span class="cp-section-label" style="margin:0 4px 0 0">Inks</span>${dots}<span class="im-txt">${n}/${RISO_MAX_INKS} · ${note}</span>`;
     inkMeter.classList.toggle('warn', left <= 1);
   }
@@ -4525,7 +4533,7 @@ function initCustomColorPicker() {
   }
   window._cpRefreshValues = () => updateValueDisplays(currentHexFor(cpTarget));
   // after edits: recount inks and re-dim swatches (only while the popup is open)
-  window._cpRefreshInks = () => { if (popup.classList.contains('on')) { renderInkMeter(); renderSwatchSection(cpTarget); } };
+  window._cpRefreshInks = () => { if (popup.classList.contains('on') && S.paper) { renderInkMeter(); renderSwatchSection(cpTarget); } };
 
   function positionPopup() {
     const btn = document.getElementById(`${cpTarget}-icon-btn`);
@@ -4708,10 +4716,20 @@ function hexToRisoLabel(hex) { return `Riso ${nearestRisoInk(hex).name}`; }
 
 // ── Riso ink budget ──
 // Each riso ink is its own plate and its own pass through the machine, so a
-// paper design is capped at RISO_MAX_INKS drums. Colours count by their
+// paper design is capped at RISO_MAX_INKS drums (4–6, chosen in the colour
+// popup and remembered). Colours count by their
 // nearest drum (two reds that both print as Bright Red are one ink). All
 // layers count, hidden ones too, so showing a layer can't break the limit.
-const RISO_MAX_INKS = 4;
+let RISO_MAX_INKS = 4;
+try { const n = +localStorage.getItem('pkRisoInks'); if (n >= 4 && n <= 6) RISO_MAX_INKS = n; } catch (e) {}
+function setRisoMaxInks(n) {
+  RISO_MAX_INKS = n;
+  try { localStorage.setItem('pkRisoInks', n); } catch (e) {}
+  if (window._cpRefreshInks) window._cpRefreshInks();
+  syncTextPopup();
+  const left = RISO_MAX_INKS - usedRisoInks().size;
+  showHint(left < 0 ? `Max ${n} inks. Your design uses ${usedRisoInks().size}, so remove ${-left} before adding new ones` : `Max ${n} riso inks`);
+}
 let _inkCache = null; // reset on every render, i.e. after any change
 function usedRisoInks() {
   if (_inkCache) return _inkCache;
