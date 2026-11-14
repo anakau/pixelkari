@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600&display=swap" rel="stylesheet">
   <!-- Fonts offered by the Text tool -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Space+Mono:wght@700&family=Caveat:wght@600&family=Bungee&family=Pixelify+Sans:wght@500&family=Baloo+Paaji+2:wght@600&family=Anek+Gurmukhi:wght@600&family=Mukta+Mahee:wght@600&family=Noto+Serif+Gurmukhi:wght@600&family=Rozha+One&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+Paaji+2:wght@600&family=Anek+Gurmukhi:wght@600&family=Mukta+Mahee:wght@600&family=Noto+Serif+Gurmukhi:wght@600&display=swap" rel="stylesheet">
   <!-- Cloudflare Web Analytics -->
   <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "25fd5bd2cd284ab3b267f5e113b3f55e"}'></script>
   <!-- End Cloudflare Web Analytics -->
@@ -16,6 +16,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
+    @font-face { font-family: 'ABC Areal'; src: url('public/fonts/ABCAreal-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #111; --bar: #181818; --border: rgba(255,255,255,0.08);
@@ -33,7 +34,6 @@
        the Pixelkari logo stamp.) */
     :root { --font-body: Arial, 'Helvetica Neue', Helvetica, sans-serif; --font-display: var(--font-body); }
     body, body *:not(.text-font-opt):not(.tlb-mark) { font-weight: 400 !important; }
-    .logo-sub { font-family: var(--font-display); }
     #story-page, #story-page * { font-family: var(--font-body); }
     body { font-family: var(--font-body); color: var(--text); font-size: 14px; -webkit-tap-highlight-color: transparent; }
     ::selection { background: #D4A827; color: #0d0d0d; }
@@ -114,9 +114,6 @@
     /* #motif-panel already contributes 8px of its own right padding before
        this divider, so trim the divider's left margin by that much to keep
        the gap on both sides equal to the other dividers' plain 14px. */
-    .bb-divider-flush-left { margin-left: 6px; }
-    .bb-group   { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-    .bb-label   { font-size: 10px; font-weight: 400; letter-spacing: 0.01em; color: var(--muted); margin-right: 6px; white-space: nowrap; }
 
     /* tool / sym buttons */
     .tbtn {
@@ -127,7 +124,6 @@
     }
     .tbtn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
     .tbtn.on { background: var(--accent); color: #111; }
-    .tool-emoji { font-size: 15px; margin-right: 5px; vertical-align: middle; line-height: 1; }
 
     /* symmetry icon buttons */
     .sym-btn {
@@ -182,13 +178,6 @@
     }
     .chk-btn:hover { background: rgba(255,255,255,0.10); color: var(--text); }
     .chk-btn.on { color: var(--text); }
-    .chk-box {
-      width: 13px; height: 13px; border-radius: 6px; border: 1.5px solid var(--muted);
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.12s;
-    }
-    .chk-btn.on .chk-box { background: var(--accent); border-color: var(--accent); }
-    .chk-box svg { opacity: 0; transition: opacity 0.1s; }
-    .chk-btn.on .chk-box svg { opacity: 1; }
     .nav-block { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
     .nav-row   { display: flex; gap: 3px; }
     .preset-select {
@@ -204,17 +193,7 @@
     }
     .orient-btn.on { background: var(--accent) !important; color: #111 !important; }
 
-    .tool-row { display: flex; align-items: center; gap: 3px; }
-
     .bb-color-col { display: flex; align-items: center; gap: 8px; flex-shrink: 0; overflow: visible; }
-    .color-wheel-btn {
-      width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.12);
-      background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
-      cursor: pointer; flex-shrink: 0; padding: 0; transition: border-color 0.15s, transform 0.15s;
-      align-self: flex-end; margin-bottom: 18px;
-    }
-    .color-wheel-btn:hover { border-color: rgba(255,255,255,0.5); transform: scale(1.1); }
-    .color-wheel-btn.on { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
     /* Landscape layout: swatches/values on the left, spectrum on the right —
        matches how a colour is actually chosen (broad picks first, fine-tune
        on the right), and reads better as a wide bar than a tall column. */
@@ -274,7 +253,7 @@
       --tilt: 4deg; height: 68px; display: flex; align-items: center; justify-content: center;
       gap: 1px; font-weight: 600; font-size: 38px; color: #cfcfcf; line-height: 1;
     }
-    #text-icon-btn .ti-en { font-family: 'Playfair Display', serif; }
+    #text-icon-btn .ti-en { font-family: 'ABC Areal', Arial, sans-serif; }
     #text-icon-btn .ti-pa { font-family: 'Baloo Paaji 2', sans-serif; transform: translateY(3px); }
     .cp-popup-title {
       position: absolute; top: 10px; left: 12px;
@@ -368,7 +347,6 @@
     }
     #weave-icon-btn  { --tilt: -6deg; }
     #stitch-icon-btn { --tilt: 6deg; }
-    #cut-icon-btn    { --tilt: -5deg; }
     .tool-icon-btn:hover { transform: rotate(calc(var(--tilt) + var(--tilt-hover))) translateY(-4px); }
     .tool-icon-btn.on { transform: rotate(var(--tilt)) translateY(-6px); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7)); }
     .tool-icon-btn.on + .spool-lbl { color: #fff; }
@@ -382,7 +360,6 @@
     .cp-season-lbl .cp-season-pa { color: var(--text); }
     .cp-season-lbl .cp-season-en { color: var(--muted); }
     .cp-season-bases { display: flex; gap: 4px; }
-
 
     /* icon buttons */
     .icon-btn {
@@ -399,7 +376,6 @@
     .fit-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
     .fit-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
     .fit-btn.danger { color: #c46060; }
-    .zoom-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.1); margin: 0 4px; flex-shrink: 0; }
     .zoom-lbl { font-size: 13px; font-family: var(--font-body); color: var(--muted); min-width: 34px; text-align: center; flex-shrink: 0; }
 
     /* toggle */
@@ -415,16 +391,6 @@
     .toggle.on::after { transform: translateX(14px); }
 
     /* action buttons */
-    .act-btn {
-      height: 38px; padding: 0 11px; background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
-      color: var(--text); cursor: pointer; font-size: 12px; box-sizing: border-box;
-      font-family: var(--font-body); font-weight: 400;
-      transition: background 0.1s; white-space: nowrap; min-width: 0;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .act-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
-    .act-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
-    .act-btn.danger { color: #c46060; }
 
     /* export button */
     .export-btn {
@@ -508,7 +474,6 @@
     .logo-x { display: inline-block; height: 0.72em; width: 0.66em; fill: currentColor; vertical-align: baseline; margin: 0 0.02em; }
     .logo-title { font-family: var(--font-body); font-size: 20px; font-weight: 400; letter-spacing: 0.02em; text-transform: lowercase; color: var(--accent); line-height: 1; } /* Arial, regular, lowercase */
     .logo-title .logo-x { height: 0.52em; width: 0.5em; } /* the bowtie x at lowercase x-height */
-    .logo-sub   { font-size: 28px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; line-height: 1; margin-top: 3px; }
 
     /* hot tip panel — Billo the mascot + her chat bubble */
     /* the wordmark sits as far from the top of the window as from its side:
@@ -590,7 +555,7 @@
       display: flex; flex-direction: row; align-items: center; gap: 6px;
       padding: 0 8px;
     }
-    .motif-create-btn, .project-create-btn {
+    .motif-create-btn {
       /* !important on height for the same reason it's already on width:
          these also carry the plain .tbtn class for its shared button look,
          and .tbtn's height gets overridden at each responsive breakpoint
@@ -604,8 +569,6 @@
       justify-content: center; gap: 5px;
     }
     .motif-thumb.selected { border-color: var(--accent); }
-    .motif-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 10px; }
-    .motif-panel-label { font-size: 9px; font-weight: 400; letter-spacing: 0.01em; color: var(--muted); }
     .motif-rot-btn { background: rgba(255,255,255,0.05); border: none; color: var(--muted); font-size: 10px; padding: 3px 8px; cursor: pointer; font-family: var(--font-body); letter-spacing: 0.05em; transition: background 0.12s, color 0.12s; white-space: nowrap; }
     .motif-rot-btn:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
     .motif-rot-btn.active { background: var(--accent); color: #111; }
@@ -649,8 +612,8 @@
     #capture-preview-canvas { display: block; image-rendering: pixelated; }
     .cp-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 16px; }
     /* Create Motif / Save Phulkari tooltip */
-    .motif-create-btn, .project-create-btn { position: relative; }
-    .motif-create-btn .mcb-tip, .project-create-btn .mcb-tip {
+    .motif-create-btn { position: relative; }
+    .motif-create-btn .mcb-tip {
       position: absolute; bottom: calc(100% + 10px); left: 50%;
       transform: translateX(-50%); width: 190px;
       background: #000; border: none; border-radius: 10px;
@@ -661,7 +624,7 @@
       text-align: left; z-index: 200;
       letter-spacing: 0.01em; text-transform: none;
     }
-    .motif-create-btn:hover .mcb-tip, .project-create-btn:hover .mcb-tip { opacity: 1; }
+    .motif-create-btn:hover .mcb-tip { opacity: 1; }
 
     .motif-grid { display: flex; flex-direction: row; gap: 6px; overflow-x: auto; align-items: flex-start; flex: 1; }
     .motif-thumb { flex-shrink: 0; width: 60px; }
@@ -679,7 +642,6 @@
       opacity: 0; transition: opacity 0.1s;
     }
     .motif-thumb:hover .m-del { opacity: 1; }
-    .m-lbl { font-size: 8px; color: var(--muted); text-align: center; padding: 2px 0; background: #1c1c1c; font-family: var(--font-body); letter-spacing: 0.06em; }
     .view-all-tile {
       flex-shrink: 0; width: 60px; cursor: pointer;
       border: 1px solid var(--border); overflow: hidden; border-radius: 8px;
@@ -694,11 +656,6 @@
     }
     .view-all-tile svg { color: #444; transition: color 0.12s; }
     .view-all-tile:hover svg { color: #888; }
-    .view-all-tile .va-count {
-      font-size: 8px; font-weight: 600; letter-spacing: 0.1em;
-      text-transform: uppercase; color: #555; transition: color 0.12s; line-height: 1;
-    }
-    .view-all-tile:hover .va-count { color: #aaa; }
     /* ── MOTIF LIBRARY MODAL ── */
     .lib-box {
       background: #000; border: none; border-radius: 16px;
@@ -765,14 +722,6 @@
       text-transform: uppercase; color: var(--muted);
     }
     .finish-head-actions { display: flex; align-items: center; gap: 14px; }
-    .btn-feature {
-      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
-      text-transform: uppercase; text-decoration: none;
-      background: var(--accent); color: #111; border: none; border-radius: 10px;
-      padding: 7px 12px; transition: background 0.12s, color 0.12s;
-      cursor: pointer; font-family: var(--font-body);
-    }
-    .btn-feature:hover { background: #F72585; color: #fff; }
     .finish-close {
       background: none; border: none; border-radius: 8px; color: var(--muted); cursor: pointer;
       font-size: 18px; line-height: 1; padding: 4px 8px;
@@ -801,56 +750,7 @@
     #motion-gif-btn { width: auto; padding-left: 18px; padding-right: 18px; }
     #motion-gif-btn:disabled { opacity: 0.7; cursor: default; }
     .finish-close:hover { color: var(--accent); background: rgba(255,255,255,0.06); }
-    #wallpaper-grid {
-      display: flex; flex-wrap: wrap; gap: 20px;
-      padding: 4px 20px 20px; flex: 1; overflow-y: auto; min-height: 0;
-    }
-    .export-col {
-      flex: 1 1 240px; min-width: 220px; display: flex; flex-direction: column; gap: 6px;
-      background: #0a0a0a; border-radius: 16px; padding: 16px;
-    }
-    .export-col-label {
-      font-size: 10px; font-weight: 600; letter-spacing: 0.14em;
-      text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
-    }
-    .wp-card {
-      padding: 10px 8px; cursor: pointer; transition: background 0.12s;
-      display: flex; align-items: center; gap: 14px; border-radius: 12px;
-    }
-    .wp-card:hover { background: rgba(255,255,255,0.06); }
-    .wp-frame {
-      background: #181818; border-radius: 10px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; overflow: hidden;
-    }
-    .wp-frame-portrait  { width: 30px; height: 54px; }
-    .wp-frame-landscape { width: 76px; height: 48px; }
-    .wp-frame-social    { width: 34px; height: 42px; }
-    .wp-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
-    .wp-info { flex: 1; }
-    .wp-name {
-      font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--text); margin-bottom: 3px;
-      transition: color 0.12s;
-    }
-    .wp-card:hover .wp-name { color: var(--accent); }
-    .wp-dims { font-size: 9px; color: var(--muted); letter-spacing: 0.06em; }
-    .wp-dl { font-size: 17px; color: #444; transition: color 0.12s; flex-shrink: 0; }
-    .wp-card:hover .wp-dl { color: var(--accent); }
-    .riso-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
-    .riso-size-badge {
-      background: rgba(255,255,255,0.06); border-radius: 9px; color: var(--accent);
-      font-size: 10px; font-weight: 600; letter-spacing: 0.06em; padding: 5px 9px;
-    }
     .disabled { opacity: 0.4; pointer-events: none; }
-    .riso-thumbs { display: flex; flex-wrap: wrap; gap: 8px; min-height: 65px; }
-    .riso-thumb { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-    .riso-thumb-frame {
-      width: 50px; height: 70px; background: #fff; border-radius: 9px;
-      overflow: hidden; flex-shrink: 0;
-    }
-    .riso-thumb-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
-    .riso-thumb-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); flex-shrink: 0; }
-    .riso-empty { font-size: 9px; color: var(--muted); letter-spacing: 0.04em; }
     .btn-pri {
       padding: 8px 20px; background: var(--accent); border: none; border-radius: 10px;
       color: #111; cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
@@ -858,13 +758,6 @@
       font-weight: 700; transition: background 0.12s, color 0.12s;
     }
     .btn-pri:hover { background: #F72585; color: #fff; }
-    .btn-sec {
-      padding: 8px 20px; background: rgba(255,255,255,0.06); border: none; border-radius: 10px;
-      color: #ccc; cursor: pointer; font-size: 11px; letter-spacing: 0.08em;
-      text-transform: uppercase; font-family: var(--font-body);
-      font-weight: 700; transition: background 0.12s, color 0.12s;
-    }
-    .btn-sec:hover { background: rgba(255,255,255,0.10); color: var(--accent); }
 
     /* ── INTRO POP-UP ── (what used to be the home page) opens over the tool
        on every visit and from the logo. */
@@ -992,16 +885,6 @@
     .s-section p {
       font-size: 15px; color: #ffffff; line-height: 1.8; margin: 0 0 14px;
     }
-    .s-img {
-      width: 100%; background: #111; border: none;
-      display: flex; align-items: center; justify-content: center;
-      margin: 28px 0;
-    }
-    .s-img.ratio-wide { aspect-ratio: 16/7; }
-    .s-img.ratio-sq   { aspect-ratio: 1; }
-    .s-img span { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #2a2a2a; }
-    .s-img-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 28px 0; }
-    .s-img-pair .s-img { margin: 0; aspect-ratio: 4/3; }
     .s-cta {
       width: 100vw; position: relative; left: 50%; margin-left: -50vw;
       padding: 140px 40px 200px; text-align: center;
@@ -1019,29 +902,6 @@
     .s-footer-link { color: #D4A827; text-decoration: none; }
     .s-footer-link:hover { text-decoration: underline; }
     body.story-open, body.story-open * { cursor: none !important; }
-    #s-wallpaper {
-      position: relative; width: 100%; min-height: 78vh;
-      display: flex; align-items: flex-end; overflow: hidden;
-    }
-    #s-wallpaper > img {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: center 25%; display: block;
-    }
-    #s-wallpaper-overlay {
-      position: absolute; inset: 0;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(13,13,13,0.88) 100%);
-    }
-    #s-wallpaper-hero {
-      position: relative; z-index: 1; width: 100%;
-      max-width: 780px; margin: 0 auto; padding: 0 40px 64px;
-    }
-    #s-wallpaper-credit {
-      position: absolute; bottom: 10px; right: 16px; z-index: 1;
-      font-size: 8px; color: rgba(255,255,255,0.28); letter-spacing: 0.05em;
-      font-family: var(--font-body); line-height: 1.5;
-    }
-    #s-wallpaper-credit a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
-    #s-wallpaper-credit a:hover { color: rgba(255,255,255,0.65); }
     .s-photo-expandable { position: relative; cursor: zoom-in !important; }
     .s-photo-expandable img { display: block; width: 100%; transition: opacity 0.15s; }
     .s-photo-expandable:hover img { opacity: 0.88; }
@@ -1085,26 +945,22 @@
       :root { --bar-h: 120px; --hdr-h: 32px; }
       #bottombar { padding: 0 14px 18px; }
       .tbtn    { height: 32px; padding: 0 10px; font-size: 12px; }
-      .act-btn { height: 32px; padding: 0 9px; font-size: 12px; }
       .sym-btn { height: 32px; }
       .chk-btn { height: 32px; padding: 0 8px; font-size: 12px; }
       .icon-btn { width: 26px; height: 26px; font-size: 12px; }
       .zoom-lbl { font-size: 12px; }
       .bb-divider { margin: 0 10px; }
       .logo-title { font-size: 18px; letter-spacing: 0.02em; }
-      .logo-sub   { font-size: 24px; }
       .export-btn { height: 32px; padding: 0 11px; font-size: 11px; letter-spacing: 0.04em; }
       .motif-create-btn { width: 60px !important; }
     }
     @media (max-width: 1200px) {
       :root { --bar-h: 110px; --hdr-h: 30px; }
       .tbtn    { height: 30px; padding: 0 9px; font-size: 12px; }
-      .act-btn { height: 30px; padding: 0 8px; }
       .sym-btn { height: 30px; }
       .chk-btn { height: 30px; padding: 0 7px; }
       .bb-divider { margin: 0 8px; }
       .logo-title { font-size: 16px; letter-spacing: 0.02em; }
-      .logo-sub   { font-size: 20px; }
       .export-btn { height: 30px; padding: 0 10px; font-size: 10px; letter-spacing: 0.04em; }
       .motif-create-btn { width: 60px !important; }
     }
@@ -1112,14 +968,12 @@
       :root { --bar-h: 96px; --hdr-h: 28px; }
       #bottombar { padding: 0 10px 14px; }
       .tbtn    { height: 27px; padding: 0 7px; font-size: 11px; }
-      .act-btn { height: 27px; padding: 0 7px; font-size: 11px; }
       .sym-btn { height: 27px; }
       .chk-btn { height: 27px; padding: 0 6px; font-size: 11px; }
       .icon-btn { width: 22px; height: 22px; font-size: 11px; }
       .zoom-lbl { font-size: 11px; min-width: 26px; }
       .bb-divider { margin: 0 7px; height: 20px; }
       .logo-title { font-size: 14px; letter-spacing: 0.02em; }
-      .logo-sub   { font-size: 16px; }
       .export-btn { height: 27px; padding: 0 8px; font-size: 9px; letter-spacing: 0.04em; }
       .motif-create-btn { width: 60px !important; }
     }
@@ -1150,7 +1004,7 @@
         -webkit-overflow-scrolling: touch; scrollbar-width: none;
       }
       #bb-tools::-webkit-scrollbar { display: none; }
-      .logo-title, .logo-sub { font-size: 14px; }
+      .logo-title { font-size: 14px; }
       /* Billo's speech-bubble panel floats above the bottom bar and, in
          portrait at this width, has nowhere to sit without overlapping the
          toolbar or the canvas — hidden here, restored below for landscape
@@ -1176,7 +1030,7 @@
     @media (max-width: 560px) {
       :root { --hdr-h: 26px; }
       .page-header { height: 50px; padding: 0 10px; }
-      .logo-title, .logo-sub { font-size: 13px; }
+      .logo-title { font-size: 13px; }
       .fit-btn span:not(.hover-tip), .page-zoom-row .fit-btn { font-size: 11px; padding: 0 7px; }
       #pan-btn svg { margin-right: 2px; }
       .export-btn { padding: 0 10px; font-size: 10px; }
@@ -1216,7 +1070,7 @@
       display: flex; align-items: center; justify-content: center; padding: 0 6px; box-sizing: border-box;
     }
     .motif-thumb, .view-all-tile { background: #111; }
-    .fit-btn:disabled, .act-btn:disabled { opacity: 1; color: #4a4a4a; }
+    .fit-btn:disabled { opacity: 1; color: #4a4a4a; }
 
     /* ── Uniform spacing ──
        One gap between every button: across the header (zoom & history,
@@ -1283,15 +1137,14 @@
     .page-header .feedback-icon, #bottombar .tbtn, #bottombar .chk-btn, #bottombar .sym-btn, #bottombar .motif-rot-btn,
     .motif-size-val, .spool-lbl, .logo-tip-avatar-slot::after,
     .text-font-opt, .text-logo-btn, .cp-brush-btn, .cp-dash-btn, .saved-row-name, .saved-all-btn,
-    .motion-style-name, .btn-sec, #text-input, .cp-value-input { color: var(--accent); }
+    .motion-style-name, #text-input, .cp-value-input { color: var(--accent); }
     .page-header .fit-btn.danger { color: var(--accent); }
     .page-header .fit-btn:disabled { color: #4a4a4a; }
 
     .page-header .fit-btn:hover, .page-header .icon-btn:hover, .page-header .export-btn.save-btn:hover,
     .page-header .feedback-btn:hover .feedback-icon, #bottombar .tbtn:hover, #bottombar .chk-btn:hover,
     #bottombar .sym-btn:hover, #bottombar .motif-rot-btn:hover, .preset-select:hover,
-    .text-font-opt:hover, .text-logo-btn:hover, .cp-brush-btn:hover, .cp-dash-btn:hover, .saved-all-btn:hover,
-    .btn-sec:hover, .finish-close:hover, .lib-name:hover { color: var(--pink) !important; }
+    .text-font-opt:hover, .text-logo-btn:hover, .cp-brush-btn:hover, .cp-dash-btn:hover, .saved-all-btn:hover, .finish-close:hover, .lib-name:hover { color: var(--pink) !important; }
 
     /* selected / active: pink, no fill */
     /* selected: pink text on a near-black deep-pink fill */
@@ -1302,9 +1155,6 @@
       background: var(--pink-deep) !important; color: var(--pink) !important;
     }
     .page-header .feedback-btn.on .feedback-icon { color: var(--pink) !important; }
-    .chk-btn .chk-box { border-color: var(--accent); }
-    .chk-btn.on .chk-box { background: transparent !important; border-color: var(--pink) !important; }
-    .chk-btn.on .chk-box svg { stroke: var(--pink); }
     .chk-btn.on { color: var(--pink) !important; }
     .tool-icon-btn.on + .spool-lbl, .tool-icon-btn:hover + .spool-lbl { color: var(--pink); }
     .motif-thumb:hover, .motif-thumb.selected, .view-all-tile:hover, .lib-thumb:hover, .lib-thumb.selected { border-color: var(--pink) !important; }
@@ -1313,9 +1163,8 @@
     .motion-style.on { border-color: var(--pink) !important; }
     .motion-style.on .motion-style-name, .motion-style:hover .motion-style-name { color: var(--pink) !important; }
     .text-swatch.on { outline-color: var(--pink) !important; }
-    .color-wheel-btn.on { border-color: var(--pink) !important; box-shadow: 0 0 0 2px var(--pink) !important; }
     .saved-row.current .saved-row-name, .saved-row:hover .saved-row-name { color: var(--pink); }
-    .export-btn:not(.save-btn):hover, .btn-pri:hover, .btn-feature:hover, .mm-save:hover { background: var(--pink) !important; color: #111 !important; }
+    .export-btn:not(.save-btn):hover, .btn-pri:hover, .mm-save:hover { background: var(--pink) !important; color: #111 !important; }
 
     /* Buttons that never had a radius of their own get the same 8px
        rounding as the rest: header icon buttons, the motif controls and
@@ -1376,7 +1225,7 @@
     .page-header .export-btn.save-btn:hover, #bottombar .tbtn:hover, #bottombar .chk-btn:hover,
     #bottombar .sym-btn:hover, #bottombar .motif-rot-btn:hover, .preset-select:hover,
     .tool-size button:hover, .text-font-opt:hover, .text-logo-btn:hover, .cp-dash-btn:hover,
-    .saved-all-btn:hover, .saved-row:hover, .finish-row:hover, .motion-style:hover, .btn-sec:hover,
+    .saved-all-btn:hover, .saved-row:hover, .finish-row:hover, .motion-style:hover,
     .edge-btn:hover, .finish-close:hover {
       background-color: var(--pink-deep) !important; color: var(--pink) !important;
     }
@@ -1535,8 +1384,7 @@
     body.light .saved-menu, body.light #layers-panel, body.light .mascot-panel,
     body.light .logo-tip-fact, body.light .logo-tip-hint, body.light #cp-popup, body.light #text-popup,
     body.light .cp-box, body.light .lib-box, body.light .finish-box, body.light .layer-row.lifted,
-    body.light .hover-tip, body.light .sym-tip, body.light .feedback-tip, body.light .motif-create-btn .mcb-tip,
-    body.light .project-create-btn .mcb-tip, body.light #hint, body.light .capture-banner, body.light .wp-frame,
+    body.light .hover-tip, body.light .sym-tip, body.light .feedback-tip, body.light .motif-create-btn .mcb-tip, body.light #hint, body.light .capture-banner,
     body.light .cp-preview, body.light #story-box {
       background: var(--panel) !important; box-shadow: 0 6px 24px rgba(0,0,0,0.10);
     }
@@ -1554,13 +1402,12 @@
     /* light grey type meant for black grounds becomes the UI yellow / muted */
     body.light .hover-tip, body.light .sym-tip, body.light .feedback-tip, body.light .motif-create-btn .mcb-tip,
     body.light #text-input, body.light .text-font-opt, body.light .text-logo-btn, body.light .cp-value-input,
-    body.light .cp-brush-btn, body.light .saved-row-name, body.light .saved-all-btn, body.light .motion-style-name,
-    body.light .btn-sec, body.light .feedback-icon { color: var(--accent); }
+    body.light .cp-brush-btn, body.light .saved-row-name, body.light .saved-all-btn, body.light .motion-style-name, body.light .feedback-icon { color: var(--accent); }
     body.light .cp-dash-btn, body.light .cp-value-readout, body.light .mm-btn, body.light .m-del,
     body.light .lib-del, body.light .lib-copy, body.light .saved-note { color: var(--muted); }
     body.light .bb-divider { opacity: 0.8; }
     body.light ::selection { background: var(--pink-deep); color: var(--pink); }
-    body.light .fit-btn:disabled, body.light .page-header .fit-btn:disabled, body.light .act-btn:disabled,
+    body.light .fit-btn:disabled, body.light .page-header .fit-btn:disabled,
     body.light .layers-act:disabled, body.light .finish-row:disabled { color: #C2C2C2 !important; }
     body.light .mascot-swatch, body.light .text-swatch { box-shadow: inset 0 0 0 1px rgba(90,70,30,0.18); }
 </style>
@@ -1960,7 +1807,6 @@
 // CONFIG
 // ═══════════════════════════════════════════════════
 const CELL   = 12;
-const RATIO  = 148 / 105;  // A6 landscape ratio
 const BORDER = 9;    // 9-cell border zone width (rounded up to whole grid squares — see borderCells)
 const MAX_H  = 60;
 
@@ -2114,7 +1960,7 @@ const S = {
   // lines/texts carry their own .seq.
   seq:       0,
   selectedText: null,
-  textDraft: { text: '', font: 'Playfair Display', size: 3, color: '#F5C518' },
+  textDraft: { text: '', font: 'ABC Areal', size: 3, color: '#F5C518' },
   textDrag:  null,
   textHover: null,
   stitchAnchor:  null,
@@ -2590,11 +2436,6 @@ function resizeCanvas(axis, action, side) {
 function borderCells() {
   const g = S.grid ? S.gridSize : 1;
   return Math.ceil(BORDER / g) * g;
-}
-function isInner(col, row) {
-  const B = borderCells();
-  return col >= B && col < S.cols - B &&
-         row >= B && row < S.rows - B;
 }
 
 let _rafPending = false;
@@ -5921,24 +5762,43 @@ function wireBilloContextTips() {
 // canvas grows and scales cleanly into thumbnails and print exports.
 // ═══════════════════════════════════════════════════
 const TEXT_FONTS = [
-  { family: 'Playfair Display',    weight: 600, label: 'Serif' },
-  { family: 'Bricolage Grotesque', weight: 600, label: 'Grotesque' },
-  { family: 'Space Mono',          weight: 700, label: 'Mono' },
-  { family: 'Caveat',              weight: 600, label: 'Handwritten' },
-  { family: 'Bungee',              weight: 400, label: 'Display' },
-  { family: 'Pixelify Sans',       weight: 500, label: 'Pixel' },
-  { family: 'Rozha One',           weight: 400, label: 'Rozha' },
+  // English: ABC Areal only (older saves in retired faces fall back to it)
+  { family: 'ABC Areal',           weight: 400, label: 'Areal' },
   // Gurmukhi — shown under their own heading in the popup
   { family: 'Baloo Paaji 2',       weight: 600, label: 'ਬਲੂ ਪਾਜੀ',   gurmukhi: true },
   { family: 'Anek Gurmukhi',       weight: 600, label: 'ਅਨੇਕ',       gurmukhi: true },
   { family: 'Mukta Mahee',         weight: 600, label: 'ਮੁਕਤਾ',      gurmukhi: true },
   { family: 'Noto Serif Gurmukhi', weight: 600, label: 'ਨੋਟੋ ਸੈਰਿਫ਼', gurmukhi: true },
 ];
-const TEXT_LINE_HEIGHT = 1.15;
+
+// Text sits on the grid: t.size is the cap height in cells (Gurmukhi: the
+// headline-to-baseline height), so letter tops and the baseline land exactly
+// on grid lines, and every line advances by a whole number of grid squares.
+function _textFontDef(t) { return TEXT_FONTS.find(f => f.family === t.font) || TEXT_FONTS[0]; }
+function _gridStep() { return S.grid ? S.gridSize : 1; }
+
+// Cap height ÷ font size, measured once per face (after it has loaded).
+const _capRatios = {};
+const _measureCtx = document.createElement('canvas').getContext('2d');
+function _capRatio(f) {
+  if (_capRatios[f.family]) return _capRatios[f.family];
+  const spec = `${f.weight} 100px "${f.family}"`;
+  _measureCtx.font = spec + ', sans-serif';
+  const r = (_measureCtx.measureText(f.gurmukhi ? 'ਮ' : 'H').actualBoundingBoxAscent || 72) / 100;
+  if (document.fonts.check(spec)) _capRatios[f.family] = r; // don't cache the fallback face
+  return r;
+}
 
 function _textFont(t, scale) {
-  const f = TEXT_FONTS.find(f => f.family === t.font) || TEXT_FONTS[0];
-  return `${f.weight} ${t.size * scale}px "${f.family}", sans-serif`;
+  const f = _textFontDef(t);
+  return `${f.weight} ${t.size * scale / _capRatio(f)}px "${f.family}", sans-serif`;
+}
+
+// Baseline-to-baseline distance in cells: the cap height plus a gap for
+// descenders, rounded up to whole grid squares.
+function _textLineStep(t) {
+  const g = _gridStep();
+  return t.size + Math.max(g, Math.ceil(t.size * 0.5 / g) * g);
 }
 
 // The Pixelkari wordmark as a text-layer object: white letters (with the
@@ -5989,9 +5849,10 @@ function drawTextObj(t, gctx = ctx, scale = CELL, ox = 0, oy = 0) {
   gctx.save();
   gctx.font = _textFont(t, scale);
   gctx.fillStyle = t.color;
-  gctx.textBaseline = 'top';
+  gctx.textBaseline = 'alphabetic';
+  const step = _textLineStep(t);
   t.text.split('\n').forEach((line, i) => {
-    gctx.fillText(line, ox + t.col * scale, oy + t.row * scale + i * t.size * scale * TEXT_LINE_HEIGHT);
+    gctx.fillText(line, ox + t.col * scale, oy + (t.row + t.size + i * step) * scale);
   });
   gctx.restore();
 }
@@ -6005,7 +5866,9 @@ function textBounds(t) {
   const lines = t.text.split('\n');
   const w = Math.max(...lines.map(l => ctx.measureText(l).width), CELL);
   ctx.restore();
-  return { x: t.col * CELL, y: t.row * CELL, w, h: lines.length * t.size * CELL * TEXT_LINE_HEIGHT };
+  // height runs to the last line's descenders (half a line gap below its baseline)
+  const step = _textLineStep(t);
+  return { x: t.col * CELL, y: t.row * CELL, w, h: ((lines.length - 1) * step + t.size + (step - t.size) / 2) * CELL };
 }
 
 function _canvasPx(e) {
@@ -6044,7 +5907,8 @@ function drawTextOverlay() {
 }
 
 function _snapTextPos(px, py) {
-  return { col: Math.round(px / CELL), row: Math.round(py / CELL) };
+  const g = _gridStep();
+  return { col: Math.round(px / CELL / g) * g, row: Math.round(py / CELL / g) * g };
 }
 
 function textPointerDown(e) {
@@ -6170,12 +6034,15 @@ function initTextPopup() {
   popup.querySelector('#text-input').addEventListener('input', e => editText({ text: e.target.value }));
   popup.querySelectorAll('.text-font-opt').forEach(b => b.addEventListener('click', () => editText({ font: b.dataset.font })));
   popup.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => {
-    editText({ size: Math.max(1, Math.min(30, _activeText().size + +b.dataset.step)) });
+    // steps by one grid square, landing on a whole number of squares
+    const g = _gridStep(), t = _activeText();
+    const size = (Math.round(t.size / g) + +b.dataset.step) * g;
+    editText({ size: Math.max(g, Math.min(Math.max(30, g * 4), size)) });
   }));
   popup.querySelectorAll('.text-swatch').forEach(b => b.addEventListener('click', () => editText({ color: b.dataset.color })));
   // Fonts load lazily — draw again once they arrive so canvas text isn't
   // stuck in the fallback face.
-  Promise.all(TEXT_FONTS.map(f => document.fonts.load(`${f.weight} 20px "${f.family}"`, 'Aaਪੰ'))).then(() => render()).catch(() => {});
+  Promise.all(TEXT_FONTS.map(f => document.fonts.load(`${f.weight} 20px "${f.family}"`, 'AaHਪੰਮ'))).then(() => render()).catch(() => {});
   syncTextPopup();
 }
 
