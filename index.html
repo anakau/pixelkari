@@ -321,6 +321,15 @@
       padding: 0; transition: transform 0.1s; flex-shrink: 0;
     }
     .cp-swatch:hover { transform: scale(1.15); }
+    /* Riso ink budget (paper canvases) */
+    .ink-meter { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .ink-meter .im-dot { width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.3); }
+    .ink-meter .im-dot.next { border-style: dashed; border-color: rgba(255,255,255,0.7); }
+    .ink-meter .im-txt { font-size: 9px; color: var(--muted); margin-left: 6px; }
+    .ink-meter.warn .im-txt { color: var(--pink); }
+    body.light .ink-meter .im-dot { border-color: rgba(0,0,0,0.25); }
+    body.light .ink-meter .im-dot.next { border-color: rgba(0,0,0,0.6); }
+    .cp-swatch.ink-off, .text-swatch.ink-off { opacity: 0.2; }
     .cp-recents { display: flex; flex-wrap: wrap; gap: 4px; min-height: 18px; }
     .cp-recents:empty::after {
       content: 'No custom colours yet'; font-size: 9px; color: #444;
@@ -2448,6 +2457,8 @@ function render() {
   });
 }
 function _doRender() {
+  _inkCache = null;
+  if (S.paper && window._cpRefreshInks) window._cpRefreshInks();
   _shadowKey = null; // the canvas changed (edit, undo, load…), so the hover shadow must be recomputed on the next move
   const W   = S.cols * CELL;   // logical pixels
   const H   = S.rows * CELL;
@@ -2808,6 +2819,7 @@ function paint(col, row, tri) {
     if (S.drawing && sig === S.lastBrushSig) return;
     S.lastBrushSig = sig;
   }
+  if (S.tool !== 'erase' && !inkGuard(S.color)) return;
   const seq = ++S.seq;
   for (const key of brushKeys(col, row, tri)) {
     if (S.tool === 'erase') {
@@ -2891,6 +2903,7 @@ function triNeighbours(c, r, tri) {
 }
 
 function floodFill(col, row, tri) {
+  if (!inkGuard(S.color)) return;
   const seq = ++S.seq; // a whole fill is one step, so the timelapse pours it in at once
   for (const key of floodRegion(col, row, tri)) { S.cells[key] = S.color; S.order[key] = seq; }
 }
@@ -3158,7 +3171,7 @@ canvas.addEventListener('pointerdown', e => {
 // symmetry) and clears the anchor — shared by the 2nd-tap finalize above
 // and the drag-then-release finalize touch needs (see pointerup below).
 function commitStitchPath() {
-  if (S.stitchPath.length > 1) {
+  if (S.stitchPath.length > 1 && inkGuard(S.stitchColor)) {
     snap();
     const seq = ++S.seq;
     symPaths(S.stitchPath).forEach(pts => {
@@ -3598,19 +3611,43 @@ function downloadWallpaper(presetId) {
 // ═══════════════════════════════════════════════════
 // RISO PRINT — colour separations
 // ═══════════════════════════════════════════════════
-function _getUsedColors() {
+// The design's colours grouped by the riso drum each prints with, lightest
+// ink first (the usual print order, so plate 01 goes through first).
+function _getUsedInks() {
   const F = flatDesign();
-  const set = new Set(Object.values(F.cells));
-  F.lines.forEach(l => set.add(l.color));
-  F.texts.forEach(t => set.add(t.color));
-  const known = THREAD.filter(hex => set.has(hex));
-  const unknown = [...set].filter(hex => !THREAD.includes(hex));
-  return [...known, ...unknown];
+  const colors = new Set(Object.values(F.cells));
+  F.lines.forEach(l => colors.add(l.color));
+  F.texts.forEach(t => colors.add(t.color));
+  const byInk = new Map();
+  for (const hex of colors) {
+    const ink = nearestRisoInk(hex);
+    if (!byInk.has(ink)) byInk.set(ink, new Set());
+    byInk.get(ink).add(hex);
+  }
+  const lum = hex => { const [r, g, b] = hexToRgbTuple(hex); return 0.299 * r + 0.587 * g + 0.114 * b; };
+  return [...byInk].map(([ink, hexes]) => ({ ink, hexes })).sort((a, b) => lum(b.ink.hex) - lum(a.ink.hex));
+}
+
+// Trap: grows a plate's black by r px in every direction, so neighbouring
+// inks overlap slightly instead of leaving paper gaps when the drums
+// register a little off (riso registration is loose).
+const RISO_TRAP_MM = 0.15;
+function _spreadPlate(src, r) {
+  const out = document.createElement('canvas');
+  out.width = src.width; out.height = src.height;
+  const g = out.getContext('2d');
+  g.fillStyle = '#fff';
+  g.fillRect(0, 0, out.width, out.height);
+  g.globalCompositeOperation = 'darken';
+  for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) if (dx * dx + dy * dy <= r * r) g.drawImage(src, dx, dy);
+  return out;
 }
 
 // A print page: the canvas scaled to fit EW × EH, centred on white, with
 // draw(ec) painting into canvas coordinates.
-function _plateCanvas(EW, EH, draw) {
+// Optional spread (px) traps what draw() painted; over() then paints on top,
+// untrapped (stitches and text already overprint, so they stay true to size).
+function _plateCanvas(EW, EH, draw, spread = 0, over = null) {
   const logW = S.cols * CELL, logH = S.rows * CELL;
   const scale = Math.min(EW / logW, EH / logH);
   const dw = Math.round(logW * scale), dh = Math.round(logH * scale);
@@ -3621,24 +3658,29 @@ function _plateCanvas(EW, EH, draw) {
   const ec = exp.getContext('2d');
   ec.fillStyle = '#fff';
   ec.fillRect(0, 0, EW, EH);
-  ec.translate(dx, dy);
-  ec.scale(scale, scale);
+  const toDesign = g => { g.setTransform(1, 0, 0, 1, 0, 0); g.translate(dx, dy); g.scale(scale, scale); };
+  toDesign(ec);
   draw(ec);
-  return exp;
+  if (!spread && !over) return exp;
+  const out = spread ? _spreadPlate(exp, spread) : exp;
+  if (over) { const oc = out.getContext('2d'); toDesign(oc); over(oc); }
+  return out;
 }
 
-// One ink's stencil, from the visible layers as seen (a triangle covered by
-// a higher layer doesn't print underneath it).
-function _buildSeparationCanvas(color, EW, EH) {
+// One drum's stencil — every colour that prints with it — from the visible
+// layers as seen (a triangle covered by a higher layer doesn't print
+// underneath it). Triangles are trapped; stitches and text overprint.
+function _buildSeparationCanvas(hexes, EW, EH, spread) {
   const F = flatDesign();
   return _plateCanvas(EW, EH, ec => {
     for (const [key, c] of Object.entries(F.cells)) {
-      if (c !== color) continue;
+      if (!hexes.has(c)) continue;
       const parts = key.split(',');
       drawTriangle(+parts[0], +parts[1], parts[2], '#000', ec);
     }
-    for (const l of F.lines) if (l.color === color) drawLine({ ...l, color: '#000' }, ec);
-    for (const t of F.texts) if (t.color === color) drawTextObj({ ...t, color: '#000' }, ec);
+  }, spread, ec => {
+    for (const l of F.lines) if (hexes.has(l.color)) drawLine({ ...l, color: '#000' }, ec);
+    for (const t of F.texts) if (hexes.has(t.color)) drawTextObj({ ...t, color: '#000' }, ec);
   });
 }
 
@@ -3675,8 +3717,10 @@ async function downloadRisoPack(byLayer = false) {
   const plates = byLayer
     ? S.layers.filter(L => L.visible && (L.cloth || Object.keys(L.cells).length || L.lines.length || L.texts.length))
         .map(L => ({ tag: `layer-%n-${slug(L.name)}`, build: (EW, EH) => _buildLayerPlateCanvas(L, EW, EH) }))
-    : _getUsedColors().map(hex => ({ tag: `separation-%n-${hex.replace('#', '')}`, build: (EW, EH) => _buildSeparationCanvas(hex, EW, EH) }));
+    : _getUsedInks().map(({ ink, hexes }) => ({ tag: `separation-%n-${slug(ink.name)}`,
+        build: (EW, EH, pxPerMm) => _buildSeparationCanvas(hexes, EW, EH, Math.max(1, Math.round(RISO_TRAP_MM * pxPerMm))) }));
   if (!plates.length) { showHint(byLayer ? 'No visible layers with anything on them to export' : 'Paint something before exporting separations'); return; }
+  if (!byLayer && plates.length > RISO_MAX_INKS) showHint(`This design uses ${plates.length} riso inks, more than the usual ${RISO_MAX_INKS}. Exporting them all`);
   if (typeof JSZip === 'undefined' || typeof jspdf === 'undefined') {
     showHint('Riso export tools still loading — try again in a moment');
     return;
@@ -3691,7 +3735,7 @@ async function downloadRisoPack(byLayer = false) {
     const [EW, EH] = _matchOrientation(preset.w, preset.h);
     const zip = new JSZip();
     plates.forEach((plate, i) => {
-      const canvas2 = plate.build(EW, EH);
+      const canvas2 = plate.build(EW, EH, EW / mmW);
       const pdf = new jspdf.jsPDF({ orientation: mmW > mmH ? 'landscape' : 'portrait', unit: 'mm', format: [mmW, mmH] });
       pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, mmW, mmH, undefined, 'MEDIUM');
       const fname = `pixelkari-${sizeId}-${plate.tag.replace('%n', String(i + 1).padStart(2, '0'))}.pdf`;
@@ -4252,6 +4296,29 @@ function initCustomColorPicker() {
   // Populated by renderSwatchSection() — flat thread grid for Weave/Stitch,
   // season-grouped base pairs for Cloth, or the Riso ink drums on a paper
   // canvas (a print run can only actually reproduce real ink colours).
+  // Paper only: how many of the riso inks the design uses, with the colour
+  // being picked shown as a dashed dot when it would add a new one.
+  const inkMeter = document.createElement('div');
+  inkMeter.className = 'ink-meter';
+  left.appendChild(inkMeter);
+  function renderInkMeter() {
+    inkMeter.style.display = S.paper ? '' : 'none';
+    if (!S.paper) return;
+    const used = [...usedRisoInks()];
+    const pending = [..._newInks(currentHexFor(cpTarget))];
+    const n = used.length + pending.length, left = RISO_MAX_INKS - n;
+    const hexOf = name => RISO_INKS.find(i => i.name === name).hex;
+    let dots = '';
+    for (let i = 0; i < RISO_MAX_INKS; i++) {
+      if (i < used.length) dots += `<span class="im-dot" title="Riso ${used[i]}" style="background:${hexOf(used[i])}"></span>`;
+      else if (i === used.length && pending.length && left >= 0) dots += `<span class="im-dot next" title="Riso ${pending[0]} (new)" style="background:${hexOf(pending[0])}"></span>`;
+      else dots += '<span class="im-dot"></span>';
+    }
+    const note = left < 0 ? 'over limit' : left === 0 ? 'last ink' : `${left} left`;
+    inkMeter.innerHTML = `<span class="cp-section-label" style="margin:0 4px 0 0">Inks</span>${dots}<span class="im-txt">${n}/${RISO_MAX_INKS} · ${note}</span>`;
+    inkMeter.classList.toggle('warn', left <= 1);
+  }
+
   const swatchGrid = document.createElement('div');
   swatchGrid.className = 'cp-swatches';
   left.appendChild(swatchGrid);
@@ -4268,7 +4335,10 @@ function initCustomColorPicker() {
     };
     swatchGrid.classList.remove('cp-swatches-seasons');
     if (S.paper) {
-      RISO_INKS.forEach(ink => swatchGrid.appendChild(makeSwatch(ink.hex, `Riso ${ink.name}`)));
+      RISO_INKS.forEach(ink => {
+        const b = swatchGrid.appendChild(makeSwatch(ink.hex, `Riso ${ink.name}`));
+        if (!inkFits(ink.hex)) { b.classList.add('ink-off'); b.title += ` (over the ${RISO_MAX_INKS}-ink limit)`; }
+      });
     } else if (target === 'cloth') {
       swatchGrid.classList.add('cp-swatches-seasons');
       SEASONS.forEach(season => {
@@ -4416,12 +4486,18 @@ function initCustomColorPicker() {
   }
 
   function commitColor(hex) {
+    // the paper itself is free; threads and a cloth layer's fabric are inks
+    if (cpTarget !== 'cloth' || activeLayer().cloth) {
+      if (!inkGuard(hex)) return currentHexFor(cpTarget);
+      inkPickNote(hex);
+    }
     updateValueDisplays(hex);
     if      (cpTarget === 'weave')  { S.color = hex; setTool('paint'); }
     else if (cpTarget === 'stitch') { S.stitchColor = hex; setTool('stitch'); }
     else                            { setClothColor(hex); } // cloth — the active cloth layer's, else the base
     renderToolIcon(cpTarget);
     refreshColorLabels();
+    renderInkMeter();
     return hex;
   }
 
@@ -4448,6 +4524,8 @@ function initCustomColorPicker() {
     return target === 'weave' ? S.color : target === 'stitch' ? S.stitchColor : clothColor();
   }
   window._cpRefreshValues = () => updateValueDisplays(currentHexFor(cpTarget));
+  // after edits: recount inks and re-dim swatches (only while the popup is open)
+  window._cpRefreshInks = () => { if (popup.classList.contains('on')) { renderInkMeter(); renderSwatchSection(cpTarget); } };
 
   function positionPopup() {
     const btn = document.getElementById(`${cpTarget}-icon-btn`);
@@ -4558,6 +4636,7 @@ function initCustomColorPicker() {
     drawHue(); drawSpectrum();
     updateValueDisplays(hex);
     updateFormatAvailability();
+    renderInkMeter();
     positionPopup();
     refreshColorLabels();
   };
@@ -4626,6 +4705,46 @@ function nearestRisoInk(hex) {
   return best;
 }
 function hexToRisoLabel(hex) { return `Riso ${nearestRisoInk(hex).name}`; }
+
+// ── Riso ink budget ──
+// Each riso ink is its own plate and its own pass through the machine, so a
+// paper design is capped at RISO_MAX_INKS drums. Colours count by their
+// nearest drum (two reds that both print as Bright Red are one ink). All
+// layers count, hidden ones too, so showing a layer can't break the limit.
+const RISO_MAX_INKS = 4;
+let _inkCache = null; // reset on every render, i.e. after any change
+function usedRisoInks() {
+  if (_inkCache) return _inkCache;
+  const set = new Set();
+  const add = hex => { if (hex) set.add(nearestRisoInk(hex).name); };
+  for (const L of S.layers) {
+    if (L.cloth) add(L.cloth);
+    Object.values(L.cells).forEach(add);
+    L.lines.forEach(l => add(l.color));
+    L.texts.forEach(t => add(t.color));
+  }
+  return (_inkCache = set);
+}
+// The new drums these colours would add to the design.
+function _newInks(hexes) {
+  const used = usedRisoInks();
+  return new Set([].concat(hexes).map(h => nearestRisoInk(h).name).filter(n => !used.has(n)));
+}
+function inkFits(hexes) {
+  return !S.paper || usedRisoInks().size + _newInks(hexes).size <= RISO_MAX_INKS;
+}
+function inkGuard(hexes) {
+  if (inkFits(hexes)) return true;
+  showHint(`Riso prints take ${RISO_MAX_INKS} inks at most. Use one of the inks already in your design`);
+  return false;
+}
+// A heads-up while picking, once a new ink would use up the budget.
+function inkPickNote(hex) {
+  if (!S.paper || !_newInks(hex).size) return;
+  const n = usedRisoInks().size + 1, left = RISO_MAX_INKS - n, name = nearestRisoInk(hex).name;
+  if (left === 0) showHint(`Riso ${name} will be your last ink (${n} of ${RISO_MAX_INKS})`);
+  else if (left === 1) showHint(`Riso ${name} will be ink ${n} of ${RISO_MAX_INKS}. One more left after it`);
+}
 
 // Toolbar-icon tooltips: hex on screen, print-relevant values on paper —
 // no manual format toggle needed, it just follows the current canvas.
@@ -5024,6 +5143,7 @@ function getMotifBounds() {
 }
 
 function placeMotif(col, row) {
+  if (!inkGuard([...Object.values(getActiveCells()), ...getActiveLines().map(l => l.color)])) return;
   const seq = ++S.seq; // one stamp = one timelapse step
   for (const [key, color] of Object.entries(getActiveCells())) {
     const p = key.split(',');
@@ -5926,6 +6046,7 @@ function textPointerDown(e) {
     showHint('Type something in the Text box first');
     return;
   }
+  if (!inkGuard(S.textDraft.color)) return;
   snap();
   S.texts.push({ ...S.textDraft, ..._snapTextPos(px, py), seq: ++S.seq });
   S.textDraft.text = '';
@@ -6039,7 +6160,7 @@ function initTextPopup() {
     const size = (Math.round(t.size / g) + +b.dataset.step) * g;
     editText({ size: Math.max(g, Math.min(Math.max(30, g * 4), size)) });
   }));
-  popup.querySelectorAll('.text-swatch').forEach(b => b.addEventListener('click', () => editText({ color: b.dataset.color })));
+  popup.querySelectorAll('.text-swatch').forEach(b => b.addEventListener('click', () => { if (inkGuard(b.dataset.color)) editText({ color: b.dataset.color }); }));
   // Fonts load lazily — draw again once they arrive so canvas text isn't
   // stuck in the fallback face.
   Promise.all(TEXT_FONTS.map(f => document.fonts.load(`${f.weight} 20px "${f.family}"`, 'AaHਪੰਮ'))).then(() => render()).catch(() => {});
@@ -6086,7 +6207,7 @@ function syncTextPopup() {
   popup.querySelector('#text-popup-title').textContent = isLogo ? 'Pixelkari Logo' : editing ? 'Edit Text' : 'New Text';
   popup.querySelector('#text-size-lbl').textContent = t.size;
   popup.querySelectorAll('.text-font-opt').forEach(b => b.classList.toggle('on', b.dataset.font === t.font));
-  popup.querySelectorAll('.text-swatch').forEach(b => b.classList.toggle('on', b.dataset.color === t.color));
+  popup.querySelectorAll('.text-swatch').forEach(b => { b.classList.toggle('on', b.dataset.color === t.color); b.classList.toggle('ink-off', !inkFits(b.dataset.color)); });
   popup.querySelector('#text-del-btn').style.display = editing ? 'block' : 'none';
   popup.querySelector('#text-del-btn').textContent = isLogo ? 'Delete logo' : 'Delete text';
   popup.querySelector('#text-hint').textContent = editing
