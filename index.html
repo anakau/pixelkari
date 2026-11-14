@@ -6868,7 +6868,11 @@ initCustomColorPicker();
 initTextPopup();
 syncSoundBtn();
 syncThemeBtn();
+// Start on an A4 print canvas (white paper), as if A4 were picked from the size menu
+Object.assign(S, { cols: GRID_PRESETS.a4.cols, rows: GRID_PRESETS.a4.rows, paper: true });
+document.body.classList.add('paper-mode');
 initCanvas();
+setBase('#FFFFFF');
 fitZoom();
 initCursors();
 // Re-fit whenever the viewport actually changes size (window resize, or an
