@@ -1254,17 +1254,17 @@
       #text-icon-btn { font-size: 50px; }
     }
 
-    /* ── Layers panel ── docked at the left, open by default (L toggles it);
+    /* ── Layers panel ── docked at the right, open by default (L toggles it);
        styled like the Saved / Finish dropdowns, rows like saved rows. While
        it's open the canvas area makes room for it. */
     #layers-panel {
-      display: none; position: fixed; left: 8px; top: 80px; z-index: 150;
+      display: none; position: fixed; right: 8px; top: 80px; z-index: 150;
       width: 260px; max-height: calc(100vh - 80px - var(--bar-h) - 24px);
       background: #000; border-radius: 16px; padding: 12px;
       box-shadow: 0 6px 24px rgba(0,0,0,0.7); flex-direction: column; gap: 8px;
     }
     #layers-panel.open { display: flex; }
-    body.layers-open #canvas-area { padding-left: calc(260px + 16px); }
+    body.layers-open #canvas-area { padding-right: calc(260px + 16px); }
     .layers-head { display: flex; align-items: center; justify-content: space-between; }
     .layers-close { /* the ✕ style, used by the mascot panel */
       background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px;
@@ -1312,11 +1312,11 @@
     .layers-act:hover { background: var(--pink-deep); color: var(--pink); }
     .layers-act:disabled { color: #4a4a4a; cursor: default; pointer-events: none; }
     @media (max-width: 1400px) {
-      #layers-panel { left: 10px; top: 86px; max-height: calc(100vh - 86px - var(--bar-h) - 30px); }
+      #layers-panel { right: 10px; top: 86px; max-height: calc(100vh - 86px - var(--bar-h) - 30px); }
     }
     @media (max-width: 560px) {
       #layers-panel { left: 10px; right: 10px; width: auto; top: 70px; max-height: 50vh; }
-      body.layers-open #canvas-area { padding-left: 0; } /* phones: the panel floats over instead */
+      body.layers-open #canvas-area { padding-right: 0; } /* phones: the panel floats over instead */
     }
 
     /* ── Intro pop-up colour scheme ── the app's resting-button look: yellow
@@ -1517,7 +1517,7 @@
     </div>
   </div>
 
-  <!-- LAYERS PANEL (docked at the left, open by default) -->
+  <!-- LAYERS PANEL (docked at the right, open by default) -->
   <div id="layers-panel" role="dialog" aria-label="Layers">
     <div class="layers-head">
       <span class="saved-menu-head">Layers</span>
@@ -3388,7 +3388,8 @@ function fitZoom() {
   const headerFootprint = 64 + 8;
   const rootCss = getComputedStyle(document.documentElement);
   const barFootprint = parseFloat(rootCss.getPropertyValue('--bar-h')) + parseFloat(rootCss.getPropertyValue('--bar-bottom'));
-  const sidePad = parseFloat(getComputedStyle(area).paddingLeft) || 0; // room kept for the Layers panel
+  const areaCss = getComputedStyle(area);
+  const sidePad = (parseFloat(areaCss.paddingLeft) || 0) + (parseFloat(areaCss.paddingRight) || 0); // room kept for the Layers panel
   const availW = Math.max(50, area.clientWidth - sidePad - PAD * 2);
   const availH = Math.max(50, area.clientHeight - headerFootprint - barFootprint - PAD * 2);
   const logW = S.cols * CELL, logH = S.rows * CELL;
