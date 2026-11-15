@@ -1322,6 +1322,13 @@
        sit tinted in the background tone and come into colour on hover. */
     #story-box { background: #120F07; } /* near-black, just warmed toward yellow */
     #story-box, #story-box * { color: var(--accent); }
+    /* …except the wordmark, which keeps its own colours here too */
+    #story-box .logo-title { color: #E91E8C; }
+    #story-box .logo-title .logo-i { color: #fff; }
+    body.light #story-box .logo-title .logo-i { color: #1C1C1A; } /* the light intro is white */
+    #story-box .logo-title .logo-e { color: #4D8DFF; }
+    #story-box .logo-title .logo-a { color: #4CBB17; }
+    #story-box .logo-title .logo-x { fill: #D4A827; }
     #story-header { background: rgba(18,15,7,0.92); }
     #story-box .s-footer-note { background: transparent; }
     #story-box .s-sources, #story-box .s-photo-credit, #story-box .s-collage-credits, #story-box .s-footer-note { opacity: 0.75; }
@@ -1447,14 +1454,6 @@
           <svg class="feedback-icon theme-moon" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"/></svg>
           <svg class="feedback-icon theme-sun" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="3.2" r="1.5"/><circle cx="12" cy="20.8" r="1.5"/><circle cx="3.2" cy="12" r="1.5"/><circle cx="20.8" cy="12" r="1.5"/><circle cx="5.8" cy="5.8" r="1.5"/><circle cx="18.2" cy="18.2" r="1.5"/><circle cx="5.8" cy="18.2" r="1.5"/><circle cx="18.2" cy="5.8" r="1.5"/></svg>
           <span class="feedback-tip" id="theme-tip">Switch to light mode</span>
-        </button>
-        <button type="button" class="feedback-btn" id="sound-btn" onclick="toggleSound()" aria-label="Drawing sounds" aria-pressed="false">
-          <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 5 6 9H3v6h3l5 4V5Z"/>
-            <g class="snd-waves" style="display:none"><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></g>
-            <g class="snd-mute"><path d="m16 9 5 6"/><path d="m21 9-5 6"/></g>
-          </svg>
-          <span class="feedback-tip" id="sound-tip">Turn on drawing sounds</span>
         </button>
       </div>
       <button class="export-btn save-btn" id="motion-btn" onclick="openMotionModal()" style="line-height:1;">GIF</button>
@@ -3120,7 +3119,6 @@ canvas.addEventListener('pointerdown', e => {
       S.stitchPreview = v;
       S.stitchPath = [v];
       S._stitchLastPx = null;
-      playDrawNote();
     } else {
       // The drag's distance-based sampling (see pointermove) can leave the
       // last recorded point short of the actual click position, if the
@@ -3156,7 +3154,6 @@ canvas.addEventListener('pointerdown', e => {
     // Mirror symmetry applies to fills too — re-check each mirrored start,
     // since an earlier fill may already have covered it.
     symTris(col, row, tri).forEach(({col: c, row: r, tri: t}) => floodFill(c, r, t));
-    playFillStrum();
     render();
     return;
   }
@@ -3167,7 +3164,6 @@ canvas.addEventListener('pointerdown', e => {
   S.lastCell = {col, row, tri};
   S.lastBrushSig = null;
   paint(col, row, tri);
-  if (S.tool === 'paint') playDrawNote();
   if (S.tool === 'erase') {
     const rect = canvas.getBoundingClientRect();
     eraseStitchesNear((e.clientX - rect.left) / S.zoom, (e.clientY - rect.top) / S.zoom);
@@ -3276,7 +3272,6 @@ canvas.addEventListener('pointermove', e => {
       // still snapped via kingPath so it hugs real grid lines, but the
       // full route follows the true movement between clicks.
       S.stitchPath.push(...kingPath(last.col, last.row, v.col, v.row).slice(1));
-      playDrawNote();
     }
     S.stitchPreview = v;
     render();
@@ -3295,7 +3290,6 @@ canvas.addEventListener('pointermove', e => {
   if (S.lastCell?.col === col && S.lastCell?.row === row && S.lastCell?.tri === tri) return;
   S.lastCell = {col, row, tri};
   paint(col, row, tri);
-  if (S.tool === 'paint') playDrawNote();
   render();
 });
 
@@ -6709,7 +6703,7 @@ async function downloadMotionGif() {
 }
 
 // ═══════════════════════════════════════════════════
-// SOUND — export clicks + drawing instruments
+// SOUND — button clicks + the export thud
 // Everything is synthesised with Web Audio, so there are no audio files to
 // load or license. The context is created lazily on the first click, since
 // browsers won't let audio start before a user gesture anyway.
@@ -6824,7 +6818,7 @@ function sfxSuccess() {
   noise.start(t);
   // warmth: low Sa, fading slowly under the hit
   const sa = ac.createOscillator(), sg = ac.createGain();
-  sa.type = 'triangle'; sa.frequency.value = SA / 4; // D2
+  sa.type = 'triangle'; sa.frequency.value = 73.42; // D2
   sg.gain.setValueAtTime(0.0001, t);
   sg.gain.exponentialRampToValueAtTime(0.12, t + 0.03);
   sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
@@ -6846,175 +6840,7 @@ document.addEventListener('pointerup', () => {
   if (_pressedEl) { _pressedEl = null; sfxRelease(); }
 }, true);
 
-// Drawing sounds — when Sound is on, drawing plays a slow Punjabi folk
-// melody: an original tune in Raag Pahadi (the raag of so much of Reshma's
-// singing), on a bowed, sarangi-like voice that slides between notes, over
-// a tanpura drone. The tune only moves while someone is drawing — each
-// stroke carries it on from where the last one left off — so any stroke
-// long enough plays a phrase that makes sense, never random notes.
-const SOUND = {
-  on: false, bus: null, buffers: new Map(), droneGain: null, timer: null,
-  idx: 0, prev: null, nextAt: 0, activeUntil: 0, droneBeat: 0, nextDroneAt: 0,
-};
-try { SOUND.on = localStorage.getItem('pkSound') === '1'; } catch (e) {}
-const SA = 293.66;                // Sa on D4, as the export chime
-const BEAT = 1.6;                 // seconds per beat — meditative, an alap's pace
-const DRONE_BEAT = 1.25;          // tanpura keeps its own unhurried cycle
-// [semitones from Sa, beats]. Pahadi moves on Sa Re Ga Pa Dha, dips to the
-// lower Pa / Dha, touches Ma, and keeps coming home to Sa.
-const MELODY = [
-  [-3,1],[0,1],[2,1],[4,2],[2,1],[4,1],[0,2],          // Dha. Sa Re Ga — Re Ga Sa —
-  [-3,1],[-5,1],[-3,1],[0,3],                          // Dha. Pa. Dha. Sa ———
-  [0,1],[2,1],[4,1],[7,2],[9,1],[7,1],[4,2],           // Sa Re Ga Pa — Dha Pa Ga —
-  [5,1],[4,1],[2,1],[4,1],[0,3],                       // Ma Ga Re Ga Sa ———
-  [7,1],[9,1],[12,2],[14,1],[12,1],[9,2],              // Pa Dha Sa' — Re' Sa' Dha —
-  [7,1],[9,1],[7,1],[4,1],[2,1],[4,1],[2,2],           // Pa Dha Pa Ga Re Ga Re —
-  [0,1],[2,1],[-3,1],[0,1],[-5,2],[-3,1],[0,4],        // Sa Re Dha. Sa Pa. — Dha. Sa ————
-];
-const _semi = n => SA * Math.pow(2, n / 12);
-
-// Output: a warm room — dry signal plus a soft synthetic reverb tail.
-function _soundBus(ac) {
-  if (SOUND.bus) return SOUND.bus;
-  const input = ac.createGain();
-  const warm = ac.createBiquadFilter(); warm.type = 'lowpass'; warm.frequency.value = 4200;
-  const dry = ac.createGain(); dry.gain.value = 0.75;
-  const len = Math.floor(ac.sampleRate * 2.4);
-  const ir = ac.createBuffer(2, len, ac.sampleRate);
-  for (let ch = 0; ch < 2; ch++) {
-    const d = ir.getChannelData(ch);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
-  }
-  const verb = ac.createConvolver(); verb.buffer = ir;
-  const wet = ac.createGain(); wet.gain.value = 0.32;
-  input.connect(warm);
-  warm.connect(dry).connect(ac.destination);
-  warm.connect(verb).connect(wet).connect(ac.destination);
-  SOUND.bus = input;
-  return input;
-}
-
-// Bowed voice: two slightly detuned saws and a triangle body through a
-// nasal formant, with a soft bow attack, delayed vibrato, and a meend
-// (glide) up or down from the previous note.
-function _sarangi(freq, from, t, dur, vol) {
-  const ac = _audio;
-  const glide = Math.min(0.5, dur * 0.3);
-  const lfo = ac.createOscillator(); lfo.frequency.value = 4.2;
-  const depth = ac.createGain();
-  depth.gain.setValueAtTime(0, t);
-  depth.gain.linearRampToValueAtTime(freq * 0.006, t + Math.min(1, dur * 0.5));
-  lfo.connect(depth);
-  const oscs = [['sawtooth', 0], ['sawtooth', 5], ['triangle', 0]].map(([type, cents]) => {
-    const o = ac.createOscillator(); o.type = type; o.detune.value = cents;
-    o.frequency.setValueAtTime(from || freq, t);
-    if (from) o.frequency.exponentialRampToValueAtTime(freq, t + glide);
-    depth.connect(o.frequency);
-    return o;
-  });
-  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2000; lp.Q.value = 0.6;
-  const nasal = ac.createBiquadFilter(); nasal.type = 'peaking'; nasal.frequency.value = 1150; nasal.Q.value = 1.4; nasal.gain.value = 7;
-  const g = ac.createGain();
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(vol, t + 0.28);
-  g.gain.setValueAtTime(vol, t + dur * 0.7);
-  g.gain.exponentialRampToValueAtTime(vol * 0.6, t + dur);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 1.2);
-  oscs.forEach(o => o.connect(lp));
-  lp.connect(nasal).connect(g).connect(_soundBus(ac));
-  const end = t + dur + 1.25;
-  oscs.forEach(o => { o.start(t); o.stop(end); });
-  lfo.start(t); lfo.stop(end);
-}
-
-// Tanpura string: a long-ringing Karplus–Strong pluck with a buzzy bridge
-// (jawari) brightness. Buffers are cached per pitch.
-function _tanpuraBuffer(ac, freq) {
-  const key = Math.round(freq * 100);
-  if (SOUND.buffers.has(key)) return SOUND.buffers.get(key);
-  const sr = ac.sampleRate, len = Math.floor(sr * 3.2);
-  const buf = ac.createBuffer(1, len, sr), y = buf.getChannelData(0);
-  const P = sr / freq - 0.5, n0 = Math.ceil(P) + 1;
-  for (let i = 0; i < n0; i++) y[i] = Math.random() * 2 - 1;
-  for (let i = n0; i < len; i++) {
-    const d = i - P, a = Math.floor(d), f = d - a;
-    const s = y[a] * (1 - f) + y[a + 1] * f;
-    y[i] = 0.9993 * 0.5 * (s + y[a - 1] * (1 - f) + y[a] * f);
-  }
-  SOUND.buffers.set(key, buf);
-  return buf;
-}
-function _droneGain(ac) {
-  if (SOUND.droneGain) return SOUND.droneGain;
-  const g = ac.createGain(); g.gain.value = 0;
-  const jawari = ac.createBiquadFilter(); jawari.type = 'peaking'; jawari.frequency.value = 2200; jawari.Q.value = 0.8; jawari.gain.value = 6;
-  g.connect(jawari).connect(_soundBus(ac));
-  SOUND.droneGain = g;
-  return g;
-}
-function _fadeDrone(level, secs) {
-  const g = _droneGain(_audio), t = _audio.currentTime;
-  g.gain.cancelScheduledValues(t);
-  g.gain.setValueAtTime(g.gain.value, t);
-  g.gain.linearRampToValueAtTime(level, t + secs);
-}
-// The classic four-string cycle: Pa, Sa', Sa', Sa (low).
-const TANPURA = [_semi(-5), _semi(0), _semi(0), _semi(-12)];
-function _tanpura(freq, t) {
-  const ac = _audio;
-  const src = ac.createBufferSource(); src.buffer = _tanpuraBuffer(ac, freq / 2);
-  const g = ac.createGain(); g.gain.value = 0.22;
-  src.connect(g).connect(_droneGain(ac));
-  src.start(t); src.stop(t + 3.2);
-}
-
-function _runSequencer() {
-  const ac = _audio, horizon = ac.currentTime + 0.15;
-  // drone keeps its own steady cycle while the phrase is live
-  while (SOUND.nextDroneAt < horizon) {
-    _tanpura(TANPURA[SOUND.droneBeat % 4], SOUND.nextDroneAt);
-    SOUND.droneBeat++;
-    SOUND.nextDroneAt += DRONE_BEAT;
-  }
-  while (SOUND.nextAt < horizon) {
-    if (SOUND.nextAt > SOUND.activeUntil) {   // drawing stopped — hold here, let it ring out
-      clearInterval(SOUND.timer);
-      SOUND.timer = null;
-      _fadeDrone(0, 2.5);
-      return;
-    }
-    const [n, beats] = MELODY[SOUND.idx];
-    const freq = _semi(n), dur = beats * BEAT;
-    _sarangi(freq, SOUND.prev, SOUND.nextAt, dur, 0.11);
-    SOUND.prev = freq;
-    SOUND.nextAt += dur;
-    SOUND.idx = (SOUND.idx + 1) % MELODY.length;
-  }
-}
-function _soundActivity() {
-  const ac = audioCtx(); if (!ac) return null;
-  SOUND.activeUntil = ac.currentTime + 0.9;
-  if (!SOUND.timer) {
-    SOUND.prev = null;                         // a fresh stroke bows in without a slide
-    SOUND.nextAt = SOUND.nextDroneAt = ac.currentTime + 0.03;
-    SOUND.timer = setInterval(_runSequencer, 30);
-    _fadeDrone(1, 0.6);
-    _runSequencer();
-  }
-  return ac;
-}
-// Weave / Stitch strokes keep the tune moving (where on the canvas no longer matters).
-function playDrawNote() {
-  if (!SOUND.on) return;
-  _soundActivity();
-}
-// A Fill sounds the tanpura's full cycle at once, like a strum, and carries the tune on.
-function playFillStrum() {
-  if (!SOUND.on) return;
-  const ac = _soundActivity(); if (!ac) return;
-  TANPURA.forEach((f, i) => _tanpura(f, ac.currentTime + i * 0.07));
-}
-// Light / dark: a sun-and-moon button next to Sound; remembered per browser.
+// Light / dark: a sun-and-moon button in the top bar; remembered per browser.
 function syncThemeBtn() {
   const light = document.body.classList.contains('light');
   const btn = document.getElementById('theme-btn');
@@ -7026,27 +6852,6 @@ function toggleTheme() {
   try { localStorage.setItem('pkTheme', light ? 'light' : 'dark'); } catch (e) {}
   syncThemeBtn();
 }
-function syncSoundBtn() {
-  const btn = document.getElementById('sound-btn');
-  if (!btn) return;
-  btn.classList.toggle('on', SOUND.on);
-  btn.setAttribute('aria-pressed', SOUND.on);
-  btn.querySelector('.snd-waves').style.display = SOUND.on ? '' : 'none';
-  btn.querySelector('.snd-mute').style.display = SOUND.on ? 'none' : '';
-  document.getElementById('sound-tip').textContent = SOUND.on ? 'Sound on — drawing plays a slow Punjabi melody' : 'Turn on drawing sounds';
-}
-
-function toggleSound() {
-  SOUND.on = !SOUND.on;
-  try { localStorage.setItem('pkSound', SOUND.on ? '1' : '0'); } catch (e) {}
-  syncSoundBtn();
-  if (SOUND.on) {
-    _soundActivity(); // greet with the opening of the tune
-  } else if (_audio) {
-    SOUND.activeUntil = 0;
-  }
-}
-
 // ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
@@ -7062,7 +6867,6 @@ wireBilloContextTips();
 initBubbleVisibility();
 initCustomColorPicker();
 initTextPopup();
-syncSoundBtn();
 syncThemeBtn();
 // Start on an A4 landscape print canvas (white paper)
 Object.assign(S, { cols: GRID_PRESETS.a4.rows, rows: GRID_PRESETS.a4.cols, paper: true });
