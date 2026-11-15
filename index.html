@@ -1255,8 +1255,8 @@
     }
 
     /* ── Layers panel ── docked at the right, open by default (L toggles it);
-       styled like the Saved / Finish dropdowns, rows like saved rows. While
-       it's open the canvas area makes room for it. */
+       styled like the Saved / Finish dropdowns, rows like saved rows. It
+       floats over the canvas area — the canvas stays centred. */
     #layers-panel {
       display: none; position: fixed; right: 8px; top: 80px; z-index: 150;
       width: 260px; max-height: calc(100vh - 80px - var(--bar-h) - 24px);
@@ -1264,7 +1264,6 @@
       box-shadow: 0 6px 24px rgba(0,0,0,0.7); flex-direction: column; gap: 8px;
     }
     #layers-panel.open { display: flex; }
-    body.layers-open #canvas-area { padding-right: calc(260px + 16px); }
     .layers-head { display: flex; align-items: center; justify-content: space-between; }
     .layers-close { /* the ✕ style, used by the mascot panel */
       background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px;
@@ -1316,7 +1315,6 @@
     }
     @media (max-width: 560px) {
       #layers-panel { left: 10px; right: 10px; width: auto; top: 70px; max-height: 50vh; }
-      body.layers-open #canvas-area { padding-right: 0; } /* phones: the panel floats over instead */
     }
 
     /* ── Intro pop-up colour scheme ── the app's resting-button look: yellow
@@ -2134,9 +2132,7 @@ function toggleLayersPanel(force) {
   const p = document.getElementById('layers-panel');
   const open = force === undefined ? !p.classList.contains('open') : force;
   p.classList.toggle('open', open);
-  document.body.classList.toggle('layers-open', open);
   if (open) refreshLayersPanel();
-  fitZoom(); // the canvas area gains / loses the panel's width
 }
 
 function refreshLayersPanel() {
@@ -3388,9 +3384,7 @@ function fitZoom() {
   const headerFootprint = 64 + 8;
   const rootCss = getComputedStyle(document.documentElement);
   const barFootprint = parseFloat(rootCss.getPropertyValue('--bar-h')) + parseFloat(rootCss.getPropertyValue('--bar-bottom'));
-  const areaCss = getComputedStyle(area);
-  const sidePad = (parseFloat(areaCss.paddingLeft) || 0) + (parseFloat(areaCss.paddingRight) || 0); // room kept for the Layers panel
-  const availW = Math.max(50, area.clientWidth - sidePad - PAD * 2);
+  const availW = Math.max(50, area.clientWidth - PAD * 2);
   const availH = Math.max(50, area.clientHeight - headerFootprint - barFootprint - PAD * 2);
   const logW = S.cols * CELL, logH = S.rows * CELL;
   S.zoom = Math.min(2 * ZOOM_UNIT, availW / logW, availH / logH); // fills the space, up to 200% on the readout
@@ -7075,7 +7069,8 @@ Object.assign(S, { cols: GRID_PRESETS.a4.rows, rows: GRID_PRESETS.a4.cols, paper
 document.body.classList.add('paper-mode');
 initCanvas();
 setBase('#FFFFFF');
-toggleLayersPanel(true); // docked on the left from the start (also fits the zoom)
+fitZoom();
+toggleLayersPanel(true); // open from the start, floating at the right
 initCursors();
 // Re-fit whenever the viewport actually changes size (window resize, or an
 // iPad/phone rotating) — without this the canvas was only ever sized once,
