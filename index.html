@@ -488,6 +488,7 @@
     .logo-title .logo-i { color: #fff; }  /* both i's white */
     .logo-title .logo-e { color: #4D8DFF; } /* light cobalt */
     .logo-title .logo-a { color: #4CBB17; } /* grass green */
+    .logo-title .logo-l { color: #FF2A2A; } /* bright red */
     body.light .logo-title .logo-i { color: #1C1C1A; } /* white would vanish on the light grey */
     .billo-wrap {
       /* Billo stands on the same baseline as the tool icons: the bar's
@@ -1328,6 +1329,7 @@
     body.light #story-box .logo-title .logo-i { color: #1C1C1A; } /* the light intro is white */
     #story-box .logo-title .logo-e { color: #4D8DFF; }
     #story-box .logo-title .logo-a { color: #4CBB17; }
+    #story-box .logo-title .logo-l { color: #FF2A2A; }
     #story-box .logo-title .logo-x { fill: #D4A827; }
     #story-header { background: rgba(18,15,7,0.92); }
     #story-box .s-footer-note { background: transparent; }
@@ -1434,7 +1436,7 @@
   <div class="page-header">
     <div class="logo-wrap">
       <div id="bar-logo" class="tip-host" onclick="showStoryPage()" style="cursor:pointer;">
-        <div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span>lk<span class="logo-a">a</span>r<span class="logo-i">i</span></div>
+        <div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span>k<span class="logo-a">a</span>r<span class="logo-i">i</span></div>
         <span class="hover-tip hover-tip-below">About Pixelkari</span>
       </div>
     </div>
@@ -1707,7 +1709,7 @@
  <div id="story-box" role="dialog" aria-modal="true" aria-label="About Pixelkari">
   <div id="story-header">
     <div style="cursor:pointer;" onclick="closeStoryPage()">
-      <div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span>lk<span class="logo-a">a</span>r<span class="logo-i">i</span></div>
+      <div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span>k<span class="logo-a">a</span>r<span class="logo-i">i</span></div>
     </div>
     <div class="story-head-actions">
       <button class="story-close" onclick="closeStoryPage()" aria-label="Close">✕</button>
@@ -6079,7 +6081,7 @@ function _textLineStep(t) {
 // letters knocked out to paper.
 const LOGO_PAD_X = 0.3, LOGO_PAD_Y = 0.22, LOGO_TRACK = 0.02; // in em
 const LOGO_BOX = '#111111', LOGO_X_FILL = '#D4A827';
-const LOGO_GLYPHS = [['p', '#E91E8C'], ['i', '#FFFFFF'], ['x', null], ['e', '#4D8DFF'], ['l', '#E91E8C'],
+const LOGO_GLYPHS = [['p', '#E91E8C'], ['i', '#FFFFFF'], ['x', null], ['e', '#4D8DFF'], ['l', '#FF2A2A'],
                      ['k', '#E91E8C'], ['a', '#4CBB17'], ['r', '#E91E8C'], ['i', '#FFFFFF']];
 function _logoFont(em) { return `400 ${em}px Arial, "Helvetica Neue", Helvetica, sans-serif`; }
 function _logoLayout(t, scale, g = ctx) {
