@@ -1254,17 +1254,19 @@
       #text-icon-btn { font-size: 50px; }
     }
 
-    /* ── Layers panel ── floats at the canvas's right edge, styled like the
-       Saved / Finish dropdowns; rows like saved rows. */
+    /* ── Layers panel ── docked at the left, open by default (L toggles it);
+       styled like the Saved / Finish dropdowns, rows like saved rows. While
+       it's open the canvas area makes room for it. */
     #layers-panel {
-      display: none; position: fixed; right: 8px; top: 80px; z-index: 150;
+      display: none; position: fixed; left: 8px; top: 80px; z-index: 150;
       width: 260px; max-height: calc(100vh - 80px - var(--bar-h) - 24px);
       background: #000; border-radius: 16px; padding: 12px;
       box-shadow: 0 6px 24px rgba(0,0,0,0.7); flex-direction: column; gap: 8px;
     }
     #layers-panel.open { display: flex; }
+    body.layers-open #canvas-area { padding-left: calc(260px + 16px); }
     .layers-head { display: flex; align-items: center; justify-content: space-between; }
-    .layers-close {
+    .layers-close { /* the ✕ style, used by the mascot panel */
       background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px;
       width: 22px; height: 22px; border-radius: 8px; font-family: var(--font-body);
     }
@@ -1309,12 +1311,12 @@
     }
     .layers-act:hover { background: var(--pink-deep); color: var(--pink); }
     .layers-act:disabled { color: #4a4a4a; cursor: default; pointer-events: none; }
-    .page-header #layers-btn.on { background: var(--pink-deep) !important; color: var(--pink) !important; }
     @media (max-width: 1400px) {
-      #layers-panel { right: 10px; top: 86px; max-height: calc(100vh - 86px - var(--bar-h) - 30px); }
+      #layers-panel { left: 10px; top: 86px; max-height: calc(100vh - 86px - var(--bar-h) - 30px); }
     }
     @media (max-width: 560px) {
       #layers-panel { left: 10px; right: 10px; width: auto; top: 70px; max-height: 50vh; }
+      body.layers-open #canvas-area { padding-left: 0; } /* phones: the panel floats over instead */
     }
 
     /* ── Intro pop-up colour scheme ── the app's resting-button look: yellow
@@ -1437,7 +1439,6 @@
       <span class="zoom-lbl" id="zoom-lbl">100%</span>
       <button class="icon-btn tip-host" onclick="doZoom(0.25)">+<span class="hover-tip hover-tip-below">Zoom in (+)</span></button>
       <button class="fit-btn tip-host" id="pan-btn" onclick="togglePan()">Drag<span class="hover-tip hover-tip-below">Press space bar to drag canvas</span></button>
-      <button class="fit-btn tip-host" id="layers-btn" onclick="toggleLayersPanel()" aria-expanded="false">Layers<span class="hover-tip hover-tip-below">Layers (L)</span></button>
       <button class="fit-btn tip-host" id="undo-btn" onclick="undo()" disabled>↩ Undo<span class="hover-tip hover-tip-below">Undo (⌘Z)</span></button>
       <button class="fit-btn tip-host" id="redo-btn" onclick="redo()" disabled>↪ Redo<span class="hover-tip hover-tip-below">Redo (⌘⇧Z)</span></button>
       <button class="fit-btn tip-host danger" onclick="clearCanvas()">✕ Clear<span class="hover-tip hover-tip-below">Clear the whole canvas (every layer)</span></button>
@@ -1516,11 +1517,10 @@
     </div>
   </div>
 
-  <!-- LAYERS PANEL (floats at the canvas's right edge) -->
+  <!-- LAYERS PANEL (docked at the left, open by default) -->
   <div id="layers-panel" role="dialog" aria-label="Layers">
     <div class="layers-head">
       <span class="saved-menu-head">Layers</span>
-      <button class="layers-close" onclick="toggleLayersPanel(false)" aria-label="Close layers">✕</button>
     </div>
     <div class="layers-list" id="layers-list"></div>
     <div class="layers-actions">
@@ -2134,10 +2134,9 @@ function toggleLayersPanel(force) {
   const p = document.getElementById('layers-panel');
   const open = force === undefined ? !p.classList.contains('open') : force;
   p.classList.toggle('open', open);
-  const btn = document.getElementById('layers-btn');
-  btn.classList.toggle('on', open);
-  btn.setAttribute('aria-expanded', String(open));
+  document.body.classList.toggle('layers-open', open);
   if (open) refreshLayersPanel();
+  fitZoom(); // the canvas area gains / loses the panel's width
 }
 
 function refreshLayersPanel() {
@@ -3389,7 +3388,8 @@ function fitZoom() {
   const headerFootprint = 64 + 8;
   const rootCss = getComputedStyle(document.documentElement);
   const barFootprint = parseFloat(rootCss.getPropertyValue('--bar-h')) + parseFloat(rootCss.getPropertyValue('--bar-bottom'));
-  const availW = Math.max(50, area.clientWidth - PAD * 2);
+  const sidePad = parseFloat(getComputedStyle(area).paddingLeft) || 0; // room kept for the Layers panel
+  const availW = Math.max(50, area.clientWidth - sidePad - PAD * 2);
   const availH = Math.max(50, area.clientHeight - headerFootprint - barFootprint - PAD * 2);
   const logW = S.cols * CELL, logH = S.rows * CELL;
   S.zoom = Math.min(2 * ZOOM_UNIT, availW / logW, availH / logH); // fills the space, up to 200% on the readout
@@ -3896,7 +3896,6 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('finish-split').classList.contains('open')) { closeFinishMenu(); return; }
     if (document.getElementById('motif-library-modal').classList.contains('on')) { closeMotifLibrary(); return; }
     if (S.capturingMotif) { stopCaptureMode(); return; }
-    if (layersPanelOpen()) { toggleLayersPanel(false); return; }
     if (S.selectedText !== null) { deselectText(); return; }
     if (S.stitchAnchor) { S.stitchAnchor = null; S.stitchPreview = null; S.stitchPath = null; render(); return; }
     if (S.activeMotif) { S.activeMotif = null; clearGhost(); showHint('Motif cancelled'); } return;
@@ -7075,7 +7074,7 @@ Object.assign(S, { cols: GRID_PRESETS.a4.rows, rows: GRID_PRESETS.a4.cols, paper
 document.body.classList.add('paper-mode');
 initCanvas();
 setBase('#FFFFFF');
-fitZoom();
+toggleLayersPanel(true); // docked on the left from the start (also fits the zoom)
 initCursors();
 // Re-fit whenever the viewport actually changes size (window resize, or an
 // iPad/phone rotating) — without this the canvas was only ever sized once,
