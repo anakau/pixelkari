@@ -755,6 +755,12 @@
     .finish-cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; min-height: 0; overflow-y: auto; }
     .finish-exports { padding: 4px 20px 20px 4px; display: flex; flex-direction: column; gap: 8px; }
     .finish-exports .finish-print-head { margin-top: 8px; }
+    .finish-plates { list-style: none; margin: 0 0 6px; padding: 2px 10px 4px 22px; display: flex; flex-direction: column; gap: 3px; }
+    .finish-plates li { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--muted); }
+    .fp-n { width: 14px; opacity: 0.7; }
+    .fp-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255,255,255,0.15); }
+    .fp-dot.fp-layer { border-radius: 2px; background: transparent; box-shadow: 0 0 0 1px currentColor; }
+    .motion-foot .finish-ig { flex: 1; max-width: 260px; }
     @media (max-width: 820px) { .finish-cols { grid-template-columns: 1fr; } .finish-exports { padding: 0 20px 20px; } }
     .motion-stage {
       display: flex; align-items: center; justify-content: center;
@@ -774,7 +780,6 @@
     .motion-style.on .motion-style-name { color: var(--accent); }
     .motion-style-desc { font-size: 9px; color: var(--muted); line-height: 1.4; }
     .motion-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .motion-meta { font-size: 10px; color: var(--muted); letter-spacing: 0.03em; }
     #motion-gif-btn { width: auto; padding-left: 18px; padding-right: 18px; }
     #motion-gif-btn:disabled { opacity: 0.7; cursor: default; }
     .finish-close:hover { color: var(--accent); background: rgba(255,255,255,0.06); }
@@ -1701,26 +1706,21 @@
 <div class="overlay" id="motion-modal">
   <div class="finish-box">
     <div class="finish-head">
-      <span class="finish-head-title">Finish</span>
+      <span class="finish-head-title">Export</span>
       <button class="finish-close" onclick="closeMotionModal()">✕</button>
     </div>
     <div class="finish-cols">
     <div class="motion-body">
-      <div class="saved-menu-head">Animated GIF</div>
       <div class="motion-stage"><canvas id="motion-canvas"></canvas></div>
       <div class="motion-styles">
         <button type="button" class="motion-style" data-style="timelapse" onclick="setMotionStyle('timelapse')"><span class="motion-style-name">Timelapse</span><span class="motion-style-desc">Replays your piece in the order you made it</span></button>
         <button type="button" class="motion-style" data-style="dance" onclick="setMotionStyle('dance')"><span class="motion-style-name">Colour dance</span><span class="motion-style-desc">Pattern colours swap and twinkle</span></button>
       </div>
-      <div class="cp-value-row motion-logo-row">
-        <span class="cp-value-lbl" style="width:auto;">End on logo</span>
-        <div style="display:flex;gap:4px;margin-left:auto;">
-          <button type="button" class="cp-dash-btn" data-endlogo="1" onclick="setMotionEndLogo(true)">On</button>
-          <button type="button" class="cp-dash-btn" data-endlogo="0" onclick="setMotionEndLogo(false)">Off</button>
-        </div>
-      </div>
       <div class="motion-foot">
-        <span class="motion-meta" id="motion-meta"></span>
+        <a class="finish-row finish-ig" href="https://www.instagram.com/pixelkari.art" target="_blank" rel="noopener">
+          <svg class="finish-ig-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="0.6" fill="currentColor" stroke="none"/></svg>
+          <span class="finish-row-name">Instagram</span><span class="finish-row-dims">@pixelkari.art</span><span class="finish-row-dl">↗</span>
+        </a>
         <button class="btn-pri" id="motion-gif-btn" onclick="downloadMotionGif()">Download GIF</button>
       </div>
     </div>
@@ -3722,20 +3722,35 @@ function buildFinishMenu() {
   const wp = [['phone', 'Phone wallpaper'], ['desktop', 'Desktop wallpaper'], ['instagram', 'Instagram']]
     .map(([id, label]) => row(label, _wallpaperDims(id).join(' × '), `onclick="downloadWallpaper('${id}')"`, all || id === active))
     .join('');
+  // Riso: what each ZIP holds — one plate per ink, or one per visible layer
+  const inks = sizeId ? _getUsedInks() : [];
+  const plateLayers = sizeId ? S.layers.filter(L => L.visible && (L.cloth || Object.keys(L.cells).length || L.lines.length || L.texts.length)) : [];
+  const n2 = i => String(i + 1).padStart(2, '0');
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const inkList = inks.map(({ ink }, i) => `<li><span class="fp-n">${n2(i)}</span><span class="fp-dot" style="background:${ink.hex}"></span>${esc(ink.name)}</li>`).join('');
+  const layerList = plateLayers.map((L, i) => `<li><span class="fp-n">${n2(i)}</span><span class="fp-dot fp-layer"></span>${esc(L.name)}</li>`).join('');
   menu.innerHTML = `
+    <div class="cp-value-row finish-logo-row">
+      <span class="cp-value-lbl" style="width:auto;">Logo watermark</span>
+      <div style="display:flex;gap:4px;margin-left:auto;">
+        <button type="button" class="cp-dash-btn${MOTION.logo ? ' on' : ''}" data-wm="1" onclick="setExportLogo(true)">On</button>
+        <button type="button" class="cp-dash-btn${MOTION.logo ? '' : ' on'}" data-wm="0" onclick="setExportLogo(false)">Off</button>
+      </div>
+    </div>
     <div class="saved-menu-head">Digital</div>
     <div class="finish-list">${wp}</div>
     <div class="saved-menu-head finish-print-head">Print${sizeId ? ' · ' + sizeId.toUpperCase() : ''}</div>
     <div class="finish-list">
       ${row('Print PDF', 'full colour', 'id="pdf-download-btn" onclick="downloadPrintPDF()"', !!sizeId)}
-      ${row('Riso separations', 'ZIP · one PDF per ink', 'id="riso-download-btn" onclick="downloadRisoPack()"', !!sizeId)}
-      ${row('Riso by layer', 'ZIP · one PDF per layer', 'id="riso-layer-download-btn" onclick="downloadRisoPack(true)"', !!sizeId)}
     </div>
-    ${sizeId ? '' : '<span class="saved-note">Switch to an A5 / A4 / A3 canvas for print files.</span>'}
-    <a class="finish-row finish-ig" href="https://www.instagram.com/pixelkari.art" target="_blank" rel="noopener">
-      <svg class="finish-ig-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="0.6" fill="currentColor" stroke="none"/></svg>
-      <span class="finish-row-name">Instagram</span><span class="finish-row-dims">@pixelkari.art</span><span class="finish-row-dl">↗</span>
-    </a>`;
+    <div class="saved-menu-head finish-print-head">Riso${sizeId ? ' · ' + sizeId.toUpperCase() : ''}</div>
+    <div class="finish-list">
+      ${row('Colour separations', `ZIP · ${inks.length} PDF${inks.length === 1 ? '' : 's'}`, 'id="riso-download-btn" onclick="downloadRisoPack()"', !!sizeId && inks.length)}
+      ${inkList ? `<ul class="finish-plates">${inkList}</ul>` : ''}
+      ${row('By layer', `ZIP · ${plateLayers.length} PDF${plateLayers.length === 1 ? '' : 's'}`, 'id="riso-layer-download-btn" onclick="downloadRisoPack(true)"', !!sizeId && plateLayers.length)}
+      ${layerList ? `<ul class="finish-plates">${layerList}</ul>` : ''}
+    </div>
+    ${sizeId ? '' : '<span class="saved-note">Switch to an A5 / A4 / A3 canvas for print and riso files.</span>'}`;
 }
 function _finishOpen() { return document.getElementById('motion-modal').classList.contains('on'); }
 
@@ -3773,6 +3788,7 @@ function _buildWallpaperCanvas(presetId) {
     ec.drawImage(canvas, 0, 0, preW, preH);
   }
   S.grid = savedGrid; _doRender();
+  if (MOTION.logo) drawLogoWatermark(ec, exp.width, exp.height);
 
   return exp;
 }
@@ -3951,6 +3967,7 @@ async function downloadPrintPDF() {
     const [mmW, mmH] = _matchOrientation(preset.mmW, preset.mmH);
     const [EW, EH] = _matchOrientation(preset.w, preset.h);
     const canvas2 = _buildFullColorCanvas(EW, EH);
+    if (MOTION.logo) { const wc = canvas2.getContext('2d'); wc.setTransform(1, 0, 0, 1, 0, 0); drawLogoWatermark(wc, canvas2.width, canvas2.height); }
     const pdf = new jspdf.jsPDF({ orientation: mmW > mmH ? 'landscape' : 'portrait', unit: 'mm', format: [mmW, mmH] });
     pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, mmW, mmH, undefined, 'MEDIUM');
     pdf.save(`pixelkari-${sizeId}-print.pdf`);
@@ -6282,7 +6299,7 @@ function drawLogoObj(t, g, scale, ox, oy) {
   const L = _logoLayout(t, scale, g);
   const x0 = ox + t.col * scale, y0 = oy + t.row * scale;
   g.save();
-  if (!t.noBox) { g.fillStyle = t.mono ? '#000' : LOGO_BOX; g.fillRect(x0, y0, L.w, L.h); }
+  if (!t.noBox) { g.fillStyle = t.mono ? '#000' : (t.box || LOGO_BOX); g.fillRect(x0, y0, L.w, L.h); }
   g.font = _logoFont(L.em);
   g.textBaseline = 'alphabetic';
   let x = x0 + L.em * LOGO_PAD_X;
@@ -6570,34 +6587,30 @@ const MOTION_STYLES = {
 };
 const MOTION_GIF_MAX = 640; // longest side of the exported GIF, in px
 
-const MOTION = { style: 'timelapse', tris: [], colors: [], raf: null, start: 0, endLogo: false };
-const MOTION_END_SECS = 1.6; // the logo card added after the loop
-
-// Total length (s) with the optional logo card, and a frame at time T of it.
-function _motionSecs(style) { return MOTION_STYLES[style].secs + (MOTION.endLogo ? MOTION_END_SECS : 0); }
+const MOTION = { style: 'timelapse', tris: [], colors: [], raf: null, start: 0, logo: false };
+// Logo watermark: the pi⧗elkari wordmark, small, on a black box centred
+// on the artwork. One switch in the Export window covers the GIF, the
+// wallpapers and the print PDF (riso plates stay clean). W, H, in g's units.
+function drawLogoWatermark(g, W, H) {
+  const em = Math.min(W * 0.5 / 4.6, H * 0.3) / 2;
+  const t = { logo: true, size: em, col: 0, row: 0, box: '#000' };
+  const L = _logoLayout(t, 1, g);
+  drawLogoObj({ ...t, col: (W - L.w) / 2, row: (H - L.h) / 2 }, g, 1, 0, 0);
+}
+function _motionSecs(style) { return MOTION_STYLES[style].secs; }
 function drawMotionTimed(g, k, style, T) {
-  const loop = MOTION_STYLES[style].secs;
-  if (T < loop) { drawMotionFrame(g, k, style, T / loop); return; }
-  // logo card: the bare loop start, a dark ground fading in, then the wordmark
-  drawMotionFrame(g, k, style, 0);
-  const f = Math.min(1, (T - loop) / 0.35);
-  const W = S.cols * CELL, H = S.rows * CELL;
+  drawMotionFrame(g, k, style, T / MOTION_STYLES[style].secs);
+  if (!MOTION.logo) return;
   g.setTransform(k, 0, 0, k, 0, 0);
-  g.globalAlpha = f;
-  g.fillStyle = '#000'; g.fillRect(-2, -2, W + 4, H + 4); // past the edges so no cloth peeks through
-  const size = Math.max(2, Math.min(S.cols * 0.5 / 4.6, S.rows * 0.3));
-  const logo = { logo: true, size, col: 0, row: 0 };
-  const L = _logoLayout(logo, CELL, g);
-  drawLogoObj({ ...logo, noBox: true, col: (W - L.w) / 2 / CELL, row: (H - L.h) / 2 / CELL }, g, CELL, 0, 0);
   g.globalAlpha = 1;
+  drawLogoWatermark(g, S.cols * CELL, S.rows * CELL);
 }
-function setMotionEndLogo(on) {
-  MOTION.endLogo = on;
-  try { localStorage.setItem('pkGifLogo', on ? '1' : '0'); } catch (e) {}
-  MOTION.start = performance.now();
-  _syncMotionUI();
+function setExportLogo(on) {
+  MOTION.logo = on;
+  try { localStorage.setItem('pkLogoMark', on ? '1' : '0'); } catch (e) {}
+  document.querySelectorAll('[data-wm]').forEach(b => b.classList.toggle('on', (b.dataset.wm === '1') === on));
 }
-try { MOTION.endLogo = localStorage.getItem('pkGifLogo') !== '0'; } catch (e) {}
+try { MOTION.logo = localStorage.getItem('pkLogoMark') === '1'; } catch (e) {}
 
 function _triVerts(c, r, tri) {
   if (tri === 't') return [[c, r], [c + 1, r], [c + 0.5, r + 0.5]];
@@ -6828,12 +6841,6 @@ function _motionPreviewLoop(now) {
 
 function _syncMotionUI() {
   document.querySelectorAll('.motion-style').forEach(b => b.classList.toggle('on', b.dataset.style === MOTION.style));
-  document.querySelectorAll('[data-endlogo]').forEach(b => b.classList.toggle('on', (b.dataset.endlogo === '1') === MOTION.endLogo));
-  const st = MOTION_STYLES[MOTION.style];
-  const secs = _motionSecs(MOTION.style), frames = Math.round(secs * st.fps);
-  const W = S.cols * CELL, H = S.rows * CELL, k = Math.min(1, MOTION_GIF_MAX / Math.max(W, H));
-  document.getElementById('motion-meta').textContent =
-    `${Math.round(W * k)} × ${Math.round(H * k)} · ${+secs.toFixed(1)}s loop · ${frames} frames`;
 }
 
 function setMotionStyle(style) {
