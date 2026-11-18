@@ -3852,10 +3852,7 @@ function buildFinishMenu() {
     ${sizeId ? '' : '<span class="saved-note">Switch to an A5 / A4 / A3 canvas for print and riso files.</span>'}`;
 }
 // The plain animated GIF is square.
-function _gifDims() { // square: the canvas's longest side, capped at MOTION_GIF_MAX
-  const W = S.cols * CELL, H = S.rows * CELL, side = Math.round(Math.max(W, H) * Math.min(1, MOTION_GIF_MAX / Math.max(W, H)));
-  return [side, side];
-}
+function _gifDims() { return [MOTION_GIF_MAX, MOTION_GIF_MAX]; }
 const _finishDropOpen = {}; // which riso drop-downs are open, kept across rebuilds
 function _finishOpen() { return document.getElementById('motion-modal').classList.contains('on'); }
 
@@ -6712,7 +6709,7 @@ const MOTION_STYLES = {
   timelapse: { label: 'Timelapse',       secs: 6, fps: 15 },
   dance:     { label: 'Colour dance',    secs: 6, fps: 15 },
 };
-const MOTION_GIF_MAX = 640; // longest side of the exported GIF, in px
+const MOTION_GIF_MAX = 1080; // the square GIF's side, in px (the social-media standard)
 
 const MOTION = { style: 'timelapse', tris: [], colors: [], raf: null, start: 0, logo: false };
 // Logo watermark: the pi⧗elkari wordmark, small, on a black box centred
@@ -7030,12 +7027,16 @@ async function downloadMotionGif(presetId) {
     const style = MOTION.style, st = MOTION_STYLES[style], n = Math.round(_motionSecs(style) * st.fps);
     const W = S.cols * CELL, H = S.rows * CELL;
     const rotate = !!presetId && !!WALLPAPER_PRESETS[presetId].autoRotate && W > H;
-    const k = presetId ? Math.min(WALLPAPER_PRESETS[presetId].scale, MOTION_WP_GIF_MAX / Math.max(W, H)) : Math.min(1, MOTION_GIF_MAX / Math.max(W, H));
+    // Each grid cell gets a whole number of pixels, so triangle edges land on
+    // pixel boundaries and stay crisp (no half-pixel blur, fewer stray colours
+    // for the GIF palette to spend itself on).
+    const maxSide = presetId ? Math.min(WALLPAPER_PRESETS[presetId].scale * Math.max(W, H), MOTION_WP_GIF_MAX) : MOTION_GIF_MAX;
+    const k = Math.max(1, Math.floor(maxSide / Math.max(S.cols, S.rows))) / CELL;
     const fw = Math.round(W * k), fh = Math.round(H * k);           // the frame as drawn
     // the GIF itself: wallpapers keep their shape; the plain GIF is square,
     // the artwork centred on its own cloth colour
     const square = !presetId;
-    const w = square ? Math.max(fw, fh) : rotate ? fh : fw, h = square ? w : rotate ? fw : fh;
+    const w = square ? MOTION_GIF_MAX : rotate ? fh : fw, h = square ? w : rotate ? fw : fh;
     const fc = document.createElement('canvas'); fc.width = fw; fc.height = fh;
     const fg = fc.getContext('2d');
     const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
