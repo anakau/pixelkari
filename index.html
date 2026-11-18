@@ -3855,8 +3855,12 @@ function buildFinishMenu() {
     </div>
     ${sizeId ? '' : '<span class="saved-note">Switch to an A5 / A4 / A3 canvas for print and riso files.</span>'}`;
 }
-// The plain animated GIF is square.
-function _gifDims() { return [MOTION_GIF_MAX, MOTION_GIF_MAX]; }
+// The plain animated GIF: the artwork's proportions, longest side up to
+// MOTION_GIF_MAX, each cell a whole number of pixels (as downloadMotionGif draws it).
+function _gifDims() {
+  const cpx = Math.max(1, Math.floor(MOTION_GIF_MAX / Math.max(S.cols, S.rows)));
+  return [S.cols * cpx, S.rows * cpx];
+}
 const _finishDropOpen = {}; // which riso drop-downs are open, kept across rebuilds
 function _finishOpen() { return document.getElementById('motion-modal').classList.contains('on'); }
 
@@ -6776,7 +6780,7 @@ const MOTION_STYLES = {
   timelapse: { label: 'Timelapse',       secs: 6, fps: 15 },
   dance:     { label: 'Colour dance',    secs: 6, fps: 15 },
 };
-const MOTION_GIF_MAX = 1080; // the square GIF's side, in px (the social-media standard)
+const MOTION_GIF_MAX = 1080; // the GIF's longest side, in px
 
 const MOTION = { style: 'timelapse', tris: [], colors: [], raf: null, start: 0, logo: false };
 // Logo watermark: the pi⧗elkari wordmark, small, on a black box centred
@@ -7100,10 +7104,8 @@ async function downloadMotionGif(presetId) {
     const maxSide = presetId ? Math.min(WALLPAPER_PRESETS[presetId].scale * Math.max(W, H), MOTION_WP_GIF_MAX) : MOTION_GIF_MAX;
     const k = Math.max(1, Math.floor(maxSide / Math.max(S.cols, S.rows))) / CELL;
     const fw = Math.round(W * k), fh = Math.round(H * k);           // the frame as drawn
-    // the GIF itself: wallpapers keep their shape; the plain GIF is square,
-    // the artwork centred on its own cloth colour
-    const square = !presetId;
-    const w = square ? MOTION_GIF_MAX : rotate ? fh : fw, h = square ? w : rotate ? fw : fh;
+    // the GIF itself: the artwork's own proportions (turned for a phone wallpaper)
+    const w = rotate ? fh : fw, h = rotate ? fw : fh;
     const fc = document.createElement('canvas'); fc.width = fw; fc.height = fh;
     const fg = fc.getContext('2d');
     const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
@@ -7112,7 +7114,6 @@ async function downloadMotionGif(presetId) {
       drawMotionTimed(fg, k, style, i / st.fps);
       g.setTransform(1, 0, 0, 1, 0, 0);
       if (rotate) { g.translate(w / 2, h / 2); g.rotate(Math.PI / 2); g.drawImage(fc, -fw / 2, -fh / 2); g.setTransform(1, 0, 0, 1, 0, 0); }
-      else if (square) { g.fillStyle = S.base; g.fillRect(0, 0, w, h); g.drawImage(fc, Math.round((w - fw) / 2), Math.round((h - fh) / 2)); }
       else g.drawImage(fc, 0, 0);
       return g.getImageData(0, 0, w, h).data;
     };
