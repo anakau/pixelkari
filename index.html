@@ -3107,6 +3107,29 @@ function drawBrushShadow({ col, row, tri }) {
   g.restore();
 }
 
+// Stitch / Zigzag before the first click: a dot (and its mirrors) on the
+// grid point where the line will start, in the thread's colour.
+function drawStitchShadow(v) {
+  const key = `stitch|${S.stitchZigzag}|${stitchInk()}|${S.stitchSize}|${S.sym}|${v.col},${v.row}`;
+  if (key === _shadowKey) return;
+  _shadowKey = key;
+  const gc = document.getElementById('ghost-canvas');
+  const g = gc.getContext('2d');
+  g.clearRect(0, 0, gc.width, gc.height);
+  const proto = { color: stitchInk(), dashed: S.stitchDashed, zigzag: S.stitchZigzag, size: S.stitchSize };
+  const w = lineWidthOf(proto);
+  for (const [p] of symPaths([v])) {
+    g.save();
+    g.globalAlpha = 0.5;
+    g.fillStyle = proto.color;
+    g.beginPath(); g.arc(p.col * CELL, p.row * CELL, Math.max(3, w * 1.4), 0, Math.PI * 2); g.fill();
+    g.globalAlpha = 0.9;
+    g.strokeStyle = proto.color; g.lineWidth = 1;
+    g.beginPath(); g.arc(p.col * CELL, p.row * CELL, Math.max(6, w * 2.6), 0, Math.PI * 2); g.stroke();
+    g.restore();
+  }
+}
+
 function clearBrushShadow() {
   if (_shadowKey === null) return;
   _shadowKey = null;
@@ -3255,6 +3278,7 @@ canvas.addEventListener('pointerdown', e => {
   if (S.tool === 'stitch') {
     e.preventDefault();
     safeSetPointerCapture(e.pointerId);
+    clearBrushShadow();
     const v = nearestVertex(e);
     if (!S.stitchAnchor) {
       S.stitchAnchor = v;
@@ -3384,7 +3408,7 @@ canvas.addEventListener('pointermove', e => {
   }
   if (S.tool === 'text') { textPointerMove(e); return; }
   if (S.tool === 'stitch') {
-    if (!S.stitchAnchor) return;
+    if (!S.stitchAnchor) { if (e.pointerType !== 'touch') drawStitchShadow(nearestVertex(e)); return; }
     // A real drag is never a perfectly straight line — even along an
     // intended diagonal, it wobbles sub-cell amounts constantly. Reacting
     // to every pointermove tick turned that wobble into its own zigzag/
