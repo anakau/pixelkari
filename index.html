@@ -852,6 +852,75 @@
       align-items: center; justify-content: center; padding: 16px;
     }
     #story-page.on { display: flex; }
+
+    /* ════ PHONE (body.phone, ≤600px wide at load) ════
+       An edit screen like the iPhone Photos editor: logo + ☰ on top, the
+       canvas in the middle, tools in a sideways-scrolling row at the bottom,
+       the chosen tool's options docked just above it. Every top-bar item
+       lives in the ☰ menu; motifs live in their own Motifs menu. */
+    #phone-menu-btn, #phone-motif-btn, #phone-menu, #phone-motifs { display: none; }
+    body.phone #phone-menu-btn {
+      display: flex; align-items: center; justify-content: center; margin-left: auto;
+      width: 40px; height: 40px; border: none; border-radius: 10px; cursor: pointer;
+      background: var(--accent-deep); color: var(--accent);
+    }
+    body.phone #phone-menu-btn.on { background: var(--pink-deep); color: var(--pink); }
+    body.phone .page-header { top: 0; left: 0; right: 0; height: 56px; padding: 0 12px; }
+    body.phone .logo-wrap { margin-top: 0; align-self: center; }
+    body.phone .billo-wrap, body.phone #story-logo { display: none !important; }
+    .phone-sheet {
+      position: fixed; left: 8px; right: 8px; z-index: 300; display: none; flex-direction: column; gap: 12px;
+      background: #000; border-radius: 16px; padding: 14px; max-height: 72vh; overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    }
+    #phone-menu.open, #phone-motifs.open { display: flex; }
+    .edge-ctrl { display: none !important; } /* no +/− canvas resizing: canvases are their preset sizes */
+    #phone-menu { top: 58px; }
+    #phone-motifs { bottom: calc(var(--phone-bar) + 8px); }
+    .phone-sheet-head { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+    #phone-menu .page-zoom-row, #phone-menu .header-actions, #phone-menu .nav-block, #phone-menu .nav-row {
+      position: static; transform: none; display: flex; flex-wrap: wrap; gap: 6px; height: auto; width: auto;
+    }
+    #phone-menu .nav-block { flex-direction: column; }
+    #phone-menu .hover-tip, #phone-menu .feedback-tip, #phone-menu .orient-btn { display: none !important; }
+    #phone-menu #preset-select { width: 100%; height: 40px; }
+    #phone-menu .fit-btn, #phone-menu .icon-btn, #phone-menu .export-btn, #phone-menu .chk-btn { height: 40px; min-width: 40px; }
+    #phone-motifs #motif-panel, #phone-motifs .motif-grid, #phone-motifs .motif-ctrls { display: flex; flex-wrap: wrap; gap: 6px; position: static; width: auto; }
+    #phone-motifs .motif-create-btn { width: 100%; flex-direction: row; gap: 10px; height: 48px; }
+    #phone-motifs .mcb-tip { display: none !important; }
+    /* bottom: the tool row, scrolling sideways */
+    body.phone { --phone-bar: 104px; }
+    body.phone #bottombar {
+      left: 0; right: 0; bottom: 0; height: var(--phone-bar); padding: 0 0 env(safe-area-inset-bottom);
+      overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+      background: #0d0d0d; align-items: center;
+    }
+    body.light.phone #bottombar { background: #E2E2E2; }
+    body.phone #bottombar::-webkit-scrollbar { display: none; }
+    body.phone #bb-tools { flex-wrap: nowrap; width: max-content; padding: 0 14px 18px; gap: 14px; align-items: center; }
+    body.phone #bb-tools > .bb-divider { display: none; }
+    body.phone .tool-icon-btn svg { height: 48px !important; width: auto; }
+    body.phone .tool-icon-btn .ti-en, body.phone .tool-icon-btn .ti-pa { font-size: 38px; }
+    body.phone .tool-size { display: none !important; }
+    body.phone #sym-group .sym-btn { width: 44px; height: 44px; }
+    body.phone #phone-motif-btn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0;
+      width: 64px; height: 64px; border: none; border-radius: 12px; cursor: pointer;
+      background: var(--accent-deep); color: var(--accent); font: 9px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    body.phone #phone-motif-btn.on { background: var(--pink-deep); color: var(--pink); }
+    body.phone #canvas-area { padding-top: 60px; padding-bottom: calc(var(--phone-bar) + 8px); }
+    /* the chosen tool's options dock above the tool row, full width */
+    body.phone #cp-popup, body.phone #text-popup {
+      left: 8px !important; right: 8px !important; top: auto !important; bottom: calc(var(--phone-bar) + 8px) !important;
+      width: auto !important; max-width: none !important; max-height: 52vh; overflow-y: auto; flex-wrap: wrap;
+    }
+    body.phone #cp-popup .cp-left { width: 100%; }
+    body.phone #cp-popup .cp-right { width: 100%; }
+    body.phone #cp-popup #cp-spectrum, body.phone #cp-popup #cp-hue { width: 100%; }
+    body.phone .cp-swatches { display: flex !important; flex-wrap: nowrap; overflow-x: auto; gap: 6px; }
+    body.phone .cp-swatch { flex: none; width: 32px !important; height: 32px !important; }
+    body.light #phone-menu, body.light #phone-motifs { background: var(--panel); box-shadow: 0 6px 24px rgba(0,0,0,0.10); }
     #story-logo { position: fixed; z-index: 2; cursor: pointer; line-height: 1; }
     @media (max-width: 900px) { #story-logo { display: none; } }
     /* a strip cropped from Sainchi Phulkari (VI)'s diamond border runs down the left margin */
@@ -1551,6 +1620,10 @@
     body.light .mascot-name, body.light .layer-name-input, body.light #text-input,
     body.light .cp-value-input, body.light .mascot-swatch { background-color: var(--accent-deep); }
     body.light .preset-select option { background: var(--panel); color: var(--accent); }
+    /* colour panel rows + Pick from screen: light grey on the white panel, ink text */
+    body.light .cp-value-row, body.light .cp-eyedrop-btn { background: #F2F2F2; }
+    body.light .cp-eyedrop-btn, body.light .cp-value-row .cp-value-input { color: #1C1C1A; }
+    body.light .cp-value-row .cp-value-input { background-color: transparent; }
     body.light .layers-actions, body.light .saved-menu-foot { border-color: rgba(120,100,60,0.15); }
     /* light grey type meant for black grounds becomes the UI yellow / muted */
     body.light .hover-tip, body.light .sym-tip, body.light .feedback-tip, body.light .motif-create-btn .mcb-tip,
@@ -1577,6 +1650,9 @@
         <span class="hover-tip hover-tip-below">About Pixelkari</span>
       </div>
     </div>
+    <button type="button" id="phone-menu-btn" onclick="togglePhoneSheet('phone-menu')" aria-label="Menu">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
     <div class="page-zoom-row">
       <button class="fit-btn tip-host" onclick="fitZoom()">Fit<span class="hover-tip hover-tip-below">Fit to screen</span></button>
       <button class="icon-btn tip-host" onclick="doZoom(-0.25)">−<span class="hover-tip hover-tip-below">Zoom out (-)</span></button>
@@ -1772,6 +1848,10 @@
     </div>
   </div>
 </div>
+
+<!-- PHONE: the ☰ menu and the Motifs menu (filled by setupPhone) -->
+<div class="phone-sheet" id="phone-menu" role="menu"></div>
+<div class="phone-sheet" id="phone-motifs" role="menu"><div class="phone-sheet-head">Motifs</div></div>
 
 <!-- MOTION MODAL -->
 <div class="overlay" id="motion-modal">
@@ -3736,9 +3816,52 @@ function _updatePresetBtns(active) {
   if (sel && active) sel.value = active;
 }
 
+// ── Phone layout ── decided once at load (a phone doesn't turn into a desktop).
+const IS_PHONE = window.matchMedia('(max-width: 600px)').matches;
+function setupPhone() {
+  if (!IS_PHONE) return;
+  document.body.classList.add('phone');
+  // ☰ menu: every top-bar item, plus canvas size, grid and border
+  const menu = document.getElementById('phone-menu');
+  const head = t => Object.assign(document.createElement('div'), { className: 'phone-sheet-head', textContent: t });
+  menu.append(head('Edit'), document.querySelector('.page-zoom-row'),
+              head('Canvas'), document.querySelector('.nav-block'),
+              head('File'), document.querySelector('.header-actions'));
+  // phones get the phone, square and Instagram sizes only
+  const sel = document.getElementById('preset-select');
+  sel.querySelectorAll('option').forEach(o => { if (!['phone', 'igsquare', 'social', 'iglandscape'].includes(o.value)) o.remove(); });
+  sel.querySelectorAll('optgroup').forEach(g => { if (!g.children.length) g.remove(); });
+  sel.value = 'phone';
+  // Motifs menu: Create Motif + the library, opened from a Motifs tool
+  const motifs = document.getElementById('phone-motifs');
+  const mBtn = document.getElementById('motif-btn');
+  const mWrap = mBtn.parentElement;
+  motifs.append(mBtn, document.getElementById('motif-panel'));
+  const open = document.createElement('button');
+  open.type = 'button'; open.id = 'phone-motif-btn';
+  open.innerHTML = '<span class="motif-btn-icon" aria-hidden="true"></span><span>Motifs</span>';
+  open.onclick = e => { e.stopPropagation(); togglePhoneSheet('phone-motifs'); };
+  mWrap.replaceWith(open);
+  // tapping a motif or Create Motif puts the sheet away so you can draw
+  motifs.addEventListener('click', e => { if (e.target.closest('#motif-btn, .motif-grid > *')) togglePhoneSheet('phone-motifs', false); });
+  document.addEventListener('pointerdown', e => {
+    if (!e.target.closest('.phone-sheet, #phone-menu-btn, #phone-motif-btn')) { togglePhoneSheet('phone-menu', false); togglePhoneSheet('phone-motifs', false); }
+  }, true);
+}
+function togglePhoneSheet(id, force) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const open = force === undefined ? !el.classList.contains('open') : force;
+  if (open) { document.querySelectorAll('.phone-sheet.open').forEach(x => x !== el && x.classList.remove('open')); if (window._closeCPPopup) window._closeCPPopup(); }
+  el.classList.toggle('open', open);
+  const btn = document.getElementById(id === 'phone-menu' ? 'phone-menu-btn' : 'phone-motif-btn');
+  if (btn) btn.classList.toggle('on', open);
+}
+
 function newGridPreset(preset) {
   if (!confirm('Start a new canvas? Your current design will be cleared.')) return;
-  const { cols, rows, paper } = GRID_PRESETS[preset];
+  let { cols, rows, paper } = GRID_PRESETS[preset];
+  if (IS_PHONE && preset === 'phone') [cols, rows] = [rows, cols]; // upright on a phone
   resetLayers();
   deselectText();
   S.cols = cols;
@@ -4173,7 +4296,6 @@ function showStoryPage() {
 }
 
 function closeStoryPage() {
-  if (window.innerWidth <= 900) return;
   document.getElementById('story-page').classList.remove('on');
   document.body.classList.remove('story-open');
   _stopStoryTrail();
@@ -4923,6 +5045,7 @@ function initCustomColorPicker() {
   window._cpRefreshInks = () => { if (popup.classList.contains('on') && isRiso()) { renderInkMeter(); renderSwatchSection(cpTarget); } };
 
   function positionPopup() {
+    if (document.body.classList.contains('phone')) { popup.style.left = popup.style.top = ''; return; } // docked by CSS
     const btn = document.getElementById(`${cpTarget}-icon-btn`);
     if (!btn) return;
     const r = btn.getBoundingClientRect();
@@ -7309,6 +7432,7 @@ buildMotifPal();
 buildProjectPal();
 renderBilloAvatar();
 initBilloEyes();
+setupPhone();
 initMascotPanel();
 pickBilloFact();
 wireBilloContextTips();
@@ -7316,12 +7440,19 @@ initBubbleVisibility();
 initCustomColorPicker();
 initTextPopup();
 syncThemeBtn();
-// Start on an A4 landscape print canvas (white paper)
-Object.assign(S, { cols: GRID_PRESETS.a4.rows, rows: GRID_PRESETS.a4.cols, paper: true });
-document.body.classList.add('paper-mode');
-initCanvas();
-setBase('#FFFFFF');
-fitZoom();
+if (IS_PHONE) {
+  // Phones start on a portrait phone-wallpaper canvas
+  Object.assign(S, { cols: GRID_PRESETS.phone.rows, rows: GRID_PRESETS.phone.cols, paper: false });
+  initCanvas();
+  fitZoom();
+} else {
+  // Start on an A4 landscape print canvas (white paper)
+  Object.assign(S, { cols: GRID_PRESETS.a4.rows, rows: GRID_PRESETS.a4.cols, paper: true });
+  document.body.classList.add('paper-mode');
+  initCanvas();
+  setBase('#FFFFFF');
+  fitZoom();
+}
 toggleLayersPanel(false); // closed at first — opens itself once a second tool is used (see _noteToolUsed)
 initCursors();
 // Re-fit whenever the viewport actually changes size (window resize, or an
