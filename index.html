@@ -1357,6 +1357,7 @@
     #story-body .lc-e { color: #4D8DFF; }
     #story-body .lc-a { color: #4CBB17; }
     #story-body .lc-l { color: #FF2A2A; }
+    #story-body .lc-u { color: #9B5CFF; }
     #story-body .lc-x { color: #D4A827; }
     #story-body .s-h1 .logo-x, #story-body h2 .logo-x { fill: #D4A827; height: 0.52em; width: 0.5em; }
     #story-box .logo-title .logo-e { color: #4D8DFF; }
@@ -1844,7 +1845,7 @@
 
 <script>
 // Story headings take the wordmark's letter colours: pink, with i white,
-// e cobalt, a green, l red, and a lowercase x drawn as the yellow bowtie.
+// e cobalt, a green, l red, u purple, and a lowercase x drawn as the yellow bowtie.
 (function logoColourHeadings() {
   const X = '<svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg>';
   document.querySelectorAll('#story-body .s-h1, #story-body h2').forEach(h => {
@@ -1855,7 +1856,7 @@
       span.innerHTML = [...n.textContent].map(c => {
         const k = c.toLowerCase();
         if (c === 'x') return `<span class="lc-x" aria-label="x">${X}</span>`;
-        if ('iealx'.includes(k)) return `<span class="lc-${k}">${c}</span>`;
+        if ('iealxu'.includes(k)) return `<span class="lc-${k}">${c}</span>`;
         return c.replace(/&/g, '&amp;').replace(/</g, '&lt;');
       }).join('');
       n.replaceWith(...span.childNodes);
