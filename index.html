@@ -1263,12 +1263,27 @@
        styled like the Saved / Finish dropdowns, rows like saved rows. It
        floats over the canvas area — the canvas stays centred. */
     #layers-panel {
-      display: none; position: fixed; right: 8px; top: 80px; z-index: 150;
+      --lp-r: 8px;
+      display: flex; position: fixed; right: var(--lp-r); top: 80px; z-index: 150;
       width: 260px; max-height: calc(100vh - 80px - var(--bar-h) - 24px);
       background: #000; border-radius: 16px; padding: 12px;
       box-shadow: 0 6px 24px rgba(0,0,0,0.7); flex-direction: column; gap: 8px;
     }
-    #layers-panel.open { display: flex; }
+    /* closed = slid off the right edge, leaving only its file-label tab */
+    #layers-panel { transform: translateX(calc(100% + var(--lp-r))); transition: transform 0.28s cubic-bezier(.2,.8,.3,1); }
+    #layers-panel.open { transform: none; }
+    #layers-panel:not(.open), body.light #layers-panel:not(.open) { box-shadow: none; }
+    .layers-tab {
+      position: absolute; left: -30px; top: 18px; width: 30px; height: 92px; padding: 0;
+      background: #000; color: var(--accent); border: none; border-radius: 0 12px 12px 0; cursor: pointer; /* flipped by the 180° turn */
+      box-shadow: 6px -4px 14px rgba(0,0,0,0.45);
+      font: 10px var(--font-body); letter-spacing: 0.16em; text-transform: uppercase;
+      writing-mode: vertical-rl; transform: rotate(180deg);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .layers-tab:hover, #layers-panel.open .layers-tab { color: var(--pink); }
+    body.light .layers-tab { background: var(--panel); color: #1C1C1A; box-shadow: 4px -3px 10px rgba(0,0,0,0.08); }
+    body.light .layers-tab:hover, body.light #layers-panel.open .layers-tab { color: #1C1C1A; background: #D5FEAF; }
     .layers-head { display: flex; align-items: center; justify-content: space-between; }
     .layers-close { /* the ✕ style, used by the mascot panel */
       background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px;
@@ -1319,10 +1334,11 @@
     body.light .layers-act.on { background: #D5FEAF; color: #1C1C1A; }
     .layers-act:disabled { color: #4a4a4a; cursor: default; pointer-events: none; }
     @media (max-width: 1400px) {
-      #layers-panel { right: 10px; top: 86px; max-height: calc(100vh - 86px - var(--bar-h) - 30px); }
+      #layers-panel { --lp-r: 10px; top: 86px; max-height: calc(100vh - 86px - var(--bar-h) - 30px); }
     }
     @media (max-width: 560px) {
-      #layers-panel { left: 10px; right: 10px; width: auto; top: 70px; max-height: 50vh; }
+      #layers-panel { --lp-r: 10px; left: 10px; width: auto; top: 70px; max-height: 50vh; }
+      #layers-panel:not(.open) { left: auto; width: 260px; }
     }
 
     /* ── Intro pop-up colour scheme ── the app's resting-button look: yellow
@@ -1537,6 +1553,7 @@
 
   <!-- LAYERS PANEL (docked at the right, open by default) -->
   <div id="layers-panel" role="dialog" aria-label="Layers">
+    <button type="button" class="layers-tab" onclick="toggleLayersPanel()" aria-label="Show or hide layers">Layers</button>
     <div class="layers-head">
       <span class="saved-menu-head">Layers</span>
     </div>
