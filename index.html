@@ -1296,6 +1296,7 @@
     .layers-actions { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--btn-gap); border-top: 1px solid rgba(255,255,255,0.07); padding-top: 8px; }
     .layers-actions .layers-act:nth-child(-n+3) { grid-column: span 2; }
     .layers-actions .layers-act:nth-child(n+4) { grid-column: span 3; }
+    .layers-actions .layers-act.layers-auto { grid-column: 1 / -1; }
     .layer-row { touch-action: none; user-select: none; -webkit-user-select: none; }
     #layers-panel { user-select: none; -webkit-user-select: none; }
     #layers-panel .layer-name-input { user-select: text; -webkit-user-select: text; }
@@ -1314,6 +1315,8 @@
       background: var(--accent-deep); color: var(--accent); transition: background 0.12s, color 0.12s;
     }
     .layers-act:hover { background: var(--pink-deep); color: var(--pink); }
+    .layers-act.on { background: var(--pink-deep); color: var(--pink); }
+    body.light .layers-act.on { background: #D5FEAF; color: #1C1C1A; }
     .layers-act:disabled { color: #4a4a4a; cursor: default; pointer-events: none; }
     @media (max-width: 1400px) {
       #layers-panel { right: 10px; top: 86px; max-height: calc(100vh - 86px - var(--bar-h) - 30px); }
@@ -1544,6 +1547,7 @@
       <button class="layers-act" onclick="duplicateLayer()">Duplicate</button>
       <button class="layers-act" id="layer-merge-btn" onclick="mergeLayerDown()">Merge ↓</button>
       <button class="layers-act" id="layer-del-btn" onclick="deleteLayer()">Delete</button>
+      <button class="layers-act layers-auto" id="layer-auto-btn" onclick="toggleAutoLayers()" title="Each tool and each motif draws on its own layer">Auto layers: On</button>
     </div>
     <span class="saved-note">Drag a layer to move it up or down; double-click a name to rename. A cloth layer is its own fabric — Cut on it cuts the cloth away to show what's underneath. On an A5 / A4 / A3 canvas, Finish → Riso by layer prints each visible layer as its own plate.</span>
   </div>
@@ -2208,6 +2212,8 @@ function refreshLayersPanel() {
     list.appendChild(row);
   }
   document.getElementById('layer-del-btn').disabled = S.layers.length < 2;
+  const autoBtn = document.getElementById('layer-auto-btn');
+  if (autoBtn) { autoBtn.textContent = `Auto layers: ${AUTO_LAYERS ? 'On' : 'Off'}`; autoBtn.classList.toggle('on', AUTO_LAYERS); }
   // a cloth layer covers everything below it, so it can't fold into the layer underneath
   document.getElementById('layer-merge-btn').disabled = S.activeLayer <= 0 || !!activeLayer().cloth;
   // the Cloth tool's colour follows the active layer — redraw its icon only when that changes
@@ -2340,6 +2346,56 @@ function _startRenameLayer(span, i) {
 function _leaveLayer() {
   deselectText();
   S.stitchAnchor = null; S.stitchPreview = null; S.stitchPath = null;
+}
+// ── Auto layers ── each tool (Weave, Stitch, Zigzag, Text) and each motif
+// draws on its own layer, found by its `auto` key or created on top the
+// first time. An empty plain layer (e.g. the starting Layer 1) is adopted
+// instead of adding a new one. Cut jumps to the top layer with weave under it.
+var AUTO_LAYERS = true;
+try { AUTO_LAYERS = localStorage.getItem('pkAutoLayers') !== '0'; } catch (e) {}
+function toggleAutoLayers() {
+  AUTO_LAYERS = !AUTO_LAYERS;
+  try { localStorage.setItem('pkAutoLayers', AUTO_LAYERS ? '1' : '0'); } catch (e) {}
+  showHint(AUTO_LAYERS ? 'Auto layers on — each tool and motif gets its own layer' : 'Auto layers off — you choose the layer');
+  refreshLayersPanel();
+}
+function _autoLayerTarget() {
+  if (S.activeMotif) return S.tool === 'erase' ? null : { key: 'motif:' + S.activeMotif.name, name: S.activeMotif.name };
+  if (S.tool === 'paint') return { key: 'weave', name: 'Weave' };
+  if (S.tool === 'stitch') return S.stitchAnchor ? null : S.stitchZigzag ? { key: 'zigzag', name: 'Zigzag' } : { key: 'stitch', name: 'Stitch' };
+  if (S.tool === 'text') return { key: 'text', name: 'Text' };
+  return null;
+}
+function routeAutoLayer(e) {
+  if (!AUTO_LAYERS) return;
+  // Cut goes to the topmost visible, unlocked layer with weave under the cursor
+  if (S.tool === 'erase' && !S.activeMotif && e) {
+    const { col, row, tri } = triAt(e);
+    const keys = [...brushKeys(col, row, tri)];
+    for (let j = S.layers.length - 1; j >= 0; j--) {
+      const L = S.layers[j];
+      if (!L.visible || L.locked || !keys.some(k => L.cells[k])) continue;
+      if (j !== S.activeLayer) { _leaveLayer(); S.activeLayer = j; refreshLayersPanel(); }
+      return;
+    }
+    return;
+  }
+  const t = _autoLayerTarget();
+  if (!t) return;
+  const cur = activeLayer();
+  if (cur.auto === t.key) return;
+  let i = S.layers.findIndex(L => L.auto === t.key);
+  if (i < 0) {
+    const empty = !cur.cloth && !cur.auto && !Object.keys(cur.cells).length && !cur.lines.length && !cur.texts.length;
+    if (empty) { cur.auto = t.key; cur.name = t.name; refreshLayersPanel(); return; }
+    const L = newLayer(t.name);
+    L.auto = t.key;
+    S.layers.push(L);
+    i = S.layers.length - 1;
+  }
+  _leaveLayer();
+  S.activeLayer = i;
+  refreshLayersPanel();
 }
 function selectLayer(i) {
   if (i === S.activeLayer) return;
@@ -3151,6 +3207,7 @@ canvas.addEventListener('pointerdown', e => {
     return;
   }
   const panIntent = S.spaceDown || e.button === 1 || S.tool === 'pan';
+  if (!panIntent) routeAutoLayer(e);
   if (!panIntent && (!activeLayer().visible || activeLayer().locked)) {
     e.preventDefault();
     showHint(activeLayer().locked ? `"${activeLayer().name}" is locked — unlock it in Layers to draw` : `"${activeLayer().name}" is hidden — show it in Layers to draw`);
