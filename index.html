@@ -6886,10 +6886,7 @@ function initTextPopup() {
     <span class="cp-popup-title" id="text-popup-title">Text</span>
     <button class="cp-close" aria-label="Close" onclick="closeTextPopup()">✕</button>
     <textarea id="text-input" rows="2" placeholder="Type here…"></textarea>
-    ${[['English', false], ['ਪੰਜਾਬੀ', true]].map(([heading, g]) => `
-      <span class="cp-section-label text-font-heading">${heading}</span>
-      <div class="text-fonts">${TEXT_FONTS.filter(f => !!f.gurmukhi === g).map(f =>
-        `<button type="button" class="text-font-opt" data-font="${f.family}" style="font-family:'${f.family}';font-weight:${f.weight}">${f.label}</button>`).join('')}</div>`).join('')}
+    <!-- one typeface (ABC Areal), so no font or language choices: just the words, size and colour -->
     <div class="cp-value-row">
       <span class="cp-value-lbl" style="width:auto;">Size</span>
       <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
