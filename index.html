@@ -766,8 +766,18 @@
     }
     .pk-switch.on { background: var(--pink-deep); }
     .pk-switch.on span { transform: translateX(16px); background: var(--pink); }
-    body.light .pk-switch { background: #E2E2E2; }
+    body.light .pk-switch { background: #F5EBC8; }
     body.light .pk-switch.on { background: #FCE3EF; }
+    body.light .pk-switch span { background: #D4A827 !important; }
+    body.light .pk-switch.on span { background: #E91E8C !important; }
+    /* Export window in light mode: light surfaces, ink text */
+    body.light .finish-logo-row, body.light .motion-style, body.light .motion-stage { background: #F2F2F2 !important; }
+    body.light .finish-logo-row .cp-value-lbl, body.light .motion-style-name { color: #1C1C1A !important; }
+    body.light .motion-style.on, body.light .motion-style:hover { background: #D5FEAF !important; }
+    body.light .finish-chip { background: #F2F2F2; color: #1C1C1A; }
+    body.light .finish-chip:hover { background: #D5FEAF; color: #1C1C1A; }
+    body.light #motion-gif-btn { background: #D5FEAF !important; color: #1C1C1A !important; }
+    body.light #motion-gif-btn:hover { background: #C3F28F !important; }
     /* wallpaper rows: a still PNG or a moving GIF */
     .finish-wp { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; font-size: 12px; color: var(--accent); }
     .finish-wp.off { opacity: 0.35; pointer-events: none; }
@@ -780,6 +790,12 @@
     .finish-chip:disabled { opacity: 0.6; cursor: default; }
     .finish-exports { display: flex; flex-direction: column; gap: 8px; }
     .finish-exports .finish-print-head { margin-top: 8px; }
+    .finish-drop > summary { list-style: none; cursor: pointer; }
+    .finish-drop > summary::-webkit-details-marker { display: none; }
+    .finish-drop.off { opacity: 0.35; pointer-events: none; }
+    .finish-chev { transition: transform 0.15s; color: var(--muted); }
+    .finish-drop[open] .finish-chev { transform: rotate(180deg); }
+    .finish-drop .finish-plates { margin-top: 4px; }
     .finish-plates { list-style: none; margin: 0 0 6px; padding: 2px 10px 4px 22px; display: flex; flex-direction: column; gap: 3px; }
     .finish-plates li { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--muted); }
     .fp-n { width: 14px; opacity: 0.7; }
@@ -3757,8 +3773,6 @@ function _currentDigitalFormatId() {
 // three on Custom), print files only on an A5/A4/A3 paper canvas.
 function buildFinishMenu() {
   const menu = document.getElementById('finish-menu');
-  const active = _currentDigitalFormatId();
-  const all = document.getElementById('preset-select').value === 'custom';
   const sizeId = _currentRisoSizeId();
   const row = (label, dims, attrs, enabled) =>
     `<button type="button" class="finish-row" ${attrs} ${enabled ? '' : 'disabled'}>
@@ -3766,7 +3780,7 @@ function buildFinishMenu() {
      </button>`;
   const DL = '<svg class="ico-arr" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.5v9M2.5 7L6 10.5 9.5 7"/></svg>';
   const wp = [['phone', 'Phone'], ['desktop', 'Desktop'], ['instagram', 'Instagram']]
-    .map(([id, label]) => `<div class="finish-wp${all || id === active ? '' : ' off'}">
+    .map(([id, label]) => `<div class="finish-wp">
         <span class="finish-row-name">${label}</span><span class="finish-row-dims">${_wallpaperDims(id).join(' × ')}</span>
         <button type="button" class="finish-chip" onclick="downloadWallpaper('${id}')" title="PNG">Still ${DL}</button>
         <button type="button" class="finish-chip" id="wp-gif-${id}" onclick="downloadMotionGif('${id}')" title="Animated GIF, in the style picked on the left">Moving ${DL}</button>
@@ -3779,6 +3793,16 @@ function buildFinishMenu() {
   const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const inkList = inks.map(({ ink }, i) => `<li><span class="fp-n">${n2(i)}</span><span class="fp-dot" style="background:${ink.hex}"></span>${esc(ink.name)}</li>`).join('');
   const layerList = plateLayers.map((L, i) => `<li><span class="fp-n">${n2(i)}</span><span class="fp-dot fp-layer"></span>${esc(L.name)}</li>`).join('');
+  // A riso pack: click the row to drop down its plate list; the arrow downloads the ZIP.
+  const CHEV = '<svg class="ico-arr finish-chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5L6 7.5 9 4.5"/></svg>';
+  const drop = (key, label, n, id, dl, list) => `
+    <details class="finish-drop${sizeId && n ? '' : ' off'}"${_finishDropOpen[key] ? ' open' : ''} ontoggle="_finishDropOpen['${key}'] = this.open">
+      <summary class="finish-row">
+        <span class="finish-row-name">${label}</span><span class="finish-row-dims">ZIP · ${n} PDF${n === 1 ? '' : 's'}</span>${CHEV}
+        <button type="button" class="finish-chip" id="${id}" onclick="event.preventDefault(); event.stopPropagation(); ${dl}">${DL}</button>
+      </summary>
+      ${list ? `<ul class="finish-plates">${list}</ul>` : ''}
+    </details>`;
   menu.innerHTML = `
     <label class="cp-value-row finish-logo-row">
       <span class="cp-value-lbl" style="width:auto;">Logo watermark</span>
@@ -3792,13 +3816,12 @@ function buildFinishMenu() {
     </div>
     <div class="saved-menu-head finish-print-head">Riso${sizeId ? ' · ' + sizeId.toUpperCase() : ''}</div>
     <div class="finish-list">
-      ${row('Colour separations', `ZIP · ${inks.length} PDF${inks.length === 1 ? '' : 's'}`, 'id="riso-download-btn" onclick="downloadRisoPack()"', !!sizeId && inks.length)}
-      ${inkList ? `<ul class="finish-plates">${inkList}</ul>` : ''}
-      ${row('By layer', `ZIP · ${plateLayers.length} PDF${plateLayers.length === 1 ? '' : 's'}`, 'id="riso-layer-download-btn" onclick="downloadRisoPack(true)"', !!sizeId && plateLayers.length)}
-      ${layerList ? `<ul class="finish-plates">${layerList}</ul>` : ''}
+      ${drop('sep', 'Colour separations', inks.length, 'riso-download-btn', 'downloadRisoPack()', inkList)}
+      ${drop('layer', 'By layer', plateLayers.length, 'riso-layer-download-btn', 'downloadRisoPack(true)', layerList)}
     </div>
     ${sizeId ? '' : '<span class="saved-note">Switch to an A5 / A4 / A3 canvas for print and riso files.</span>'}`;
 }
+const _finishDropOpen = {}; // which riso drop-downs are open, kept across rebuilds
 function _finishOpen() { return document.getElementById('motion-modal').classList.contains('on'); }
 
 // Final export pixel size for presetId, always exactly proportional to the
@@ -3835,7 +3858,7 @@ function _buildWallpaperCanvas(presetId) {
     ec.drawImage(canvas, 0, 0, preW, preH);
   }
   S.grid = savedGrid; _doRender();
-  if (MOTION.logo) drawLogoWatermark(ec, exp.width, exp.height);
+  if (MOTION.logo) { const c = _artCentre(); drawLogoWatermark(ec, exp.width, exp.height, rotate ? { x: 1 - c.y, y: c.x } : c); }
 
   return exp;
 }
@@ -6677,11 +6700,24 @@ const MOTION = { style: 'timelapse', tris: [], colors: [], raf: null, start: 0, 
 // Logo watermark: the pi⧗elkari wordmark, small, on a black box centred
 // on the artwork. One switch in the Export window covers the GIF, the
 // wallpapers and the print PDF (riso plates stay clean). W, H, in g's units.
-function drawLogoWatermark(g, W, H) {
-  const em = Math.min(W * 0.5 / 4.6, H * 0.3) / 3.5;
+// Centre of what's actually drawn (cells, stitches, text), as 0–1 of the canvas.
+function _artCentre() {
+  const F = flatDesign();
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const add = (c, r) => { x0 = Math.min(x0, c); y0 = Math.min(y0, r); x1 = Math.max(x1, c); y1 = Math.max(y1, r); };
+  for (const k in F.cells) { const [c, r] = k.split(','); add(+c, +r); add(+c + 1, +r + 1); }
+  F.lines.forEach(l => l.points.forEach(p => add(p.col, p.row)));
+  F.texts.forEach(t => add(t.col, t.row));
+  if (x0 === Infinity) return { x: 0.5, y: 0.5 };
+  return { x: (x0 + x1) / 2 / S.cols, y: (y0 + y1) / 2 / S.rows };
+}
+function drawLogoWatermark(g, W, H, centre = _artCentre()) {
+  const em = Math.min(W * 0.5 / 4.6, H * 0.3) / 2.4;
   const t = { logo: true, size: em, col: 0, row: 0, box: '#000' };
   const L = _logoLayout(t, 1, g);
-  drawLogoObj({ ...t, col: (W - L.w) / 2, row: (H - L.h) / 2 }, g, 1, 0, 0);
+  const x = Math.max(0, Math.min(W - L.w, centre.x * W - L.w / 2));
+  const y = Math.max(0, Math.min(H - L.h, centre.y * H - L.h / 2));
+  drawLogoObj({ ...t, col: x, row: y }, g, 1, 0, 0);
 }
 function _motionSecs(style) { return MOTION_STYLES[style].secs; }
 function drawMotionTimed(g, k, style, T) {
@@ -6689,7 +6725,7 @@ function drawMotionTimed(g, k, style, T) {
   if (!MOTION.logo) return;
   g.setTransform(k, 0, 0, k, 0, 0);
   g.globalAlpha = 1;
-  drawLogoWatermark(g, S.cols * CELL, S.rows * CELL);
+  drawLogoWatermark(g, S.cols * CELL, S.rows * CELL, MOTION.artCentre || (MOTION.artCentre = _artCentre()));
 }
 function setExportLogo(on) {
   MOTION.logo = on;
@@ -6709,6 +6745,7 @@ function _triVerts(c, r, tri) {
 function _prepareMotion() {
   const cx = S.cols / 2, cy = S.rows / 2, maxD = Math.hypot(cx, cy);
   const F = MOTION.flat = flatDesign(); // the visible layers, as seen
+  MOTION.artCentre = null;
   MOTION.colors = [...new Set(Object.values(F.cells))];
   MOTION.tris = Object.entries(F.cells).map(([key, color]) => {
     const [c, r, tri] = key.split(',');
