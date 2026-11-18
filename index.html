@@ -494,10 +494,13 @@
        in both themes. Hovering the bar logo swaps them (dark mode). */
     .logo-title, #story-box .logo-title { color: #E91E8C; }
     .logo-title .logo-x { fill: #D4A827; transition: fill 0.15s; }
+    .logo-title .logo-k { color: #D4A827; transition: color 0.15s; }
+    #bar-logo:hover .logo-title .logo-k { color: #E91E8C; }
     #bar-logo:hover .logo-title { color: #D4A827; }
     #bar-logo:hover .logo-title .logo-x { fill: #E91E8C; }
     body.light #bar-logo:hover .logo-title { color: #E91E8C; }
     body.light #bar-logo:hover .logo-title .logo-x { fill: #D4A827; }
+    body.light #bar-logo:hover .logo-title .logo-k { color: #D4A827; }
     .logo-title .logo-i { color: #fff; }  /* both i's white */
     .logo-title .logo-e { color: #4D8DFF; } /* light cobalt */
     .logo-title .logo-a { color: #4CBB17; } /* grass green */
@@ -1443,7 +1446,7 @@
     #story-body .lc-l { color: #FF2A2A; }
     #story-body .lc-u { color: #9B5CFF; }
     #story-body .lc-p { color: #3B55E6; } /* deep navy-leaning blue, still legible on the dark ground */
-    #story-body .lc-x { color: #D4A827; }
+    #story-body .lc-x, #story-body .lc-k { color: #D4A827; }
     #story-body .s-h1 .logo-x, #story-body h2 .logo-x { fill: #D4A827; height: 0.52em; width: 0.5em; }
     #story-box .logo-title .logo-e { color: #4D8DFF; }
     #story-box .logo-title .logo-a { color: #4CBB17; }
@@ -1570,7 +1573,7 @@
   <div class="page-header">
     <div class="logo-wrap">
       <div id="bar-logo" class="tip-host" onclick="showStoryPage()" style="cursor:pointer;">
-        <div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span>k<span class="logo-a">a</span>r<span class="logo-i">i</span></div>
+        <div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span><span class="logo-k">k</span><span class="logo-a">a</span>r<span class="logo-i">i</span></div>
         <span class="hover-tip hover-tip-below">About Pixelkari</span>
       </div>
     </div>
@@ -1840,7 +1843,7 @@
 
 <!-- STORY PAGE -->
 <div id="story-page" onclick="if (event.target === this) closeStoryPage()">
- <div id="story-logo" onclick="closeStoryPage()" title="Back to the tool"><div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span>k<span class="logo-a">a</span>r<span class="logo-i">i</span></div></div>
+ <div id="story-logo" onclick="closeStoryPage()" title="Back to the tool"><div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span><span class="logo-k">k</span><span class="logo-a">a</span>r<span class="logo-i">i</span></div></div>
  <div id="story-box" role="dialog" aria-modal="true" aria-label="About Pixelkari">
   <!-- no top bar: just a floating close that stays in the corner while the story scrolls -->
   <div class="story-close-dock"><button class="story-close" onclick="closeStoryPage()" aria-label="Close">✕</button></div>
@@ -1939,7 +1942,7 @@
       span.innerHTML = [...n.textContent].map(c => {
         const k = c.toLowerCase();
         if (c === 'x') return `<span class="lc-x" aria-label="x">${X}</span>`;
-        if ('iealxup'.includes(k)) return `<span class="lc-${k}">${c}</span>`;
+        if ('iealxupk'.includes(k)) return `<span class="lc-${k}">${c}</span>`;
         return c.replace(/&/g, '&amp;').replace(/</g, '&lt;');
       }).join('');
       n.replaceWith(...span.childNodes);
@@ -6405,7 +6408,7 @@ function _textLineStep(t) {
 const LOGO_PAD_X = 0.3, LOGO_PAD_Y = 0.22, LOGO_TRACK = 0.02; // in em
 const LOGO_BOX = '#111111', LOGO_X_FILL = '#D4A827';
 const LOGO_GLYPHS = [['p', '#E91E8C'], ['i', '#FFFFFF'], ['x', null], ['e', '#4D8DFF'], ['l', '#FF2A2A'],
-                     ['k', '#E91E8C'], ['a', '#4CBB17'], ['r', '#E91E8C'], ['i', '#FFFFFF']];
+                     ['k', '#D4A827'], ['a', '#4CBB17'], ['r', '#E91E8C'], ['i', '#FFFFFF']];
 function _logoFont(em) { return `400 ${em}px Arial, "Helvetica Neue", Helvetica, sans-serif`; }
 function _logoLayout(t, scale, g = ctx) {
   const em = t.size * scale;
