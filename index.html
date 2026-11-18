@@ -914,6 +914,13 @@
       box-shadow: 0 10px 40px rgba(0,0,0,0.6);
     }
     #phone-menu.open, #phone-motifs.open { display: flex; }
+    /* phone: About text uses the width — tighter, even side margins */
+    @media (max-width: 600px) {
+      #story-body { padding: 0 20px; }
+      .s-hero-inner { padding: 0 20px; }
+      #story-box .s-lead { max-width: none; font-size: 20px; }
+      #story-box .s-cta { padding-left: 20px; padding-right: 20px; }
+    }
     .edge-ctrl { display: none !important; } /* no +/− canvas resizing: canvases are their preset sizes */
     #phone-menu { top: 58px; }
     #phone-motifs { top: 58px; }
@@ -1020,7 +1027,7 @@
       #story-page { align-items: flex-start; }
       #story-box { height: calc(100% - 44px); }
       #story-page .s-footer-note { padding: 12px 16px; font-size: 10px; background: #0d0d0d; }
-      .story-close { display: none; }
+      .story-close-dock .story-close { width: 40px; height: 40px; font-size: 15px; } /* the way into the tool, as on desktop */
     }
     /* the pop-up's Start Creating: the selected-button look — bright pink on deep pink */
     .snav-cta {
@@ -1034,7 +1041,6 @@
     .mobile-only-msg { display: none; }
     @media (max-width: 900px) {
       .snav-cta { display: none !important; }
-      .mobile-only-msg { display: block !important; }
       #story-header > div:first-child { pointer-events: none; cursor: default; }
       .s-section p { font-size: 12px; }
       .s-lead { font-size: 14px; }
@@ -2049,7 +2055,6 @@
     <div class="s-cta">
       <h2>Create your first Pixelkari.</h2>
       <p>Runs entirely in your browser. No account, no installation.</p>
-      <p class="mobile-only-msg" style="font-size:10px;font-family:var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin:0;font-weight:500;position:relative;z-index:1;">Please open on desktop to use the tool</p>
     </div>
 
   </div>
