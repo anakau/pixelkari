@@ -1499,7 +1499,6 @@
           <span class="feedback-tip" id="theme-tip">Switch to light mode</span>
         </button>
       </div>
-      <button class="export-btn save-btn" id="motion-btn" onclick="openMotionModal()" style="line-height:1;">GIF</button>
       <!-- Save split button: save now, or ▾ to open a saved Pixelkari -->
       <div class="save-split" id="save-split">
         <button class="export-btn save-btn save-main" onclick="saveProject()" style="line-height:1;">Save</button>
@@ -1692,6 +1691,13 @@
       <div class="motion-styles">
         <button type="button" class="motion-style" data-style="timelapse" onclick="setMotionStyle('timelapse')"><span class="motion-style-name">Timelapse</span><span class="motion-style-desc">Replays your piece in the order you made it</span></button>
         <button type="button" class="motion-style" data-style="dance" onclick="setMotionStyle('dance')"><span class="motion-style-name">Colour dance</span><span class="motion-style-desc">Pattern colours swap and twinkle</span></button>
+      </div>
+      <div class="cp-value-row motion-logo-row">
+        <span class="cp-value-lbl" style="width:auto;">End on logo</span>
+        <div style="display:flex;gap:4px;margin-left:auto;">
+          <button type="button" class="cp-dash-btn" data-endlogo="1" onclick="setMotionEndLogo(true)">On</button>
+          <button type="button" class="cp-dash-btn" data-endlogo="0" onclick="setMotionEndLogo(false)">Off</button>
+        </div>
       </div>
       <div class="motion-foot">
         <span class="motion-meta" id="motion-meta"></span>
@@ -3696,7 +3702,9 @@ function buildFinishMenu() {
     .join('');
   menu.innerHTML = `
     <div class="saved-menu-head">Digital</div>
-    <div class="finish-list">${wp}</div>
+    <div class="finish-list">${wp}
+      ${row('Animated GIF', 'timelapse · colour dance', 'onclick="closeFinishMenu(); openMotionModal()"', !isCanvasEmpty())}
+    </div>
     <div class="saved-menu-head finish-print-head">Print${sizeId ? ' · ' + sizeId.toUpperCase() : ''}</div>
     <div class="finish-list">
       ${row('Print PDF', 'full colour', 'id="pdf-download-btn" onclick="downloadPrintPDF()"', !!sizeId)}
@@ -6199,7 +6207,6 @@ function wireBilloContextTips() {
     ['tog-border',       'border'],
     ['sym-group',        'mirror'],
     ['motif-btn',         'motifCreate'],
-    ['motion-btn',        'motion'],
   ];
   hoverMap.forEach(([id, key]) => {
     const el = document.getElementById(id);
@@ -6570,7 +6577,34 @@ const MOTION_STYLES = {
 };
 const MOTION_GIF_MAX = 640; // longest side of the exported GIF, in px
 
-const MOTION = { style: 'timelapse', tris: [], colors: [], raf: null, start: 0 };
+const MOTION = { style: 'timelapse', tris: [], colors: [], raf: null, start: 0, endLogo: false };
+const MOTION_END_SECS = 1.6; // the logo card added after the loop
+
+// Total length (s) with the optional logo card, and a frame at time T of it.
+function _motionSecs(style) { return MOTION_STYLES[style].secs + (MOTION.endLogo ? MOTION_END_SECS : 0); }
+function drawMotionTimed(g, k, style, T) {
+  const loop = MOTION_STYLES[style].secs;
+  if (T < loop) { drawMotionFrame(g, k, style, T / loop); return; }
+  // logo card: the bare loop start, a dark ground fading in, then the wordmark
+  drawMotionFrame(g, k, style, 0);
+  const f = Math.min(1, (T - loop) / 0.35);
+  const W = S.cols * CELL, H = S.rows * CELL;
+  g.setTransform(k, 0, 0, k, 0, 0);
+  g.globalAlpha = f;
+  g.fillStyle = LOGO_BOX; g.fillRect(-2, -2, W + 4, H + 4); // past the edges so no cloth peeks through
+  const size = Math.max(2, Math.min(S.cols * 0.5 / 4.6, S.rows * 0.3));
+  const logo = { logo: true, size, col: 0, row: 0 };
+  const L = _logoLayout(logo, CELL, g);
+  drawLogoObj({ ...logo, col: (W - L.w) / 2 / CELL, row: (H - L.h) / 2 / CELL }, g, CELL, 0, 0);
+  g.globalAlpha = 1;
+}
+function setMotionEndLogo(on) {
+  MOTION.endLogo = on;
+  try { localStorage.setItem('pkGifLogo', on ? '1' : '0'); } catch (e) {}
+  MOTION.start = performance.now();
+  _syncMotionUI();
+}
+try { MOTION.endLogo = localStorage.getItem('pkGifLogo') !== '0'; } catch (e) {}
 
 function _triVerts(c, r, tri) {
   if (tri === 't') return [[c, r], [c + 1, r], [c + 0.5, r + 0.5]];
@@ -6793,18 +6827,20 @@ function drawMotionFrame(g, k, style, t) {
 
 function _motionPreviewLoop(now) {
   const cv = document.getElementById('motion-canvas');
-  const st = MOTION_STYLES[MOTION.style];
-  const t = (((now - MOTION.start) / 1000) / st.secs) % 1;
-  drawMotionFrame(cv.getContext('2d'), cv._k, MOTION.style, t);
+  const total = _motionSecs(MOTION.style);
+  const T = ((now - MOTION.start) / 1000) % total;
+  drawMotionTimed(cv.getContext('2d'), cv._k, MOTION.style, T);
   MOTION.raf = requestAnimationFrame(_motionPreviewLoop);
 }
 
 function _syncMotionUI() {
   document.querySelectorAll('.motion-style').forEach(b => b.classList.toggle('on', b.dataset.style === MOTION.style));
+  document.querySelectorAll('[data-endlogo]').forEach(b => b.classList.toggle('on', (b.dataset.endlogo === '1') === MOTION.endLogo));
   const st = MOTION_STYLES[MOTION.style];
+  const secs = _motionSecs(MOTION.style), frames = Math.round(secs * st.fps);
   const W = S.cols * CELL, H = S.rows * CELL, k = Math.min(1, MOTION_GIF_MAX / Math.max(W, H));
   document.getElementById('motion-meta').textContent =
-    `${Math.round(W * k)} × ${Math.round(H * k)} · ${st.secs}s loop · ${st.secs * st.fps} frames`;
+    `${Math.round(W * k)} × ${Math.round(H * k)} · ${+secs.toFixed(1)}s loop · ${frames} frames`;
 }
 
 function setMotionStyle(style) {
@@ -6846,12 +6882,12 @@ async function downloadMotionGif() {
   try {
     if (!_gifenc) _gifenc = await import('https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js');
     const { GIFEncoder, quantize, applyPalette } = _gifenc;
-    const style = MOTION.style, st = MOTION_STYLES[style], n = st.secs * st.fps;
+    const style = MOTION.style, st = MOTION_STYLES[style], n = Math.round(_motionSecs(style) * st.fps);
     const W = S.cols * CELL, H = S.rows * CELL, k = Math.min(1, MOTION_GIF_MAX / Math.max(W, H));
     const w = Math.round(W * k), h = Math.round(H * k);
     const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
     const g = cv.getContext('2d', { willReadFrequently: true });
-    const frame = i => { drawMotionFrame(g, k, style, i / n); return g.getImageData(0, 0, w, h).data; };
+    const frame = i => { drawMotionTimed(g, k, style, i / st.fps); return g.getImageData(0, 0, w, h).data; };
 
     // One palette for the whole loop (sampled from a spread of frames)
     // keeps colours steady from frame to frame instead of flickering.
