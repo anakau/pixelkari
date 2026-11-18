@@ -1331,6 +1331,15 @@
     #story-box .logo-title { color: #E91E8C; }
     #story-box .logo-title .logo-i { color: #fff; }
     body.light #story-box .logo-title .logo-i { color: #1C1C1A; } /* the light intro is white */
+    /* story headings get the wordmark's colours — see logoColourHeadings() */
+    #story-body .s-h1, #story-body h2 { color: #E91E8C; }
+    #story-body .lc-i { color: #fff; }
+    body.light #story-body .lc-i { color: #1C1C1A; }
+    #story-body .lc-e { color: #4D8DFF; }
+    #story-body .lc-a { color: #4CBB17; }
+    #story-body .lc-l { color: #FF2A2A; }
+    #story-body .lc-x { color: #D4A827; }
+    #story-body .s-h1 .logo-x, #story-body h2 .logo-x { fill: #D4A827; height: 0.52em; width: 0.5em; }
     #story-box .logo-title .logo-e { color: #4D8DFF; }
     #story-box .logo-title .logo-a { color: #4CBB17; }
     #story-box .logo-title .logo-l { color: #FF2A2A; }
@@ -1805,6 +1814,29 @@
  </div>
   <div class="s-footer-note">Made with 🩷 for all phulkari lovers. Built with AI. © pixelkari 2026. <a href="https://anahat.studio" target="_blank" rel="noopener" class="s-footer-link">anahat.studio</a></div>
 </div>
+
+<script>
+// Story headings take the wordmark's letter colours: pink, with i white,
+// e cobalt, a green, l red, and a lowercase x drawn as the yellow bowtie.
+(function logoColourHeadings() {
+  const X = '<svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg>';
+  document.querySelectorAll('#story-body .s-h1, #story-body h2').forEach(h => {
+    const walk = node => [...node.childNodes].forEach(n => {
+      if (n.nodeType === 1) return walk(n);
+      if (n.nodeType !== 3 || !n.textContent.trim()) return;
+      const span = document.createElement('span');
+      span.innerHTML = [...n.textContent].map(c => {
+        const k = c.toLowerCase();
+        if (c === 'x') return `<span class="lc-x" aria-label="x">${X}</span>`;
+        if ('iealx'.includes(k)) return `<span class="lc-${k}">${c}</span>`;
+        return c.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      }).join('');
+      n.replaceWith(...span.childNodes);
+    });
+    walk(h);
+  });
+})();
+</script>
 
 <!-- GEO MAP LIGHTBOX -->
 <div id="geo-lightbox">
