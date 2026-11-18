@@ -813,6 +813,9 @@
     @media (max-width: 900px) {
       #story-page { padding: 0; }
       #story-box { border-radius: 0; max-width: none; height: 100%; }
+      #story-page { align-items: flex-start; }
+      #story-box { height: calc(100% - 44px); }
+      #story-page .s-footer-note { padding: 12px 16px; font-size: 10px; background: #0d0d0d; }
       .story-close { display: none; }
     }
     /* the pop-up's Start Creating: the selected-button look — bright pink on deep pink */
@@ -1333,8 +1336,11 @@
     #story-box .logo-title .logo-l { color: #FF2A2A; }
     #story-box .logo-title .logo-x { fill: #D4A827; }
     #story-header { background: rgba(18,15,7,0.92); }
-    #story-box .s-footer-note { background: transparent; }
-    #story-box .s-sources, #story-box .s-photo-credit, #story-box .s-collage-credits, #story-box .s-footer-note { opacity: 0.75; }
+    /* sits outside the pop-up, fixed under it while the story scrolls */
+    #story-page .s-footer-note { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 24px; background: transparent; opacity: 0.75; }
+    body.light #story-page .s-footer-note { color: #1C1C1A; }
+    #story-page .s-footer-link:hover { color: var(--pink); }
+    #story-box .s-sources, #story-box .s-photo-credit, #story-box .s-collage-credits { opacity: 0.75; }
     #story-box a:hover, #story-box a:hover * { color: var(--pink); }
     #story-box .s-dedication-motif { fill: currentColor; }
     #story-box .snav-cta, #story-box .story-close { background: var(--accent-deep); color: var(--accent); }
@@ -1796,8 +1802,8 @@
 
   </div>
 
-  <div class="s-footer-note">Made with 🩷 for all phulkari lovers. Built with AI. © pixelkari 2026. <a href="https://anahat.studio" target="_blank" rel="noopener" class="s-footer-link">anahat.studio</a></div>
  </div>
+  <div class="s-footer-note">Made with 🩷 for all phulkari lovers. Built with AI. © pixelkari 2026. <a href="https://anahat.studio" target="_blank" rel="noopener" class="s-footer-link">anahat.studio</a></div>
 </div>
 
 <!-- GEO MAP LIGHTBOX -->
