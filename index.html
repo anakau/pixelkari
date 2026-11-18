@@ -907,7 +907,7 @@
     body.phone #phone-menu-btn.on { background: var(--pink-deep); color: var(--pink); }
     body.phone .page-header { top: 0; left: 0; right: 0; height: 56px; padding: 0 12px; }
     body.phone .logo-wrap { margin-top: 0; align-self: center; }
-    body.phone .billo-wrap, body.phone #story-logo { display: none !important; }
+    body.phone .billo-wrap { display: none !important; }
     .phone-sheet {
       position: fixed; left: 8px; right: 8px; z-index: 300; display: none; flex-direction: column; gap: 12px;
       background: #000; border-radius: 16px; padding: 14px; max-height: 72vh; overflow-y: auto;
@@ -917,6 +917,7 @@
     /* phone: About text uses the width — tighter, even side margins */
     @media (max-width: 600px) {
       #story-body { padding: 0 20px; }
+      #story-box .s-hero { padding-top: 76px; } /* room for the logo above */
       .s-hero-inner { padding: 0 20px; }
       #story-box .s-lead { max-width: none; font-size: 20px; }
       #story-box .s-cta { padding-left: 20px; padding-right: 20px; }
@@ -984,7 +985,8 @@
     body.phone .cp-swatch { flex: none; width: 32px !important; height: 32px !important; }
     body.light #phone-menu, body.light #phone-motifs { background: var(--panel); box-shadow: 0 6px 24px rgba(0,0,0,0.10); }
     #story-logo { position: fixed; z-index: 2; cursor: pointer; line-height: 1; }
-    @media (max-width: 900px) { #story-logo { display: none; } }
+    /* phone: the About page fills the screen, so the logo sits on top of it (tap = back to the tool) */
+    @media (max-width: 900px) { #story-logo { z-index: 3; } }
     /* a pixelkari piece (turned upright, every other copy mirrored so the stitches meet) runs down the left margin */
     #story-page #story-box {
       background-image: url(./public/margin-art.svg); background-repeat: repeat-y; background-attachment: local;
@@ -1490,6 +1492,9 @@
     /* closed = slid off the right edge, leaving only its file-label tab */
     #layers-panel { transform: translateX(calc(100% + var(--lp-r))); transition: transform 0.28s cubic-bezier(.2,.8,.3,1); }
     #layers-panel.open { transform: none; }
+    #layers-panel { touch-action: pan-y; } /* sideways drags move the panel, vertical ones scroll its list */
+    #layers-panel .layers-tab { touch-action: none; }
+    body.phone #layers-panel { left: auto !important; width: min(300px, 82vw) !important; top: 64px; }
     #layers-panel:not(.open), body.light #layers-panel:not(.open) { box-shadow: none; }
     .layers-tab {
       position: absolute; left: -30px; top: 18px; width: 30px; height: 92px; padding: 0;
@@ -2420,6 +2425,49 @@ const UNLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 function layersPanelOpen() {
   const p = document.getElementById('layers-panel');
   return !!p && p.classList.contains('open');
+}
+// Drag the LAYERS tab (or swipe the panel) and it follows the finger; on
+// release it settles open or shut by where it is and how fast it was going.
+// A plain tap still toggles. Layer rows keep their own drag-to-reorder.
+function initLayersSwipe() {
+  const p = document.getElementById('layers-panel');
+  let x0 = null, startOpen = false, moved = false, lastX = 0, lastT = 0, v = 0, pos = 0;
+  const span = () => p.offsetWidth + (parseFloat(getComputedStyle(p).getPropertyValue('--lp-r')) || 8);
+  p.addEventListener('pointerdown', e => {
+    if (e.button > 0 || e.target.closest('.layer-row, .layers-act, .layer-tog, input, select')) return;
+    x0 = lastX = e.clientX; lastT = e.timeStamp; v = 0; moved = false;
+    startOpen = p.classList.contains('open');
+  });
+  // tracked on the window: the finger leaves the narrow tab straight away
+  window.addEventListener('pointermove', e => {
+    if (x0 === null) return;
+    const dx = e.clientX - x0;
+    if (!moved) {
+      if (Math.abs(dx) < 6) return;
+      moved = true;
+      p.style.transition = 'none';
+      if (!startOpen) { p.classList.add('open'); refreshLayersPanel(); p.classList.remove('open'); } // fill the list before it slides in
+    }
+    const W = span();
+    pos = Math.max(0, Math.min(W, (startOpen ? 0 : W) + dx));
+    p.style.transform = `translateX(${pos}px)`;
+    const dt = e.timeStamp - lastT;
+    if (dt > 0) v = (e.clientX - lastX) / dt;
+    lastX = e.clientX; lastT = e.timeStamp;
+    e.preventDefault();
+  });
+  const end = () => {
+    if (x0 === null) return;
+    x0 = null;
+    if (!moved) return;
+    const open = v < -0.3 ? true : v > 0.3 ? false : pos < span() / 2;
+    p.style.transition = ''; p.style.transform = '';
+    toggleLayersPanel(open);
+    p._swiped = true; setTimeout(() => { p._swiped = false; }, 0); // swallow the click a drag ends with
+  };
+  window.addEventListener('pointerup', end);
+  window.addEventListener('pointercancel', end);
+  p.addEventListener('click', e => { if (p._swiped) { e.stopPropagation(); e.preventDefault(); } }, true);
 }
 function toggleLayersPanel(force) {
   const p = document.getElementById('layers-panel');
@@ -7549,6 +7597,7 @@ if (IS_PHONE) {
   fitZoom();
 }
 toggleLayersPanel(false); // closed at first — opens itself once a second tool is used (see _noteToolUsed)
+initLayersSwipe();
 initCursors();
 // Re-fit whenever the viewport actually changes size (window resize, or an
 // iPad/phone rotating) — without this the canvas was only ever sized once,
