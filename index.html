@@ -892,6 +892,9 @@
       align-items: center; justify-content: center; padding: 16px;
     }
     #story-page.on { display: flex; }
+    /* opening art: Anahat's piece across the top, its triangles trickling down the page */
+    #story-art { position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none; display: block; }
+    #story-box #story-body { position: relative; z-index: 1; }
 
     /* ════ PHONE (body.phone, ≤600px wide at load) ════
        An edit screen like the iPhone Photos editor: logo + ☰ on top, the
@@ -1019,7 +1022,7 @@
     body.light #phone-menu, body.light #phone-motifs { background: var(--panel); box-shadow: 0 6px 24px rgba(0,0,0,0.10); }
     #story-logo { position: fixed; z-index: 2; cursor: pointer; line-height: 1; }
     /* phone: the About page fills the screen, so the logo sits on top of it (tap = back to the tool) */
-    @media (max-width: 900px) { #story-logo { z-index: 3; } }
+    @media (max-width: 900px) { #story-logo { z-index: 3; background: rgba(0,0,0,0.78); padding: 7px 10px; margin: -7px 0 0 -10px; border-radius: 10px; } }
     /* a pixelkari piece (turned upright, every other copy mirrored so the stitches meet) runs down the left margin */
     #story-page #story-box {
       background-image: url(./public/margin-art.svg); background-repeat: repeat-y; background-attachment: local;
@@ -2024,6 +2027,7 @@
  <div id="story-box" role="dialog" aria-modal="true" aria-label="About Pixelkari">
   <!-- no top bar: just a floating close that stays in the corner while the story scrolls -->
   <div class="story-close-dock"><button class="story-close" onclick="closeStoryPage()" aria-label="Close">✕</button></div>
+  <canvas id="story-art" aria-hidden="true"></canvas>
   <div id="story-body">
 
     <!-- Hero -->
@@ -4439,7 +4443,102 @@ function _placeStoryLogo() {
   const el = document.getElementById('story-logo');
   el.style.left = r.left + 'px'; el.style.top = r.top + 'px';
 }
+// ── Opening art ── the piece is drawn full width at the top of the About
+// page. The top band stays put (with a faint shimmer); the rest of the piece
+// thins out the further down it sits, and those bits — plus a few from the
+// band — keep loosening and drifting down the page, swaying and fading, then
+// settle back home. Concentrated at the top, trickling down.
+const STORY_ART = { tris: null, stitches: [], raf: null, W: 0, band: 0, h: 0, s: 1 };
+async function _loadStoryArt() {
+  if (STORY_ART.tris) return true;
+  try {
+    const txt = await (await fetch('public/story-art.svg')).text();
+    const doc = new DOMParser().parseFromString(txt, 'image/svg+xml');
+    const tris = [];
+    doc.querySelectorAll('path').forEach(p => {
+      const fill = p.getAttribute('fill'), d = p.getAttribute('d') || '';
+      if (fill && fill !== 'none') {
+        for (const m of d.matchAll(/M([\d.\-]+) ([\d.\-]+)L([\d.\-]+) ([\d.\-]+)L([\d.\-]+) ([\d.\-]+)Z/g)) {
+          const v = m.slice(1).map(Number);
+          tris.push({ color: fill, v, cx: (v[0] + v[2] + v[4]) / 3, cy: (v[1] + v[3] + v[5]) / 3 });
+        }
+      } else if (p.getAttribute('stroke')) {
+        STORY_ART.stitches.push({ path: new Path2D(d), color: p.getAttribute('stroke'), w: +p.getAttribute('stroke-width') || 2.4 });
+      }
+    });
+    STORY_ART.tris = tris;
+    return true;
+  } catch (e) { return false; }
+}
+function _layoutStoryArt() {
+  const box = document.getElementById('story-box'), cv = document.getElementById('story-art');
+  const W = box.clientWidth, s = W / 708, artH = 504 * s;
+  const band = Math.min(artH, Math.max(220, Math.round(W * 0.34))); // the dense opening strip
+  const h = Math.round(band + Math.min(1400, W * 1.4));              // how far the trickle reaches
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(h * dpr);
+  cv.style.width = W + 'px'; cv.style.height = h + 'px';
+  Object.assign(STORY_ART, { W, s, band, h, dpr });
+  document.querySelector('#story-box .s-hero').style.paddingTop = (band + 36) + 'px';
+  // who drifts: everything below the band (thinning with depth), and 1 in 9 from the band
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  STORY_ART.parts = [];
+  for (const t of STORY_ART.tris) {
+    const hy = t.cy * s, below = hy - band;
+    const drift = below > 0 ? rnd() < Math.exp(-below / (band * 0.6)) : rnd() < 0.07;
+    if (below > 0 && !drift) continue; // thinned away
+    STORY_ART.parts.push({ t, drift, fall: 160 + rnd() * (h - hy - 60), dur: 7 + rnd() * 9, off: rnd(), sway: (rnd() - 0.5) * 36, spin: (rnd() - 0.5) * 2.4 });
+  }
+}
+function _drawStoryArt(now) {
+  const cv = document.getElementById('story-art'), g = cv.getContext('2d');
+  const { s, band, dpr, W, h } = STORY_ART, secs = now / 1000;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, W, h);
+  // stitches, held in the band
+  g.save(); g.beginPath(); g.rect(0, 0, W, band); g.clip();
+  g.scale(s, s); g.lineCap = 'round'; g.lineJoin = 'round';
+  for (const st of STORY_ART.stitches) { g.strokeStyle = st.color; g.lineWidth = st.w; g.stroke(st.path); }
+  g.restore();
+  for (const p of STORY_ART.parts) {
+    const t = p.t;
+    let dx = 0, dy = 0, a = 1, rot = 0;
+    if (p.drift) {
+      const u = ((secs / p.dur + p.off) % 1);            // 0→1 loop
+      const fallU = Math.max(0, (u - 0.12) / 0.88);        // rests at home a moment, then drops
+      const ease = fallU * fallU;
+      dy = ease * p.fall;
+      dx = Math.sin(fallU * Math.PI * 2) * p.sway * fallU;
+      rot = p.spin * ease;
+      a = (u < 0.06 ? u / 0.06 : 1 - Math.pow(fallU, 1.3)) * 0.85; // fades in at home, out as it falls
+    }
+    const cx = t.cx * s + dx, cy = t.cy * s + dy;
+    g.save();
+    g.globalAlpha = Math.max(0, a);
+    g.translate(cx, cy); if (rot) g.rotate(rot);
+    g.fillStyle = t.color;
+    g.beginPath();
+    g.moveTo(t.v[0] * s - t.cx * s, t.v[1] * s - t.cy * s);
+    g.lineTo(t.v[2] * s - t.cx * s, t.v[3] * s - t.cy * s);
+    g.lineTo(t.v[4] * s - t.cx * s, t.v[5] * s - t.cy * s);
+    g.closePath(); g.fill();
+    g.restore();
+  }
+}
+async function startStoryArt() {
+  if (!(await _loadStoryArt())) return;
+  _layoutStoryArt();
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  cancelAnimationFrame(STORY_ART.raf);
+  const loop = now => { _drawStoryArt(now); if (!still) STORY_ART.raf = requestAnimationFrame(loop); };
+  STORY_ART.raf = requestAnimationFrame(loop);
+}
+function stopStoryArt() { cancelAnimationFrame(STORY_ART.raf); STORY_ART.raf = null; }
+window.addEventListener('resize', () => { if (document.getElementById('story-page').classList.contains('on') && STORY_ART.tris) _layoutStoryArt(); });
+
 function showStoryPage() {
+  startStoryArt();
   document.getElementById('story-page').classList.add('on');
   _placeStoryLogo();
   document.body.classList.add('story-open');
@@ -4448,6 +4547,7 @@ function showStoryPage() {
 }
 
 function closeStoryPage() {
+  stopStoryArt();
   document.getElementById('story-page').classList.remove('on');
   document.body.classList.remove('story-open');
   _stopStoryTrail();
@@ -4485,7 +4585,8 @@ function _initStoryTrail() {
       for (let i = 1; i < _storyTrail.length; i++) {
         const t = i / _storyTrail.length;
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(212,168,39,${(t * 0.7).toFixed(2)})`;
+        ctx.strokeStyle = document.body.classList.contains('light')   // white trail (ink on the light theme's white page)
+          ? `rgba(28,28,26,${(t * 0.6).toFixed(2)})` : `rgba(255,255,255,${(t * 0.75).toFixed(2)})`;
         ctx.lineWidth = 0.8 + t * 1.4;
         ctx.moveTo(_storyTrail[i-1].x, _storyTrail[i-1].y);
         ctx.lineTo(_storyTrail[i].x,   _storyTrail[i].y);
