@@ -344,6 +344,7 @@
     }
     #weave-icon-btn  { --tilt: -6deg; }
     #stitch-icon-btn { --tilt: 6deg; }
+    #zigzag-icon-btn { --tilt: -4deg; }
     .tool-icon-btn:hover { transform: rotate(calc(var(--tilt) + var(--tilt-hover))) translateY(-4px); }
     .tool-icon-btn.on { transform: rotate(var(--tilt)) translateY(-6px); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7)); }
     .tool-icon-btn.on + .spool-lbl { color: #fff; }
@@ -1949,6 +1950,7 @@ const S = {
   sym:       null,
   brushSize: 1,
   fillMode:  false, // Weave only — a click floods the connected region instead of painting one triangle
+  stitchZigzag: false, // Zigzag tool = Stitch drawing a zigzag running stitch
   stitchDashed: false, // applies to new stitch lines only — existing ones keep whatever they were drawn with
   stitchSize: 1,       // 1–4: thickness for new stitch lines (Stitch's − / +), same rule
   grid:      true,
@@ -2492,7 +2494,7 @@ function _doRender() {
   drawLayers(ctx, true);
   if (S.stitchAnchor && S.stitchPath) {
     symPaths(S.stitchPath).forEach(pts => {
-      drawLine({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, size: S.stitchSize }, ctx, true);
+      drawLine({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, zigzag: S.stitchZigzag, size: S.stitchSize }, ctx, true);
     });
   }
 
@@ -2509,6 +2511,31 @@ function stitchDashPattern(lineWidth) {
   return [5 * scale, 4 * scale];
 }
 
+// Builds a stitch line's path on gctx: straight segments, or for a Zigzag
+// line a zigzag running along each segment (peaks every half cell, a third
+// of a cell either side). px = pixels per cell, (ox, oy) pixel offset,
+// (c0, r0) the cell subtracted from each point. Caller begins/strokes.
+function traceStitch(gctx, line, px, ox, oy, c0, r0) {
+  const P = line.points.map(p => [ox + (p.col - c0) * px, oy + (p.row - r0) * px]);
+  gctx.beginPath();
+  gctx.moveTo(P[0][0], P[0][1]);
+  if (!line.zigzag) { for (let i = 1; i < P.length; i++) gctx.lineTo(P[i][0], P[i][1]); return; }
+  const amp = px * (0.28 + 0.06 * (line.size || 1)), step = px * 0.5;
+  let side = 1;
+  for (let i = 1; i < P.length; i++) {
+    const [ax, ay] = P[i - 1], [bx, by] = P[i];
+    const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy);
+    if (!len) continue;
+    const n = Math.max(1, Math.round(len / step)), nx = -dy / len, ny = dx / len;
+    for (let k = 0; k < n; k++) {
+      const t = (k + 0.5) / n;
+      gctx.lineTo(ax + dx * t + nx * amp * side, ay + dy * t + ny * amp * side);
+      side = -side;
+    }
+    gctx.lineTo(bx, by);
+  }
+}
+
 function drawLine(line, gctx = ctx, preview = false) {
   if (!line.points || line.points.length < 2) return;
   gctx.save();
@@ -2518,11 +2545,7 @@ function drawLine(line, gctx = ctx, preview = false) {
   gctx.lineJoin = 'round';
   gctx.globalAlpha = preview ? 0.55 : 1;
   gctx.setLineDash(line.dashed ? stitchDashPattern(gctx.lineWidth) : []);
-  gctx.beginPath();
-  gctx.moveTo(line.points[0].col * CELL, line.points[0].row * CELL);
-  for (let i = 1; i < line.points.length; i++) {
-    gctx.lineTo(line.points[i].col * CELL, line.points[i].row * CELL);
-  }
+  traceStitch(gctx, line, CELL, 0, 0, 0, 0);
   gctx.stroke();
   gctx.restore();
 }
@@ -3181,7 +3204,7 @@ function commitStitchPath() {
     snap();
     const seq = ++S.seq;
     symPaths(S.stitchPath).forEach(pts => {
-      S.lines.push({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, size: S.stitchSize, seq });
+      S.lines.push({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, zigzag: S.stitchZigzag, size: S.stitchSize, seq });
     });
   }
   S.stitchAnchor = null;
@@ -3995,10 +4018,11 @@ function togglePan() {
 // the same active-state highlight a toolbar button would normally show.
 // Cloth isn't a tool (it's just a colour launcher), so it's excluded here.
 function syncSpoolActiveState() {
-  const toolOf = { weave: 'paint', stitch: 'stitch', cut: 'erase', text: 'text' };
+  const toolOf = { weave: 'paint', stitch: 'stitch', zigzag: 'stitch', cut: 'erase', text: 'text' };
   Object.entries(toolOf).forEach(([key, tool]) => {
     const btn = document.getElementById(`${key}-icon-btn`);
-    if (btn) btn.classList.toggle('on', S.tool === tool);
+    const z = key === 'zigzag' ? S.stitchZigzag : key === 'stitch' ? !S.stitchZigzag : true;
+    if (btn) btn.classList.toggle('on', S.tool === tool && z);
   });
 }
 
@@ -4019,7 +4043,7 @@ function setTool(id) {
 
 
 // ── Big tool icons: weave / stitch / cloth / cut ──
-const TOOL_ICON_FILES = { weave: 'weave.svg', stitch: 'stitch.svg', cloth: 'cloth.svg', cut: 'cut.svg' };
+const TOOL_ICON_FILES = { weave: 'weave.svg', stitch: 'stitch.svg', zigzag: 'needle.svg', cloth: 'cloth.svg', cut: 'cut.svg' };
 const TOOL_ICON_HEIGHT = 68; // "nice big icons" — width scales per each SVG's own aspect ratio
 let TOOL_ICON_SVG = {};
 
@@ -4055,6 +4079,7 @@ function _iconSvg(key, hex) {
   // render filled solid instead of as a hole.
   const outline = _isTooDarkForBar(hex) ? ' stroke="rgba(255,255,255,0.4)" stroke-width="0.75"' : '';
   return tpl
+    .replace(/__HEX__/g, hex)
     .replace('<svg', `<svg fill="${hex}" height="${TOOL_ICON_HEIGHT}"`)
     .replace('<path', `<path fill-rule="evenodd"${outline}`);
 }
@@ -4064,7 +4089,7 @@ function _iconSvg(key, hex) {
 function renderToolIcon(key) {
   const btn = document.getElementById(`${key}-icon-btn`);
   if (!btn) return;
-  const hex = key === 'weave' ? S.color : key === 'stitch' ? S.stitchColor : key === 'cloth' ? clothColor() : null;
+  const hex = key === 'weave' ? S.color : (key === 'stitch' || key === 'zigzag') ? S.stitchColor : key === 'cloth' ? clothColor() : null;
   btn.innerHTML = _iconSvg(key, hex || '#cfcfcf');
   if (hex) btn.title = formatColor(hex);
 }
@@ -4112,6 +4137,7 @@ async function buildToolIcons() {
     { key: 'cut',    label: 'Cut',    tool: 'erase',  hasColor: false },
     { key: 'weave',  label: 'Weave',  tool: 'paint',  hasColor: true },
     { key: 'stitch', label: 'Stitch', tool: 'stitch', hasColor: true },
+    { key: 'zigzag', label: 'Zigzag', tool: 'stitch', hasColor: true },
   ];
   defs.forEach(({ key, label, tool, hasColor }) => {
     const wrap = document.createElement('div');
@@ -4126,8 +4152,14 @@ async function buildToolIcons() {
     // toggleCustomColorPicker already implements that.
     btn.onclick = (e) => {
       e.stopPropagation();
+      if (tool === 'stitch') S.stitchZigzag = key === 'zigzag';
       if (tool) setTool(tool);
-      if (hasColor) toggleCustomColorPicker(key);
+      // Stitch and Zigzag share one colour: switching between them keeps an
+      // open popup open rather than toggling it shut.
+      const pop = document.getElementById('cp-popup');
+      const swap = pop && pop.classList.contains('on') && window._cpTarget === 'stitch' && tool === 'stitch' && window._cpKey !== key;
+      window._cpKey = key;
+      if (hasColor && !swap) toggleCustomColorPicker(key === 'zigzag' ? 'stitch' : key);
     };
     const lbl = document.createElement('span');
     lbl.className = 'spool-lbl';
@@ -4500,6 +4532,7 @@ function initCustomColorPicker() {
     else if (cpTarget === 'stitch') { S.stitchColor = hex; setTool('stitch'); }
     else                            { setClothColor(hex); } // cloth — the active cloth layer's, else the base
     renderToolIcon(cpTarget);
+    if (cpTarget === 'stitch') renderToolIcon('zigzag');
     refreshColorLabels();
     renderInkMeter();
     return hex;
@@ -4606,7 +4639,7 @@ function initCustomColorPicker() {
   // here first, which made the button's own re-open logic fire right after
   // (net effect: clicking the icon again looked like it did nothing).
   document.addEventListener('pointerdown', e => {
-    const iconBtns = ['weave', 'stitch', 'cloth'].map(k => document.getElementById(`${k}-icon-btn`)).filter(Boolean);
+    const iconBtns = ['weave', 'stitch', 'zigzag', 'cloth'].map(k => document.getElementById(`${k}-icon-btn`)).filter(Boolean);
     const onIcon = iconBtns.some(btn => btn.contains(e.target));
     if (popup.classList.contains('on') && !popup.contains(e.target) && !onIcon) {
       popup.classList.remove('on');
@@ -4904,6 +4937,8 @@ function refreshColorLabels() {
   const clothBtn = document.getElementById('cloth-icon-btn');
   if (weaveBtn) weaveBtn.title = formatColor(S.color);
   if (stitchBtn) stitchBtn.title = formatColor(S.stitchColor);
+  const zigBtn = document.getElementById('zigzag-icon-btn');
+  if (zigBtn) zigBtn.title = formatColor(S.stitchColor);
   if (clothBtn) clothBtn.title = formatColor(clothColor());
   if (window._cpRefreshValues) window._cpRefreshValues();
 }
@@ -5076,9 +5111,7 @@ function renderCapturePreview(cells, lines = []) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.setLineDash(l.dashed ? stitchDashPattern(ctx.lineWidth) : []);
-    ctx.beginPath();
-    ctx.moveTo((l.points[0].col - minC) * cs2, (l.points[0].row - minR) * cs2);
-    for (let i = 1; i < l.points.length; i++) ctx.lineTo((l.points[i].col - minC) * cs2, (l.points[i].row - minR) * cs2);
+    traceStitch(ctx, l, cs2, 0, 0, minC, minR);
     ctx.stroke();
     ctx.restore();
   }
@@ -5098,7 +5131,7 @@ function confirmCaptureMotif() {
   const name = `Motif ${MOTIFS.length + 1}`;
   const motif = { name, cells };
   if (_capturedLines.length) {
-    motif.lines = _capturedLines.map(l => ({ points: l.points.map(p => ({ col: p.col - cx, row: p.row - cy })), color: l.color, dashed: l.dashed, size: l.size }));
+    motif.lines = _capturedLines.map(l => ({ points: l.points.map(p => ({ col: p.col - cx, row: p.row - cy })), color: l.color, dashed: l.dashed, zigzag: l.zigzag, size: l.size }));
   }
   MOTIFS.push(motif);
   saveMotifs();
@@ -5318,7 +5351,7 @@ function placeMotif(col, row) {
     }
     for (const run of runs) {
       if (run.length < 2) continue;
-      for (const pts of symPaths(run)) S.lines.push({ points: pts, color: line.color, dashed: line.dashed, size: line.size, seq });
+      for (const pts of symPaths(run)) S.lines.push({ points: pts, color: line.color, dashed: line.dashed, zigzag: line.zigzag, size: line.size, seq });
     }
   }
 }
@@ -5359,9 +5392,7 @@ function drawGhost(col, row) {
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.setLineDash(line.dashed ? stitchDashPattern(ctx.lineWidth) : []);
-      ctx.beginPath();
-      ctx.moveTo(pts[0].col * CELL, pts[0].row * CELL);
-      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].col * CELL, pts[i].row * CELL);
+      traceStitch(ctx, { points: pts, zigzag: line.zigzag, size: line.size }, CELL, 0, 0, 0, 0);
       ctx.stroke();
     }
   }
@@ -5421,9 +5452,7 @@ function _drawMotifThumb(motif, px, bg = '#000000') {
       tctx.lineCap = 'round';
       tctx.lineJoin = 'round';
       tctx.setLineDash(l.dashed ? stitchDashPattern(tctx.lineWidth) : []);
-      tctx.beginPath();
-      tctx.moveTo(offX + (l.points[0].col - left) * tCell, offY + (l.points[0].row - top) * tCell);
-      for (let i = 1; i < l.points.length; i++) tctx.lineTo(offX + (l.points[i].col - left) * tCell, offY + (l.points[i].row - top) * tCell);
+      traceStitch(tctx, l, tCell, offX, offY, left, top);
       tctx.stroke();
       tctx.restore();
     }
@@ -5580,9 +5609,7 @@ function _drawProjectThumb(project, px) {
     tctx.lineCap = 'round';
     tctx.lineJoin = 'round';
     tctx.setLineDash(l.dashed ? stitchDashPattern(tctx.lineWidth) : []);
-    tctx.beginPath();
-    tctx.moveTo(offX + l.points[0].col * tCell, offY + l.points[0].row * tCell);
-    for (let i = 1; i < l.points.length; i++) tctx.lineTo(offX + l.points[i].col * tCell, offY + l.points[i].row * tCell);
+    traceStitch(tctx, l, tCell, offX, offY, 0, 0);
     tctx.stroke();
     tctx.restore();
   }
@@ -5632,7 +5659,7 @@ function loadProject(idx) {
   } else { // saved before layers: everything goes on one
     resetLayers();
     S.cells = { ...project.cells };
-    S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed, size: l.size, seq: l.seq }));
+    S.lines = (project.lines || []).map(l => ({ points: l.points.map(p => ({ ...p })), color: l.color, dashed: l.dashed, zigzag: l.zigzag, size: l.size, seq: l.seq }));
     S.texts = (project.texts || []).map(t => ({ ...t }));
     S.order = { ...(project.order || {}) };
   }
