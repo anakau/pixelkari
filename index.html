@@ -753,7 +753,32 @@
     /* Finish window: the animation on the left, every other download on the right */
     #motion-modal .finish-box { width: min(1040px, 96vw); }
     .finish-cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; min-height: 0; overflow-y: auto; }
-    .finish-exports { padding: 4px 20px 20px 4px; display: flex; flex-direction: column; gap: 8px; }
+    .finish-right { display: flex; flex-direction: column; gap: 12px; padding: 4px 20px 20px 4px; }
+    .finish-right #motion-gif-btn { width: 100%; }
+    /* iPhone-style switch: on = pink, off = yellow */
+    .pk-switch {
+      position: relative; margin-left: auto; width: 38px; height: 22px; padding: 0; border: none; border-radius: 11px; cursor: pointer;
+      background: var(--accent-deep); transition: background 0.2s;
+    }
+    .pk-switch span {
+      position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+      background: var(--accent); transition: transform 0.2s cubic-bezier(.3,.7,.4,1.2), background 0.2s;
+    }
+    .pk-switch.on { background: var(--pink-deep); }
+    .pk-switch.on span { transform: translateX(16px); background: var(--pink); }
+    body.light .pk-switch { background: #E2E2E2; }
+    body.light .pk-switch.on { background: #FCE3EF; }
+    /* wallpaper rows: a still PNG or a moving GIF */
+    .finish-wp { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; font-size: 12px; color: var(--accent); }
+    .finish-wp.off { opacity: 0.35; pointer-events: none; }
+    .finish-wp .finish-row-name { flex: 1; }
+    .finish-chip {
+      display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border: none; border-radius: 8px; cursor: pointer;
+      background: var(--accent-deep); color: var(--accent); font: 10px var(--font-body);
+    }
+    .finish-chip:hover { background: var(--pink-deep); color: var(--pink); }
+    .finish-chip:disabled { opacity: 0.6; cursor: default; }
+    .finish-exports { display: flex; flex-direction: column; gap: 8px; }
     .finish-exports .finish-print-head { margin-top: 8px; }
     .finish-plates { list-style: none; margin: 0 0 6px; padding: 2px 10px 4px 22px; display: flex; flex-direction: column; gap: 3px; }
     .finish-plates li { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--muted); }
@@ -764,7 +789,7 @@
     .finish-ig-arrow .ico-arr { width: 16px; height: 16px; stroke-width: 1.5; }
     .motion-foot .finish-ig .finish-row-name { flex: none; }
     #motion-gif-btn { white-space: nowrap; }
-    @media (max-width: 820px) { .finish-cols { grid-template-columns: 1fr; } .finish-exports { padding: 0 20px 20px; } }
+    @media (max-width: 820px) { .finish-cols { grid-template-columns: 1fr; } .finish-right { padding: 0 20px 20px; } }
     .motion-stage {
       display: flex; align-items: center; justify-content: center;
       background: #0a0a0a; border-radius: 16px; padding: 16px; min-height: 200px;
@@ -1198,7 +1223,7 @@
     .motif-thumb:hover, .motif-thumb.selected, .view-all-tile:hover, .lib-thumb:hover, .lib-thumb.selected { border-color: var(--pink) !important; }
     .view-all-tile svg { color: var(--accent); }
     .view-all-tile:hover svg { color: var(--pink); }
-    .motion-style.on { border-color: var(--pink) !important; }
+    .motion-style.on { border-color: transparent !important; }
     .motion-style.on .motion-style-name, .motion-style:hover .motion-style-name { color: var(--pink) !important; }
     .text-swatch.on { outline-color: var(--pink) !important; }
     .saved-row.current .saved-row-name, .saved-row:hover .saved-row-name { color: var(--pink); }
@@ -1731,10 +1756,12 @@
         <a class="finish-row finish-ig" href="https://www.instagram.com/pixelkari.art" target="_blank" rel="noopener">
           <span class="finish-row-name">@pixelkari.art</span><span class="finish-row-dl finish-ig-arrow"><svg class="ico-arr" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 10L10 2M3 2h7v7"/></svg></span>
         </a>
-        <button class="btn-pri" id="motion-gif-btn" onclick="downloadMotionGif()">Download GIF</button>
       </div>
     </div>
-    <div class="finish-exports" id="finish-menu"></div>
+    <div class="finish-right">
+      <div class="finish-exports" id="finish-menu"></div>
+      <button class="btn-pri" id="motion-gif-btn" onclick="downloadMotionGif()">Download GIF</button>
+    </div>
     </div>
   </div>
 </div>
@@ -3729,8 +3756,13 @@ function buildFinishMenu() {
     `<button type="button" class="finish-row" ${attrs} ${enabled ? '' : 'disabled'}>
        <span class="finish-row-name">${label}</span><span class="finish-row-dims">${dims}</span><span class="finish-row-dl"><svg class="ico-arr" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.5v9M2.5 7L6 10.5 9.5 7"/></svg></span>
      </button>`;
-  const wp = [['phone', 'Phone wallpaper'], ['desktop', 'Desktop wallpaper'], ['instagram', 'Instagram']]
-    .map(([id, label]) => row(label, _wallpaperDims(id).join(' × '), `onclick="downloadWallpaper('${id}')"`, all || id === active))
+  const DL = '<svg class="ico-arr" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.5v9M2.5 7L6 10.5 9.5 7"/></svg>';
+  const wp = [['phone', 'Phone'], ['desktop', 'Desktop'], ['instagram', 'Instagram']]
+    .map(([id, label]) => `<div class="finish-wp${all || id === active ? '' : ' off'}">
+        <span class="finish-row-name">${label}</span><span class="finish-row-dims">${_wallpaperDims(id).join(' × ')}</span>
+        <button type="button" class="finish-chip" onclick="downloadWallpaper('${id}')" title="PNG">Still ${DL}</button>
+        <button type="button" class="finish-chip" id="wp-gif-${id}" onclick="downloadMotionGif('${id}')" title="Animated GIF, in the style picked on the left">Moving ${DL}</button>
+      </div>`)
     .join('');
   // Riso: what each ZIP holds — one plate per ink, or one per visible layer
   const inks = sizeId ? _getUsedInks() : [];
@@ -3740,13 +3772,10 @@ function buildFinishMenu() {
   const inkList = inks.map(({ ink }, i) => `<li><span class="fp-n">${n2(i)}</span><span class="fp-dot" style="background:${ink.hex}"></span>${esc(ink.name)}</li>`).join('');
   const layerList = plateLayers.map((L, i) => `<li><span class="fp-n">${n2(i)}</span><span class="fp-dot fp-layer"></span>${esc(L.name)}</li>`).join('');
   menu.innerHTML = `
-    <div class="cp-value-row finish-logo-row">
+    <label class="cp-value-row finish-logo-row">
       <span class="cp-value-lbl" style="width:auto;">Logo watermark</span>
-      <div style="display:flex;gap:4px;margin-left:auto;">
-        <button type="button" class="cp-dash-btn${MOTION.logo ? ' on' : ''}" data-wm="1" onclick="setExportLogo(true)">On</button>
-        <button type="button" class="cp-dash-btn${MOTION.logo ? '' : ' on'}" data-wm="0" onclick="setExportLogo(false)">Off</button>
-      </div>
-    </div>
+      <button type="button" role="switch" class="pk-switch${MOTION.logo ? ' on' : ''}" aria-checked="${MOTION.logo}" onclick="setExportLogo(!MOTION.logo)"><span></span></button>
+    </label>
     <div class="saved-menu-head">Digital</div>
     <div class="finish-list">${wp}</div>
     <div class="saved-menu-head finish-print-head">Print${sizeId ? ' · ' + sizeId.toUpperCase() : ''}</div>
@@ -6632,7 +6661,7 @@ function drawMotionTimed(g, k, style, T) {
 function setExportLogo(on) {
   MOTION.logo = on;
   try { localStorage.setItem('pkLogoMark', on ? '1' : '0'); } catch (e) {}
-  document.querySelectorAll('[data-wm]').forEach(b => b.classList.toggle('on', (b.dataset.wm === '1') === on));
+  document.querySelectorAll('.finish-logo-row .pk-switch').forEach(b => { b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
 }
 try { MOTION.logo = localStorage.getItem('pkLogoMark') === '1'; } catch (e) {}
 
@@ -6904,8 +6933,11 @@ function closeMotionModal() {
 }
 
 let _gifenc = null;
-async function downloadMotionGif() {
-  const btn = document.getElementById('motion-gif-btn');
+// presetId: a wallpaper ('phone' / 'desktop' / 'instagram') — the same
+// proportions and rotation as its still PNG, capped in size so the GIF stays light.
+const MOTION_WP_GIF_MAX = 1080;
+async function downloadMotionGif(presetId) {
+  const btn = document.getElementById(presetId ? `wp-gif-${presetId}` : 'motion-gif-btn');
   if (btn.disabled) return;
   const label = btn.textContent;
   btn.disabled = true;
@@ -6914,11 +6946,22 @@ async function downloadMotionGif() {
     if (!_gifenc) _gifenc = await import('https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js');
     const { GIFEncoder, quantize, applyPalette } = _gifenc;
     const style = MOTION.style, st = MOTION_STYLES[style], n = Math.round(_motionSecs(style) * st.fps);
-    const W = S.cols * CELL, H = S.rows * CELL, k = Math.min(1, MOTION_GIF_MAX / Math.max(W, H));
-    const w = Math.round(W * k), h = Math.round(H * k);
+    const W = S.cols * CELL, H = S.rows * CELL;
+    const rotate = !!presetId && !!WALLPAPER_PRESETS[presetId].autoRotate && W > H;
+    const k = presetId ? Math.min(WALLPAPER_PRESETS[presetId].scale, MOTION_WP_GIF_MAX / Math.max(W, H)) : Math.min(1, MOTION_GIF_MAX / Math.max(W, H));
+    const fw = Math.round(W * k), fh = Math.round(H * k);           // the frame as drawn
+    const w = rotate ? fh : fw, h = rotate ? fw : fh;                  // the GIF itself
+    const fc = document.createElement('canvas'); fc.width = fw; fc.height = fh;
+    const fg = fc.getContext('2d');
     const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
     const g = cv.getContext('2d', { willReadFrequently: true });
-    const frame = i => { drawMotionTimed(g, k, style, i / st.fps); return g.getImageData(0, 0, w, h).data; };
+    const frame = i => {
+      drawMotionTimed(fg, k, style, i / st.fps);
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      if (rotate) { g.translate(w / 2, h / 2); g.rotate(Math.PI / 2); g.drawImage(fc, -fw / 2, -fh / 2); g.setTransform(1, 0, 0, 1, 0, 0); }
+      else g.drawImage(fc, 0, 0);
+      return g.getImageData(0, 0, w, h).data;
+    };
 
     // One palette for the whole loop (sampled from a spread of frames)
     // keeps colours steady from frame to frame instead of flickering.
@@ -6931,13 +6974,13 @@ async function downloadMotionGif() {
     for (let i = 0; i < n; i++) {
       const data = frame(i);
       gif.writeFrame(applyPalette(data, palette), w, h, i === 0 ? { palette, delay: 1000 / st.fps, repeat: 0 } : { delay: 1000 / st.fps });
-      btn.textContent = `Making GIF… ${Math.round((i + 1) / n * 100)}%`;
+      btn.textContent = `${presetId ? '' : 'Making GIF… '}${Math.round((i + 1) / n * 100)}%`;
       await new Promise(r => setTimeout(r)); // let the progress label paint
     }
     gif.finish();
     const blob = new Blob([gif.bytes()], { type: 'image/gif' });
     const a = document.createElement('a');
-    a.download = `pixelkari-${style}.gif`;
+    a.download = presetId ? `pixelkari-${presetId}-${style}.gif` : `pixelkari-${style}.gif`;
     a.href = URL.createObjectURL(blob);
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
