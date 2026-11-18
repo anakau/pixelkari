@@ -876,13 +876,17 @@
     #phone-menu.open, #phone-motifs.open { display: flex; }
     .edge-ctrl { display: none !important; } /* no +/− canvas resizing: canvases are their preset sizes */
     #phone-menu { top: 58px; }
-    #phone-motifs { bottom: calc(var(--phone-bar) + 8px); }
+    #phone-motifs { top: 58px; }
+    #phone-menu #sym-group { display: flex !important; gap: 6px; }
     .phone-sheet-head { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
     #phone-menu .page-zoom-row, #phone-menu .header-actions, #phone-menu .nav-block, #phone-menu .nav-row {
       position: static; transform: none; display: flex; flex-wrap: wrap; gap: 6px; height: auto; width: auto;
     }
     #phone-menu .nav-block { flex-direction: column; }
     #phone-menu .hover-tip, #phone-menu .feedback-tip, #phone-menu .orient-btn { display: none !important; }
+    /* touch already pinches, pans and (pinching out) fits — no Fit, zoom or Drag buttons */
+    #phone-menu .page-zoom-row > .fit-btn:not(#undo-btn):not(#redo-btn):not(.danger),
+    #phone-menu .page-zoom-row > .icon-btn, #phone-menu .page-zoom-row > .zoom-lbl { display: none !important; }
     #phone-menu #preset-select { width: 100%; height: 40px; }
     #phone-menu .fit-btn, #phone-menu .icon-btn, #phone-menu .export-btn, #phone-menu .chk-btn { height: 40px; min-width: 40px; }
     #phone-motifs #motif-panel, #phone-motifs .motif-grid, #phone-motifs .motif-ctrls { display: flex; flex-wrap: wrap; gap: 6px; position: static; width: auto; }
@@ -897,17 +901,22 @@
     }
     body.light.phone #bottombar { background: #E2E2E2; }
     body.phone #bottombar::-webkit-scrollbar { display: none; }
-    body.phone #bb-tools { flex-wrap: nowrap; width: max-content; padding: 0 14px 18px; gap: 14px; align-items: center; }
+    body.phone #bb-tools { flex-wrap: nowrap; width: 100%; padding: 0 10px 18px; gap: 0; align-items: center; justify-content: center; }
+    body.phone .bb-color-col, body.phone #color-spools { width: 100%; }
+    body.phone #color-spools { display: flex; justify-content: space-around; align-items: center; }
     body.phone #bb-tools > .bb-divider { display: none; }
     body.phone .tool-icon-btn svg { height: 48px !important; width: auto; }
-    body.phone .tool-icon-btn .ti-en, body.phone .tool-icon-btn .ti-pa { font-size: 38px; }
+    body.phone .tool-icon-btn .ti-en { font-size: 34px; }
+    body.phone .spool-wrap { height: 64px; display: flex; align-items: center; } /* labels line up across all five */
     body.phone .tool-size { display: none !important; }
     body.phone #sym-group .sym-btn { width: 44px; height: 44px; }
     body.phone #phone-motif-btn {
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0;
-      width: 64px; height: 64px; border: none; border-radius: 12px; cursor: pointer;
-      background: var(--accent-deep); color: var(--accent); font: 9px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase;
+      display: flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; margin-left: auto; margin-right: 8px;
+      height: 40px; padding: 0 12px; border: none; border-radius: 10px; cursor: pointer;
+      background: var(--accent-deep); color: var(--accent); font: 12px var(--font-body);
     }
+    body.phone #phone-motif-btn .motif-btn-icon { width: 18px; height: 18px; }
+    body.phone #phone-motif-btn + #phone-menu-btn { margin-left: 0; }
     body.phone #phone-motif-btn.on { background: var(--pink-deep); color: var(--pink); }
     body.phone #canvas-area { padding-top: 60px; padding-bottom: calc(var(--phone-bar) + 8px); }
     /* the chosen tool's options dock above the tool row, full width */
@@ -915,6 +924,8 @@
       left: 8px !important; right: 8px !important; top: auto !important; bottom: calc(var(--phone-bar) + 8px) !important;
       width: auto !important; max-width: none !important; max-height: 52vh; overflow-y: auto; flex-wrap: wrap;
     }
+    /* the keyboard takes the bottom half when typing, so Text docks at the top */
+    body.phone #text-popup { top: 60px !important; bottom: auto !important; max-height: 40vh; flex-wrap: nowrap; }
     body.phone #cp-popup .cp-left { width: 100%; }
     body.phone #cp-popup .cp-right { width: 100%; }
     body.phone #cp-popup #cp-spectrum, body.phone #cp-popup #cp-hue { width: 100%; }
@@ -3409,7 +3420,11 @@ function endTouchPoint(e) {
   if (e.pointerType !== 'touch') return;
   touchPoints.delete(e.pointerId);
   if (touchPoints.size < 2) lastPinch = null;
-  if (touchPoints.size === 0) pinchActive = false;
+  if (touchPoints.size === 0) {
+    // pinched out past "fits the screen": snap back to fit (touch's Fit button)
+    if (pinchActive && S.fitZoomLevel && S.zoom < S.fitZoomLevel) fitZoom();
+    pinchActive = false;
+  }
 }
 canvasArea.addEventListener('pointerup', endTouchPoint, true);
 canvasArea.addEventListener('pointercancel', endTouchPoint, true);
@@ -3730,17 +3745,20 @@ document.getElementById('canvas-wrap').addEventListener('wheel', e => {
 }, { passive: false });
 function fitZoom() {
   const area = document.getElementById('canvas-area');
-  const PAD = 32;
+  const phone = document.body.classList.contains('phone');
+  const PAD = phone ? 12 : 32;
   // canvas-area now spans the full viewport (both bars float above it via
   // position:fixed), so its own footprint has to be subtracted explicitly
   // instead of relying on clientHeight already excluding them.
-  const headerFootprint = 64 + 8;
+  const headerFootprint = phone ? 56 : 64 + 8;
   const rootCss = getComputedStyle(document.documentElement);
-  const barFootprint = parseFloat(rootCss.getPropertyValue('--bar-h')) + parseFloat(rootCss.getPropertyValue('--bar-bottom'));
+  const barFootprint = phone ? parseFloat(getComputedStyle(document.body).getPropertyValue('--phone-bar')) + 8
+    : parseFloat(rootCss.getPropertyValue('--bar-h')) + parseFloat(rootCss.getPropertyValue('--bar-bottom'));
   const availW = Math.max(50, area.clientWidth - PAD * 2);
   const availH = Math.max(50, area.clientHeight - headerFootprint - barFootprint - PAD * 2);
   const logW = S.cols * CELL, logH = S.rows * CELL;
   S.zoom = Math.min(2 * ZOOM_UNIT, availW / logW, availH / logH); // fills the space, up to 200% on the readout
+  S.fitZoomLevel = S.zoom;
   S.panX = 0; S.panY = 0;
   applyTransform(true);
   updateZoomLabel();
@@ -3824,7 +3842,9 @@ function setupPhone() {
   // ☰ menu: every top-bar item, plus canvas size, grid and border
   const menu = document.getElementById('phone-menu');
   const head = t => Object.assign(document.createElement('div'), { className: 'phone-sheet-head', textContent: t });
+  const mirror = document.getElementById('sym-group');
   menu.append(head('Edit'), document.querySelector('.page-zoom-row'),
+              head('Mirror'), mirror,
               head('Canvas'), document.querySelector('.nav-block'),
               head('File'), document.querySelector('.header-actions'));
   // phones get the phone, square and Instagram sizes only
@@ -3841,7 +3861,11 @@ function setupPhone() {
   open.type = 'button'; open.id = 'phone-motif-btn';
   open.innerHTML = '<span class="motif-btn-icon" aria-hidden="true"></span><span>Motifs</span>';
   open.onclick = e => { e.stopPropagation(); togglePhoneSheet('phone-motifs'); };
-  mWrap.replaceWith(open);
+  open.setAttribute('aria-label', 'Motifs');
+  mWrap.remove();
+  // the bottom row keeps only the five core tools; Motifs sits up top by ☰
+  document.getElementById('phone-menu-btn').before(open);
+  document.getElementById('tool-group').remove();
   // tapping a motif or Create Motif puts the sheet away so you can draw
   motifs.addEventListener('click', e => { if (e.target.closest('#motif-btn, .motif-grid > *')) togglePhoneSheet('phone-motifs', false); });
   document.addEventListener('pointerdown', e => {
@@ -4639,11 +4663,10 @@ async function buildToolIcons() {
     el.appendChild(wrap);
     renderToolIcon(key);
   });
-  // Text has no SVG artwork — a bilingual "Aਅ" stands in as its icon:
-  // the letter "a" in English and in Gurmukhi (ਅ), since text can be written in both.
+  // Text has no SVG artwork — "Aa" stands in as its icon.
   const tWrap = document.createElement('div');
   tWrap.className = 'spool-wrap';
-  tWrap.innerHTML = `<button class="tool-icon-btn" id="text-icon-btn" data-tool="text" aria-label="Text"><span class="ti-en">A</span><span class="ti-pa">ਅ</span></button><span class="spool-lbl">Text</span>`;
+  tWrap.innerHTML = `<button class="tool-icon-btn" id="text-icon-btn" data-tool="text" aria-label="Text"><span class="ti-en">Aa</span></button><span class="spool-lbl">Text</span>`;
   tWrap.firstChild.onclick = (e) => {
     e.stopPropagation();
     if (window._closeCPPopup) window._closeCPPopup();
