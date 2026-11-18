@@ -502,8 +502,7 @@
     body.light #bar-logo:hover .logo-title .logo-x { fill: #D4A827; }
     body.light #bar-logo:hover .logo-title .logo-k { color: #D4A827; }
     .logo-title .logo-i { color: #fff; }
-    .logo-title .logo-tld { color: #fff; } /* pixelkari.art — the address, in the i's white */
-    body.light .logo-title .logo-tld { color: #1C1C1A; }  /* both i's white */
+    /* ".art" follows the wordmark's letter colours: a green, the rest pink */  /* both i's white */
     .logo-title .logo-e { color: #4D8DFF; } /* light cobalt */
     .logo-title .logo-a { color: #4CBB17; } /* grass green */
     .logo-title .logo-l { color: #FF2A2A; } /* bright red */
@@ -1698,7 +1697,7 @@
   <div class="page-header">
     <div class="logo-wrap">
       <div id="bar-logo" class="tip-host" onclick="showStoryPage()" style="cursor:pointer;">
-        <div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span><span class="logo-k">k</span><span class="logo-a">a</span>r<span class="logo-i">i</span><span class="logo-tld">.art</span></div>
+        <div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span><span class="logo-k">k</span><span class="logo-a">a</span>r<span class="logo-i">i</span>.<span class="logo-a">a</span>rt</div>
         <span class="hover-tip hover-tip-below">About Pixelkari</span>
       </div>
     </div>
@@ -1973,7 +1972,7 @@
 
 <!-- STORY PAGE -->
 <div id="story-page" onclick="if (event.target === this) closeStoryPage()">
- <div id="story-logo" onclick="closeStoryPage()" title="Back to the tool"><div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span><span class="logo-k">k</span><span class="logo-a">a</span>r<span class="logo-i">i</span><span class="logo-tld">.art</span></div></div>
+ <div id="story-logo" onclick="closeStoryPage()" title="Back to the tool"><div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span><span class="logo-k">k</span><span class="logo-a">a</span>r<span class="logo-i">i</span>.<span class="logo-a">a</span>rt</div></div>
  <div id="story-box" role="dialog" aria-modal="true" aria-label="About Pixelkari">
   <!-- no top bar: just a floating close that stays in the corner while the story scrolls -->
   <div class="story-close-dock"><button class="story-close" onclick="closeStoryPage()" aria-label="Close">✕</button></div>
