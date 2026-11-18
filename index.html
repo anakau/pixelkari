@@ -2475,7 +2475,18 @@ function _autoLayerTarget() {
   if (S.tool === 'text') return { key: 'text', name: 'Text' };
   return null;
 }
+// Layers stay tucked away until the drawing uses a second tool (or a motif),
+// then the panel slides open once to show the layers building up.
+const _toolsUsed = new Set();
+let _layersRevealed = false;
+function _noteToolUsed() {
+  const t = _autoLayerTarget();
+  if (!t) return;
+  _toolsUsed.add(t.key);
+  if (!_layersRevealed && _toolsUsed.size > 1) { _layersRevealed = true; toggleLayersPanel(true); }
+}
 function routeAutoLayer(e) {
+  _noteToolUsed();
   if (!AUTO_LAYERS) return;
   // Cut goes to the topmost visible, unlocked layer with weave under the cursor
   if (S.tool === 'erase' && !S.activeMotif && e) {
@@ -7237,7 +7248,7 @@ document.body.classList.add('paper-mode');
 initCanvas();
 setBase('#FFFFFF');
 fitZoom();
-toggleLayersPanel(true); // open from the start, floating at the right
+toggleLayersPanel(false); // closed at first — opens itself once a second tool is used (see _noteToolUsed)
 initCursors();
 // Re-fit whenever the viewport actually changes size (window resize, or an
 // iPad/phone rotating) — without this the canvas was only ever sized once,
