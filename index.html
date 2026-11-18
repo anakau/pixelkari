@@ -899,6 +899,39 @@
        the chosen tool's options docked just above it. Every top-bar item
        lives in the ☰ menu; motifs live in their own Motifs menu. */
     #phone-menu-btn, #phone-motif-btn, #phone-menu, #phone-motifs { display: none; }
+    /* ── Phone type scale (iOS guidance): reading text 16px, captions ≥ 11px,
+       controls ≥ 44px tall, and every text field ≥ 16px so Safari doesn't
+       zoom the page when it's tapped. ── */
+    body.phone #story-box .s-eyebrow { font-size: 11px; }
+    body.phone #story-box .s-h1 { font-size: 34px; }
+    body.phone #story-box .s-lead { font-size: 20px; line-height: 1.45; }
+    body.phone #story-box .s-section h2 { font-size: 24px; }
+    body.phone #story-box .s-section p, body.phone #story-box .s-section .s-dedication p { font-size: 16px; line-height: 1.6; }
+    body.phone #story-box .s-section .s-sources, body.phone #story-box .s-section .s-collage-credits,
+    body.phone #story-box .s-photo-credit { font-size: 11px; }
+    body.phone #story-box .s-cta h2 { font-size: 26px; }
+    body.phone #story-box .s-cta p { font-size: 16px; }
+    body.phone #story-page .s-footer-note { font-size: 11px; }
+    body.phone .phone-sheet-head, body.phone .cp-popup-title, body.phone .cp-section-label { font-size: 11px; }
+    body.phone #phone-menu .fit-btn, body.phone #phone-menu .chk-btn, body.phone #phone-menu .export-btn,
+    body.phone #phone-motif-btn, body.phone .layers-act { font-size: 15px; min-height: 44px; }
+    body.phone #phone-menu .feedback-btn, body.phone #phone-menu .save-btn { min-height: 44px; min-width: 44px; }
+    body.phone .cp-dash-btn { font-size: 13px; min-height: 36px; padding: 0 12px; }
+    body.phone .cp-eyedrop-btn { font-size: 14px; min-height: 40px; }
+    body.phone .cp-value-lbl { font-size: 11px; }
+    body.phone #text-input, body.phone .cp-value-input, body.phone #preset-select, body.phone .gallery-name,
+    body.phone .layer-name-input, body.phone .mascot-name { font-size: 16px !important; }
+    body.phone #preset-select { min-height: 44px; }
+    body.phone .text-hint, body.phone .saved-note { font-size: 12px; line-height: 1.5; }
+    body.phone .layer-name { font-size: 15px; }
+    body.phone .layer-row { min-height: 52px; }
+    body.phone .finish-row, body.phone .finish-wp { font-size: 15px; min-height: 44px; }
+    body.phone .finish-row-dims, body.phone .finish-plates li { font-size: 12px; }
+    body.phone .finish-chip { font-size: 13px; height: 34px; }
+    body.phone .gallery-dims { font-size: 14px; }
+    body.phone .cp-brush-btn { width: 36px; height: 36px; font-size: 18px; }
+    body.phone #text-size-lbl { font-size: 15px !important; min-width: 28px !important; }
+    body.phone .cp-recents, body.phone #cp-recents { font-size: 12px; }
     body.phone #phone-menu-btn {
       display: flex; align-items: center; justify-content: center; margin-left: auto;
       width: 40px; height: 40px; border: none; border-radius: 10px; cursor: pointer;
