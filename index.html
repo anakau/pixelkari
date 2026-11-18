@@ -944,17 +944,21 @@
     body.phone #bottombar {
       left: 0; right: 0; bottom: 0; height: var(--phone-bar); padding: 0 0 env(safe-area-inset-bottom);
       overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none;
-      background: #0d0d0d; align-items: center;
+      background: none; align-items: flex-end;
     }
-    body.light.phone #bottombar { background: #E2E2E2; }
     body.phone #bottombar::-webkit-scrollbar { display: none; }
-    body.phone #bb-tools { flex-wrap: nowrap; width: 100%; padding: 0 10px 18px; gap: 0; align-items: center; justify-content: center; }
+    body.phone #bb-tools { flex-wrap: nowrap; width: 100%; padding: 0 10px; gap: 0; align-items: flex-end; justify-content: center; }
     body.phone .bb-color-col, body.phone #color-spools { width: 100%; }
     body.phone #color-spools { display: flex; justify-content: space-around; align-items: center; }
     body.phone #bb-tools > .bb-divider { display: none; }
-    body.phone .tool-icon-btn svg { height: 48px !important; width: auto; }
-    body.phone .tool-icon-btn .ti-en { font-size: 34px; }
-    body.phone .spool-wrap { height: 64px; display: flex; align-items: center; } /* labels line up across all five */
+    /* tools tucked into the bottom edge, bigger; the chosen one pops up */
+    body.phone .tool-icon-btn svg { height: 80px !important; width: auto; }
+    body.phone .tool-icon-btn { transform: rotate(var(--tilt)) translateY(30px); transition: transform 0.22s cubic-bezier(.3,1.5,.5,1); filter: none !important; }
+    body.phone .tool-icon-btn:hover { transform: rotate(var(--tilt)) translateY(30px); }
+    body.phone .tool-icon-btn.on, body.phone .tool-icon-btn.on:hover { transform: rotate(var(--tilt)) translateY(6px); }
+    body.phone .spool-lbl { display: none; }
+    body.phone .tool-icon-btn .ti-en { font-size: 54px; line-height: 80px; }
+    body.phone .spool-wrap { height: auto; display: flex; align-items: flex-end; }
     body.phone .tool-size { display: none !important; }
     body.phone #sym-group .sym-btn { width: 44px; height: 44px; }
     body.phone #phone-motif-btn {
@@ -7531,8 +7535,9 @@ initCustomColorPicker();
 initTextPopup();
 syncThemeBtn();
 if (IS_PHONE) {
-  // Phones start on a portrait phone-wallpaper canvas
-  Object.assign(S, { cols: GRID_PRESETS.phone.rows, rows: GRID_PRESETS.phone.cols, paper: false });
+  // Phones start on a portrait phone-wallpaper canvas: grid on, no border
+  Object.assign(S, { cols: GRID_PRESETS.phone.rows, rows: GRID_PRESETS.phone.cols, paper: false, showBorder: false });
+  updateBorderBtn();
   initCanvas();
   fitZoom();
 } else {
