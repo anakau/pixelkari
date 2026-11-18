@@ -501,7 +501,9 @@
     body.light #bar-logo:hover .logo-title { color: #E91E8C; }
     body.light #bar-logo:hover .logo-title .logo-x { fill: #D4A827; }
     body.light #bar-logo:hover .logo-title .logo-k { color: #D4A827; }
-    .logo-title .logo-i { color: #fff; }  /* both i's white */
+    .logo-title .logo-i { color: #fff; }
+    .logo-title .logo-tld { color: #fff; } /* pixelkari.art — the address, in the i's white */
+    body.light .logo-title .logo-tld { color: #1C1C1A; }  /* both i's white */
     .logo-title .logo-e { color: #4D8DFF; } /* light cobalt */
     .logo-title .logo-a { color: #4CBB17; } /* grass green */
     .logo-title .logo-l { color: #FF2A2A; } /* bright red */
@@ -969,12 +971,12 @@
     body.light #phone-menu, body.light #phone-motifs { background: var(--panel); box-shadow: 0 6px 24px rgba(0,0,0,0.10); }
     #story-logo { position: fixed; z-index: 2; cursor: pointer; line-height: 1; }
     @media (max-width: 900px) { #story-logo { display: none; } }
-    /* a strip cropped from Sainchi Phulkari (VI)'s diamond border runs down the left margin */
+    /* a pixelkari piece (turned upright, every other copy mirrored so the stitches meet) runs down the left margin */
     #story-page #story-box {
-      background-image: url(./public/phulkari-border.png); background-repeat: repeat-y; background-attachment: local;
-      background-size: 64px auto; background-position: calc((100% - 780px) / 4 - 32px) 120px;
+      background-image: url(./public/margin-art.svg); background-repeat: repeat-y; background-attachment: local;
+      background-size: 140px auto; background-position: calc((100% - 780px) / 4 - 70px) 0;
     }
-    body.light #story-page #story-box { background-image: url(./public/phulkari-border.png) !important; background-repeat: repeat-y !important; background-attachment: local !important; background-size: 64px auto !important; background-position: calc((100% - 780px) / 4 - 32px) 120px !important; }
+    body.light #story-page #story-box { background-image: url(./public/margin-art.svg) !important; background-repeat: repeat-y !important; background-attachment: local !important; background-size: 140px auto !important; background-position: calc((100% - 780px) / 4 - 70px) 0 !important; }
     @media (max-width: 1000px) { #story-page #story-box, body.light #story-page #story-box { background-image: none !important; } }
     #story-box {
       position: relative; width: 100%; max-width: 1120px; height: min(78vh, 760px); /* wider than tall, centred */
@@ -1692,7 +1694,7 @@
   <div class="page-header">
     <div class="logo-wrap">
       <div id="bar-logo" class="tip-host" onclick="showStoryPage()" style="cursor:pointer;">
-        <div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span><span class="logo-k">k</span><span class="logo-a">a</span>r<span class="logo-i">i</span></div>
+        <div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span><span class="logo-k">k</span><span class="logo-a">a</span>r<span class="logo-i">i</span><span class="logo-tld">.art</span></div>
         <span class="hover-tip hover-tip-below">About Pixelkari</span>
       </div>
     </div>
@@ -1967,7 +1969,7 @@
 
 <!-- STORY PAGE -->
 <div id="story-page" onclick="if (event.target === this) closeStoryPage()">
- <div id="story-logo" onclick="closeStoryPage()" title="Back to the tool"><div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span><span class="logo-k">k</span><span class="logo-a">a</span>r<span class="logo-i">i</span></div></div>
+ <div id="story-logo" onclick="closeStoryPage()" title="Back to the tool"><div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span><span class="logo-k">k</span><span class="logo-a">a</span>r<span class="logo-i">i</span><span class="logo-tld">.art</span></div></div>
  <div id="story-box" role="dialog" aria-modal="true" aria-label="About Pixelkari">
   <!-- no top bar: just a floating close that stays in the corner while the story scrolls -->
   <div class="story-close-dock"><button class="story-close" onclick="closeStoryPage()" aria-label="Close">✕</button></div>
