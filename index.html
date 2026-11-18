@@ -1023,13 +1023,6 @@
     #story-logo { position: fixed; z-index: 2; cursor: pointer; line-height: 1; }
     /* phone: the About page fills the screen, so the logo sits on top of it (tap = back to the tool) */
     @media (max-width: 900px) { #story-logo { z-index: 3; background: rgba(0,0,0,0.78); padding: 7px 10px; margin: -7px 0 0 -10px; border-radius: 10px; } }
-    /* a pixelkari piece (turned upright, every other copy mirrored so the stitches meet) runs down the left margin */
-    #story-page #story-box {
-      background-image: url(./public/margin-art.svg); background-repeat: repeat-y; background-attachment: local;
-      background-size: 140px auto; background-position: calc((100% - 780px) / 4 - 70px) 0;
-    }
-    body.light #story-page #story-box { background-image: url(./public/margin-art.svg) !important; background-repeat: repeat-y !important; background-attachment: local !important; background-size: 140px auto !important; background-position: calc((100% - 780px) / 4 - 70px) 0 !important; }
-    @media (max-width: 1000px) { #story-page #story-box, body.light #story-page #story-box { background-image: none !important; } }
     #story-box {
       position: relative; width: 100%; max-width: 1120px; height: min(78vh, 760px); /* wider than tall, centred */
       background: #0d0d0d; border-radius: 8px; overflow-y: auto; overflow-x: hidden;
