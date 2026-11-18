@@ -1436,7 +1436,14 @@
       background: var(--accent-deep); color: var(--accent); font: 12px var(--font-body);
     }
     .mascot-name:focus { box-shadow: 0 0 0 1px var(--pink); color: var(--pink); }
-    .mascot-swatches { display: flex; flex-wrap: wrap; gap: 5px; }
+    /* the name is the panel's title, editable in place */
+    .mascot-name.mascot-title {
+      flex: 1; min-width: 0; height: 24px; padding: 0 6px; margin-left: -6px; background: transparent;
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); cursor: text;
+    }
+    .mascot-name.mascot-title:hover { color: var(--pink); }
+    .mascot-name.mascot-title:focus { background: var(--accent-deep); color: var(--pink); box-shadow: none; }
+    .mascot-swatches { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 4px; }
     .mascot-swatch { width: 20px; height: 20px; border-radius: 8px; border: none; padding: 0; cursor: pointer; transition: transform 0.1s; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12); }
     .mascot-swatch:hover { transform: scale(1.15); }
     .mascot-swatch.on { outline: 2px solid var(--pink); outline-offset: 1px; }
@@ -1568,11 +1575,9 @@
     <!-- Mascot customiser: opens from a click on the mascot, in the bubble's place -->
     <div class="mascot-panel" id="mascot-panel" role="dialog" aria-label="Customise your mascot">
       <div class="mascot-head">
-        <span class="saved-menu-head">Your mascot</span>
+        <input id="mascot-name" class="mascot-name mascot-title" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Billo" aria-label="Mascot name — click to rename" title="Click to rename">
         <button class="layers-close" onclick="toggleMascotPanel(false)" aria-label="Close">✕</button>
       </div>
-      <label class="mascot-label" for="mascot-name">Name</label>
-      <input id="mascot-name" class="mascot-name" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Billo">
       <div class="mascot-label">Hair</div><div class="mascot-swatches" data-part="hair"></div>
       <div class="mascot-label">Clothes</div><div class="mascot-swatches" data-part="clothes"></div>
       <div class="mascot-label">Shoes</div><div class="mascot-swatches" data-part="shoes"></div>
@@ -5998,12 +6003,20 @@ let billoEyesClosed = false;
 // ── Mascot look + name ──
 // Everyone can rename the mascot and recolour her hair, clothes and shoes;
 // her look is the Billo motif with those colours swapped in. Saved per browser.
-const MASCOT_DEFAULT = { name: 'Billo', hair: '#6B4C9A', clothes: '#F4C430', shoes: '#2d5a35' };
-const MASCOT_SWATCHES = {
-  hair:    ['#6B4C9A', '#1E1A1A', '#5A3825', '#9A3B26', '#D9B26B', '#9C9C9C', '#E91E8C', '#3A6FD8'],
+// acc1 / acc2: the two tassels at the ends of her braids (hair accessories).
+const MASCOT_DEFAULT = { name: 'Billo', hair: '#6B4C9A', clothes: '#F4C430', shoes: '#2d5a35', acc1: '#E91E8C', acc2: '#5B9BD5' };
+const MASCOT_SWATCHES = { // ten each, so the three rows line up
+  hair:    ['#6B4C9A', '#1E1A1A', '#5A3825', '#9A3B26', '#D9B26B', '#9C9C9C', '#E91E8C', '#3A6FD8', '#B0203A', '#F0920A'],
   clothes: ['#F4C430', '#E91E8C', '#D93030', '#F0920A', '#40C070', '#28B8B8', '#48A8F0', '#6B4C9A', '#F5F0E6', '#222222'],
-  shoes:   ['#2d5a35', '#111111', '#B0203A', '#D4A827', '#3A6FD8', '#E91E8C', '#F0F0F0', '#6B3E26'],
+  shoes:   ['#2d5a35', '#111111', '#B0203A', '#D4A827', '#3A6FD8', '#E91E8C', '#F0F0F0', '#6B3E26', '#28B8B8', '#F0920A'],
 };
+const MASCOT_ACCESSORY = ['#E91E8C', '#5B9BD5', '#F4C430', '#40C070', '#D93030', '#F0920A', '#28B8B8', '#9D7AD2', '#FFFFFF', '#FF48B0'];
+// A fresh pair of tassel colours: two different ones, neither the clothes colour.
+function _randomAccessories(clothes) {
+  const pool = MASCOT_ACCESSORY.filter(c => c.toLowerCase() !== (clothes || '').toLowerCase());
+  const a = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+  return { acc1: a, acc2: pool[Math.floor(Math.random() * pool.length)] };
+}
 let MASCOT = { ...MASCOT_DEFAULT };
 try { MASCOT = { ...MASCOT_DEFAULT, ...JSON.parse(localStorage.getItem('pkMascot') || '{}') }; } catch (e) {}
 function saveMascot() { try { localStorage.setItem('pkMascot', JSON.stringify(MASCOT)); } catch (e) {} }
@@ -6019,6 +6032,8 @@ function _mascotMotif(motif) {
     '#F4C430': MASCOT.clothes,
     '#D4A017': _shade(MASCOT.clothes, -0.18),
     '#2d5a35': MASCOT.shoes,
+    '#E91E8C': MASCOT.acc1,
+    '#5B9BD5': MASCOT.acc2,
   };
   const cells = {};
   for (const [k, c] of Object.entries(motif.cells)) cells[k] = swap[c] || c;
@@ -6047,14 +6062,16 @@ function toggleMascotPanel(force) {
 }
 function syncMascotPanel() {
   const inp = document.getElementById('mascot-name');
-  if (document.activeElement !== inp) inp.value = MASCOT.name === MASCOT_DEFAULT.name ? '' : MASCOT.name;
+  if (document.activeElement !== inp) inp.value = mascotName();
   inp.placeholder = MASCOT_DEFAULT.name;
   document.querySelectorAll('.mascot-swatches').forEach(row => {
     const part = row.dataset.part;
     if (!row.children.length) {
       row.innerHTML = MASCOT_SWATCHES[part].map(hex =>
         `<button type="button" class="mascot-swatch" data-color="${hex}" style="background:${hex}" aria-label="${part} ${hex}"></button>`).join('');
-      row.querySelectorAll('.mascot-swatch').forEach(b => b.addEventListener('click', () => setMascot({ [part]: b.dataset.color })));
+      // a new clothes colour also gives the braid tassels a fresh pair of colours
+      row.querySelectorAll('.mascot-swatch').forEach(b => b.addEventListener('click', () =>
+        setMascot(part === 'clothes' ? { clothes: b.dataset.color, ..._randomAccessories(b.dataset.color) } : { [part]: b.dataset.color })));
     }
     row.querySelectorAll('.mascot-swatch').forEach(b => b.classList.toggle('on', b.dataset.color.toLowerCase() === MASCOT[part].toLowerCase()));
   });
@@ -6069,7 +6086,8 @@ function setMascot(patch) {
 }
 function shuffleMascot() {
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  setMascot({ hair: pick(MASCOT_SWATCHES.hair), clothes: pick(MASCOT_SWATCHES.clothes), shoes: pick(MASCOT_SWATCHES.shoes) });
+  const clothes = pick(MASCOT_SWATCHES.clothes);
+  setMascot({ hair: pick(MASCOT_SWATCHES.hair), clothes, shoes: pick(MASCOT_SWATCHES.shoes), ..._randomAccessories(clothes) });
   spawnBilloConfetti();
 }
 function resetMascot() { setMascot({ ...MASCOT_DEFAULT, name: MASCOT.name }); }
@@ -6083,6 +6101,7 @@ function toggleMascotTips() {
 function initMascotPanel() {
   const inp = document.getElementById('mascot-name');
   inp.addEventListener('input', () => setMascot({ name: inp.value.slice(0, 16) }));
+  inp.addEventListener('blur', () => { if (!inp.value.trim()) { setMascot({ name: MASCOT_DEFAULT.name }); inp.value = mascotName(); } });
   inp.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') { inp.blur(); if (e.key === 'Escape') toggleMascotPanel(false); } });
   document.addEventListener('pointerdown', e => { // a click anywhere else closes it
     if (mascotPanelOpen() && !e.target.closest('#mascot-panel, #billo-avatar-slot')) toggleMascotPanel(false);
