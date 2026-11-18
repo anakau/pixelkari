@@ -1370,7 +1370,13 @@
     #story-page .s-footer-link:hover { color: var(--pink); }
     #story-box .s-sources, #story-box .s-photo-credit, #story-box .s-collage-credits { opacity: 0.75; }
     #story-box a:hover, #story-box a:hover * { color: var(--pink); }
-    #story-box .s-dedication-motif { fill: currentColor; }
+    /* dedication: white words under the favicon star, as a pink silhouette */
+    #story-box .s-dedication-motif {
+      width: 26px; height: 26px; background: #E91E8C;
+      -webkit-mask: url(./public/favicon.png) center / contain no-repeat; mask: url(./public/favicon.png) center / contain no-repeat;
+    }
+    #story-box .s-section .s-dedication p { color: #fff; }
+    body.light #story-box .s-section .s-dedication p { color: #1C1C1A; }
     #story-box .snav-cta, #story-box .story-close { background: var(--accent-deep); color: var(--accent); }
     #story-box .snav-cta:hover, #story-box .story-close:hover { background: var(--pink-deep); color: var(--pink); }
     #story-box img { border-radius: 6px; }
@@ -1817,7 +1823,7 @@
         <figcaption class="s-photo-credit">H Gupta, Anu &amp; Mehta, Shalina. (2020). <em>Phulkari from Punjab: Embroidery in Transition</em>.</figcaption>
       </figure>
       <div class="s-dedication">
-        <svg class="s-dedication-motif" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(0 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(45 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(90 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(135 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(180 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(225 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(270 12 12)"/><path d="M12 2 C13.5 5 13.5 7 12 10 C10.5 7 10.5 5 12 2Z" transform="rotate(315 12 12)"/><circle cx="12" cy="12" r="2.5"/></svg>
+        <span class="s-dedication-motif" aria-hidden="true"></span>
         <p>This is an ode to nani, mumma, and all maternal figures who carry collective memory through traditional crafts. May we learn from them, and carry on the work.</p>
       </div>
     </section>
@@ -2003,6 +2009,7 @@ const S = {
   tool:      'paint',
   color:     '#E91E8C', // magenta — the default until the user picks another Weave colour
   stitchColor: THREAD[0],
+  zigzagColor: THREAD[2], // Zigzag keeps its own thread colour
   base:      BASES[Math.floor(Math.random() * BASES.length)],
   paper:     false,
   printMode: (() => { try { return localStorage.getItem('pkPrintMode') === 'riso' ? 'riso' : 'cmyk'; } catch (e) { return 'cmyk'; } })(),
@@ -2605,7 +2612,7 @@ function _doRender() {
   drawLayers(ctx, true);
   if (S.stitchAnchor && S.stitchPath) {
     symPaths(S.stitchPath).forEach(pts => {
-      drawLine({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, zigzag: S.stitchZigzag, size: S.stitchSize }, ctx, true);
+      drawLine({ points: pts, color: stitchInk(), dashed: S.stitchDashed, zigzag: S.stitchZigzag, size: S.stitchSize }, ctx, true);
     });
   }
 
@@ -3311,12 +3318,13 @@ canvas.addEventListener('pointerdown', e => {
 // Commits the in-progress stitch path as a line (mirrored per active
 // symmetry) and clears the anchor — shared by the 2nd-tap finalize above
 // and the drag-then-release finalize touch needs (see pointerup below).
+function stitchInk() { return S.stitchZigzag ? S.zigzagColor : S.stitchColor; }
 function commitStitchPath() {
-  if (S.stitchPath.length > 1 && inkGuard(S.stitchColor)) {
+  if (S.stitchPath.length > 1 && inkGuard(stitchInk())) {
     snap();
     const seq = ++S.seq;
     symPaths(S.stitchPath).forEach(pts => {
-      S.lines.push({ points: pts, color: S.stitchColor, dashed: S.stitchDashed, zigzag: S.stitchZigzag, size: S.stitchSize, seq });
+      S.lines.push({ points: pts, color: stitchInk(), dashed: S.stitchDashed, zigzag: S.stitchZigzag, size: S.stitchSize, seq });
     });
   }
   S.stitchAnchor = null;
@@ -4201,7 +4209,7 @@ function _iconSvg(key, hex) {
 function renderToolIcon(key) {
   const btn = document.getElementById(`${key}-icon-btn`);
   if (!btn) return;
-  const hex = key === 'weave' ? S.color : (key === 'stitch' || key === 'zigzag') ? S.stitchColor : key === 'cloth' ? clothColor() : null;
+  const hex = key === 'weave' ? S.color : key === 'stitch' ? S.stitchColor : key === 'zigzag' ? S.zigzagColor : key === 'cloth' ? clothColor() : null;
   btn.innerHTML = _iconSvg(key, hex || '#cfcfcf');
   if (hex) btn.title = formatColor(hex);
 }
@@ -4266,12 +4274,7 @@ async function buildToolIcons() {
       e.stopPropagation();
       if (tool === 'stitch') S.stitchZigzag = key === 'zigzag';
       if (tool) setTool(tool);
-      // Stitch and Zigzag share one colour: switching between them keeps an
-      // open popup open rather than toggling it shut.
-      const pop = document.getElementById('cp-popup');
-      const swap = pop && pop.classList.contains('on') && window._cpTarget === 'stitch' && tool === 'stitch' && window._cpKey !== key;
-      window._cpKey = key;
-      if (hasColor && !swap) toggleCustomColorPicker(key === 'zigzag' ? 'stitch' : key);
+      if (hasColor) toggleCustomColorPicker(key);
     };
     const lbl = document.createElement('span');
     lbl.className = 'spool-lbl';
@@ -4641,10 +4644,10 @@ function initCustomColorPicker() {
     }
     updateValueDisplays(hex);
     if      (cpTarget === 'weave')  { S.color = hex; setTool('paint'); }
-    else if (cpTarget === 'stitch') { S.stitchColor = hex; setTool('stitch'); }
+    else if (cpTarget === 'stitch') { S.stitchColor = hex; S.stitchZigzag = false; setTool('stitch'); }
+    else if (cpTarget === 'zigzag') { S.zigzagColor = hex; S.stitchZigzag = true; setTool('stitch'); }
     else                            { setClothColor(hex); } // cloth — the active cloth layer's, else the base
     renderToolIcon(cpTarget);
-    if (cpTarget === 'stitch') renderToolIcon('zigzag');
     refreshColorLabels();
     renderInkMeter();
     return hex;
@@ -4670,7 +4673,7 @@ function initCustomColorPicker() {
   window._cpSelectColor = selectColor;
 
   function currentHexFor(target) {
-    return target === 'weave' ? S.color : target === 'stitch' ? S.stitchColor : clothColor();
+    return target === 'weave' ? S.color : target === 'stitch' ? S.stitchColor : target === 'zigzag' ? S.zigzagColor : clothColor();
   }
   window._cpRefreshValues = () => updateValueDisplays(currentHexFor(cpTarget));
   // after edits: recount inks and re-dim swatches (only while the popup is open)
@@ -4779,7 +4782,7 @@ function initCustomColorPicker() {
     cpTarget = target;
     window._cpTarget = cpTarget;
     modeRow.style.display = target === 'weave' ? 'flex' : 'none';
-    dashRow.style.display = target === 'stitch' ? 'flex' : 'none';
+    dashRow.style.display = (target === 'stitch' || target === 'zigzag') ? 'flex' : 'none';
     if (target === 'cloth') setBilloMessage('cloth'); // weave/stitch already set theirs via setTool()
     renderSwatchSection(cpTarget);
     const hex = currentHexFor(cpTarget);
@@ -5050,7 +5053,7 @@ function refreshColorLabels() {
   if (weaveBtn) weaveBtn.title = formatColor(S.color);
   if (stitchBtn) stitchBtn.title = formatColor(S.stitchColor);
   const zigBtn = document.getElementById('zigzag-icon-btn');
-  if (zigBtn) zigBtn.title = formatColor(S.stitchColor);
+  if (zigBtn) zigBtn.title = formatColor(S.zigzagColor);
   if (clothBtn) clothBtn.title = formatColor(clothColor());
   if (window._cpRefreshValues) window._cpRefreshValues();
 }
