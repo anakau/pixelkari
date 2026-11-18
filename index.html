@@ -344,7 +344,6 @@
     }
     #weave-icon-btn  { --tilt: -6deg; }
     #stitch-icon-btn { --tilt: 6deg; }
-    #zigzag-icon-btn { --tilt: -4deg; }
     .tool-icon-btn:hover { transform: rotate(calc(var(--tilt) + var(--tilt-hover))) translateY(-4px); }
     .tool-icon-btn.on { transform: rotate(var(--tilt)) translateY(-6px); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7)); }
     .tool-icon-btn.on + .spool-lbl { color: #fff; }
@@ -2008,14 +2007,13 @@ const S = {
   tool:      'paint',
   color:     '#E91E8C', // magenta — the default until the user picks another Weave colour
   stitchColor: THREAD[0],
-  zigzagColor: THREAD[2], // Zigzag keeps its own thread colour
   base:      BASES[Math.floor(Math.random() * BASES.length)],
   paper:     false,
   printMode: (() => { try { return localStorage.getItem('pkPrintMode') === 'riso' ? 'riso' : 'cmyk'; } catch (e) { return 'cmyk'; } })(),
   sym:       null,
   brushSize: 1,
   fillMode:  false, // Weave only — a click floods the connected region instead of painting one triangle
-  stitchZigzag: false, // Zigzag tool = Stitch drawing a zigzag running stitch
+  stitchZigzag: false, // Stitch style: straight line or zigzag (toggle in the Stitch colour pop-up)
   stitchDashed: false, // applies to new stitch lines only — existing ones keep whatever they were drawn with
   stitchSize: 1,       // 1–4: thickness for new stitch lines (Stitch's − / +), same rule
   grid:      true,
@@ -2385,7 +2383,7 @@ function toggleAutoLayers() {
 function _autoLayerTarget() {
   if (S.activeMotif) return S.tool === 'erase' ? null : { key: 'motif:' + S.activeMotif.name, name: S.activeMotif.name };
   if (S.tool === 'paint') return { key: 'weave', name: 'Weave' };
-  if (S.tool === 'stitch') return S.stitchAnchor ? null : S.stitchZigzag ? { key: 'zigzag', name: 'Zigzag' } : { key: 'stitch', name: 'Stitch' };
+  if (S.tool === 'stitch') return S.stitchAnchor ? null : { key: 'stitch', name: 'Stitch' };
   if (S.tool === 'text') return { key: 'text', name: 'Text' };
   return null;
 }
@@ -3341,7 +3339,7 @@ canvas.addEventListener('pointerdown', e => {
 // Commits the in-progress stitch path as a line (mirrored per active
 // symmetry) and clears the anchor — shared by the 2nd-tap finalize above
 // and the drag-then-release finalize touch needs (see pointerup below).
-function stitchInk() { return S.stitchZigzag ? S.zigzagColor : S.stitchColor; }
+function stitchInk() { return S.stitchColor; }
 function commitStitchPath() {
   if (S.stitchPath.length > 1 && inkGuard(stitchInk())) {
     snap();
@@ -4083,6 +4081,15 @@ function setBrushSize(delta) { selectBrushSize(S.brushSize + delta); }
 // commitStitchPath, which reads S.stitchDashed at the moment a line is
 // pushed. Existing lines carry their own `dashed` flag so they aren't
 // affected retroactively, same as how stitch colour already works.
+// Straight or zigzag — like dashed, only affects lines drawn from now on.
+function setStitchZigzag(on) {
+  S.stitchZigzag = on;
+  clearBrushShadow();
+  document.querySelectorAll('.cp-dash-btn[data-zigzag]').forEach(b => {
+    b.classList.toggle('on', (b.dataset.zigzag === '1') === on);
+  });
+  showHint(on ? 'Stitch: zigzag' : 'Stitch: straight');
+}
 function setStitchDashed(dashed) {
   S.stitchDashed = dashed;
   document.querySelectorAll('.cp-dash-btn[data-dashed]').forEach(b => {
@@ -4162,11 +4169,10 @@ function togglePan() {
 // the same active-state highlight a toolbar button would normally show.
 // Cloth isn't a tool (it's just a colour launcher), so it's excluded here.
 function syncSpoolActiveState() {
-  const toolOf = { weave: 'paint', stitch: 'stitch', zigzag: 'stitch', cut: 'erase', text: 'text' };
+  const toolOf = { weave: 'paint', stitch: 'stitch', cut: 'erase', text: 'text' };
   Object.entries(toolOf).forEach(([key, tool]) => {
     const btn = document.getElementById(`${key}-icon-btn`);
-    const z = key === 'zigzag' ? S.stitchZigzag : key === 'stitch' ? !S.stitchZigzag : true;
-    if (btn) btn.classList.toggle('on', S.tool === tool && z);
+    if (btn) btn.classList.toggle('on', S.tool === tool);
   });
 }
 
@@ -4187,7 +4193,7 @@ function setTool(id) {
 
 
 // ── Big tool icons: weave / stitch / cloth / cut ──
-const TOOL_ICON_FILES = { weave: 'weave.svg', stitch: 'stitch.svg', zigzag: 'needle.svg', cloth: 'cloth.svg', cut: 'cut.svg' };
+const TOOL_ICON_FILES = { weave: 'weave.svg', stitch: 'stitch.svg', cloth: 'cloth.svg', cut: 'cut.svg' };
 const TOOL_ICON_HEIGHT = 68; // "nice big icons" — width scales per each SVG's own aspect ratio
 let TOOL_ICON_SVG = {};
 
@@ -4233,7 +4239,7 @@ function _iconSvg(key, hex) {
 function renderToolIcon(key) {
   const btn = document.getElementById(`${key}-icon-btn`);
   if (!btn) return;
-  const hex = key === 'weave' ? S.color : key === 'stitch' ? S.stitchColor : key === 'zigzag' ? S.zigzagColor : key === 'cloth' ? clothColor() : null;
+  const hex = key === 'weave' ? S.color : key === 'stitch' ? S.stitchColor : key === 'cloth' ? clothColor() : null;
   btn.innerHTML = _iconSvg(key, hex || '#cfcfcf');
   if (hex) btn.title = formatColor(hex);
 }
@@ -4281,7 +4287,6 @@ async function buildToolIcons() {
     { key: 'cut',    label: 'Cut',    tool: 'erase',  hasColor: false },
     { key: 'weave',  label: 'Weave',  tool: 'paint',  hasColor: true },
     { key: 'stitch', label: 'Stitch', tool: 'stitch', hasColor: true },
-    { key: 'zigzag', label: 'Zigzag', tool: 'stitch', hasColor: true },
   ];
   defs.forEach(({ key, label, tool, hasColor }) => {
     const wrap = document.createElement('div');
@@ -4296,7 +4301,6 @@ async function buildToolIcons() {
     // toggleCustomColorPicker already implements that.
     btn.onclick = (e) => {
       e.stopPropagation();
-      if (tool === 'stitch') S.stitchZigzag = key === 'zigzag';
       if (tool) setTool(tool);
       if (hasColor) toggleCustomColorPicker(key);
     };
@@ -4413,6 +4417,19 @@ function initCustomColorPicker() {
     </div>
   `;
   left.appendChild(modeRow);
+
+  // Stitch kind: a straight line or a zigzag running stitch — Stitch-only.
+  const styleRow = document.createElement('div');
+  styleRow.className = 'cp-value-row cp-style-row';
+  styleRow.style.display = 'none';
+  styleRow.innerHTML = `
+    <span class="cp-value-lbl" style="width:auto;">Stitch</span>
+    <div style="display:flex;gap:4px;margin-left:auto;">
+      <button type="button" class="cp-dash-btn${S.stitchZigzag ? '' : ' on'}" data-zigzag="0" onclick="setStitchZigzag(false)">Straight</button>
+      <button type="button" class="cp-dash-btn${S.stitchZigzag ? ' on' : ''}" data-zigzag="1" onclick="setStitchZigzag(true)">Zigzag</button>
+    </div>
+  `;
+  left.appendChild(styleRow);
 
   // Line style is Stitch-only — mirrors modeRow's per-target show/hide.
   const dashRow = document.createElement('div');
@@ -4668,8 +4685,7 @@ function initCustomColorPicker() {
     }
     updateValueDisplays(hex);
     if      (cpTarget === 'weave')  { S.color = hex; setTool('paint'); }
-    else if (cpTarget === 'stitch') { S.stitchColor = hex; S.stitchZigzag = false; setTool('stitch'); }
-    else if (cpTarget === 'zigzag') { S.zigzagColor = hex; S.stitchZigzag = true; setTool('stitch'); }
+    else if (cpTarget === 'stitch') { S.stitchColor = hex; setTool('stitch'); }
     else                            { setClothColor(hex); } // cloth — the active cloth layer's, else the base
     renderToolIcon(cpTarget);
     refreshColorLabels();
@@ -4697,7 +4713,7 @@ function initCustomColorPicker() {
   window._cpSelectColor = selectColor;
 
   function currentHexFor(target) {
-    return target === 'weave' ? S.color : target === 'stitch' ? S.stitchColor : target === 'zigzag' ? S.zigzagColor : clothColor();
+    return target === 'weave' ? S.color : target === 'stitch' ? S.stitchColor : clothColor();
   }
   window._cpRefreshValues = () => updateValueDisplays(currentHexFor(cpTarget));
   // after edits: recount inks and re-dim swatches (only while the popup is open)
@@ -4778,7 +4794,7 @@ function initCustomColorPicker() {
   // here first, which made the button's own re-open logic fire right after
   // (net effect: clicking the icon again looked like it did nothing).
   document.addEventListener('pointerdown', e => {
-    const iconBtns = ['weave', 'stitch', 'zigzag', 'cloth'].map(k => document.getElementById(`${k}-icon-btn`)).filter(Boolean);
+    const iconBtns = ['weave', 'stitch', 'cloth'].map(k => document.getElementById(`${k}-icon-btn`)).filter(Boolean);
     const onIcon = iconBtns.some(btn => btn.contains(e.target));
     if (popup.classList.contains('on') && !popup.contains(e.target) && !onIcon) {
       popup.classList.remove('on');
@@ -4806,7 +4822,8 @@ function initCustomColorPicker() {
     cpTarget = target;
     window._cpTarget = cpTarget;
     modeRow.style.display = target === 'weave' ? 'flex' : 'none';
-    dashRow.style.display = (target === 'stitch' || target === 'zigzag') ? 'flex' : 'none';
+    dashRow.style.display = target === 'stitch' ? 'flex' : 'none';
+    styleRow.style.display = target === 'stitch' ? 'flex' : 'none';
     if (target === 'cloth') setBilloMessage('cloth'); // weave/stitch already set theirs via setTool()
     renderSwatchSection(cpTarget);
     const hex = currentHexFor(cpTarget);
@@ -5076,8 +5093,6 @@ function refreshColorLabels() {
   const clothBtn = document.getElementById('cloth-icon-btn');
   if (weaveBtn) weaveBtn.title = formatColor(S.color);
   if (stitchBtn) stitchBtn.title = formatColor(S.stitchColor);
-  const zigBtn = document.getElementById('zigzag-icon-btn');
-  if (zigBtn) zigBtn.title = formatColor(S.zigzagColor);
   if (clothBtn) clothBtn.title = formatColor(clothColor());
   if (window._cpRefreshValues) window._cpRefreshValues();
 }
