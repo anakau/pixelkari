@@ -755,6 +755,14 @@
     .finish-cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; min-height: 0; overflow-y: auto; }
     .finish-right { display: flex; flex-direction: column; gap: 12px; padding: 4px 20px 20px 4px; }
     .finish-right #motion-gif-btn { width: 100%; }
+    .finish-logo-row {
+      display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 12px 0 14px; border-radius: 12px; cursor: pointer;
+      background: #0a0a0a; color: var(--accent); font-size: 13px;
+    }
+    .finish-logo-row .finish-row-name { flex: 1; }
+    .finish-logo-row .pk-switch { width: 46px; height: 28px; border-radius: 14px; }
+    .finish-logo-row .pk-switch span { width: 22px; height: 22px; }
+    .finish-logo-row .pk-switch.on span { transform: translateX(18px); }
     /* iPhone-style switch: on = pink, off = yellow */
     .pk-switch {
       position: relative; margin-left: auto; width: 38px; height: 22px; padding: 0; border: none; border-radius: 11px; cursor: pointer;
@@ -772,7 +780,7 @@
     body.light .pk-switch.on span { background: #E91E8C !important; }
     /* Export window in light mode: light surfaces, ink text */
     body.light .finish-logo-row, body.light .motion-style, body.light .motion-stage { background: #F2F2F2 !important; }
-    body.light .finish-logo-row .cp-value-lbl, body.light .motion-style-name { color: #1C1C1A !important; }
+    body.light .finish-logo-row, body.light .motion-style-name { color: #1C1C1A !important; }
     body.light .motion-style.on, body.light .motion-style:hover { background: #D5FEAF !important; }
     body.light .finish-chip { background: #F2F2F2; color: #1C1C1A; }
     body.light .finish-chip:hover { background: #D5FEAF; color: #1C1C1A; }
@@ -2724,19 +2732,28 @@ function traceStitch(gctx, line, px, ox, oy, c0, r0) {
   gctx.beginPath();
   gctx.moveTo(P[0][0], P[0][1]);
   if (!line.zigzag) { for (let i = 1; i < P.length; i++) gctx.lineTo(P[i][0], P[i][1]); return; }
-  const amp = px * (0.28 + 0.06 * (line.size || 1)), step = px * 0.5;
-  let side = 1;
+  // A zigzag is a triangle wave laid along the path (one up-and-down per
+  // cell). line.phase (0–1) slides the wave forward along the line, so in
+  // motion the zigs travel like a train instead of wiggling in place.
+  const amp = px * (0.28 + 0.06 * (line.size || 1)), period = px, phase = line.phase || 0;
+  const wave = s => { const f = ((s / period - phase + 0.25) % 1 + 1) % 1; return 1 - 4 * Math.abs(f - 0.5); };
+  let s0 = 0;
   for (let i = 1; i < P.length; i++) {
     const [ax, ay] = P[i - 1], [bx, by] = P[i];
     const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy);
     if (!len) continue;
-    const n = Math.max(1, Math.round(len / step)), nx = -dy / len, ny = dx / len;
-    for (let k = 0; k < n; k++) {
-      const t = (k + 0.5) / n;
-      gctx.lineTo(ax + dx * t + nx * amp * side, ay + dy * t + ny * amp * side);
-      side = -side;
+    const nx = -dy / len, ny = dx / len;
+    const at = s => { const u = (s - s0) / len, o = amp * wave(s); return [ax + dx * u + nx * o, ay + dy * u + ny * o]; };
+    if (i === 1) gctx.moveTo(...at(0));
+    // the wave's corners inside this segment, then the segment's end
+    let k = Math.ceil(((s0 / period - phase) - 0.25) * 2);
+    for (;; k++) {
+      const s = (k / 2 + 0.25 + phase) * period;
+      if (s >= s0 + len) break;
+      if (s > s0) gctx.lineTo(...at(s));
     }
-    gctx.lineTo(bx, by);
+    gctx.lineTo(...at(s0 + len));
+    s0 += len;
   }
 }
 
@@ -2749,6 +2766,10 @@ function drawLine(line, gctx = ctx, preview = false) {
   gctx.lineJoin = 'round';
   gctx.globalAlpha = preview ? 0.55 : 1;
   gctx.setLineDash(line.dashed ? stitchDashPattern(gctx.lineWidth) : []);
+  if (line.dashed && line.phase) { // dashes march forward
+    const d = stitchDashPattern(gctx.lineWidth);
+    gctx.lineDashOffset = -line.phase * (d[0] + d[1]);
+  }
   traceStitch(gctx, line, CELL, 0, 0, 0, 0);
   gctx.stroke();
   gctx.restore();
@@ -3804,8 +3825,8 @@ function buildFinishMenu() {
       ${list ? `<ul class="finish-plates">${list}</ul>` : ''}
     </details>`;
   menu.innerHTML = `
-    <label class="cp-value-row finish-logo-row">
-      <span class="cp-value-lbl" style="width:auto;">Logo watermark</span>
+    <label class="finish-logo-row">
+      <span class="finish-row-name">Logo watermark</span>
       <button type="button" role="switch" class="pk-switch${MOTION.logo ? ' on' : ''}" aria-checked="${MOTION.logo}" onclick="setExportLogo(!MOTION.logo)"><span></span></button>
     </label>
     <div class="saved-menu-head">Digital</div>
@@ -3858,7 +3879,7 @@ function _buildWallpaperCanvas(presetId) {
     ec.drawImage(canvas, 0, 0, preW, preH);
   }
   S.grid = savedGrid; _doRender();
-  if (MOTION.logo) { const c = _artCentre(); drawLogoWatermark(ec, exp.width, exp.height, rotate ? { x: 1 - c.y, y: c.x } : c); }
+  if (MOTION.logo) drawLogoWatermark(ec, exp.width, exp.height);
 
   return exp;
 }
@@ -6700,19 +6721,8 @@ const MOTION = { style: 'timelapse', tris: [], colors: [], raf: null, start: 0, 
 // Logo watermark: the pi⧗elkari wordmark, small, on a black box centred
 // on the artwork. One switch in the Export window covers the GIF, the
 // wallpapers and the print PDF (riso plates stay clean). W, H, in g's units.
-// Centre of what's actually drawn (cells, stitches, text), as 0–1 of the canvas.
-function _artCentre() {
-  const F = flatDesign();
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  const add = (c, r) => { x0 = Math.min(x0, c); y0 = Math.min(y0, r); x1 = Math.max(x1, c); y1 = Math.max(y1, r); };
-  for (const k in F.cells) { const [c, r] = k.split(','); add(+c, +r); add(+c + 1, +r + 1); }
-  F.lines.forEach(l => l.points.forEach(p => add(p.col, p.row)));
-  F.texts.forEach(t => add(t.col, t.row));
-  if (x0 === Infinity) return { x: 0.5, y: 0.5 };
-  return { x: (x0 + x1) / 2 / S.cols, y: (y0 + y1) / 2 / S.rows };
-}
-function drawLogoWatermark(g, W, H, centre = _artCentre()) {
-  const em = Math.min(W * 0.5 / 4.6, H * 0.3) / 2.4;
+function drawLogoWatermark(g, W, H, centre = { x: 0.5, y: 0.5 }) {
+  const em = Math.min(W * 0.5 / 4.6, H * 0.3) / 3.5;
   const t = { logo: true, size: em, col: 0, row: 0, box: '#000' };
   const L = _logoLayout(t, 1, g);
   const x = Math.max(0, Math.min(W - L.w, centre.x * W - L.w / 2));
@@ -6725,7 +6735,7 @@ function drawMotionTimed(g, k, style, T) {
   if (!MOTION.logo) return;
   g.setTransform(k, 0, 0, k, 0, 0);
   g.globalAlpha = 1;
-  drawLogoWatermark(g, S.cols * CELL, S.rows * CELL, MOTION.artCentre || (MOTION.artCentre = _artCentre()));
+  drawLogoWatermark(g, S.cols * CELL, S.rows * CELL);
 }
 function setExportLogo(on) {
   MOTION.logo = on;
@@ -6745,7 +6755,6 @@ function _triVerts(c, r, tri) {
 function _prepareMotion() {
   const cx = S.cols / 2, cy = S.rows / 2, maxD = Math.hypot(cx, cy);
   const F = MOTION.flat = flatDesign(); // the visible layers, as seen
-  MOTION.artCentre = null;
   MOTION.colors = [...new Set(Object.values(F.cells))];
   MOTION.tris = Object.entries(F.cells).map(([key, color]) => {
     const [c, r, tri] = key.split(',');
@@ -6795,8 +6804,8 @@ function _prepareMotion() {
 // by swapping those partner colours for a beat, while single triangles
 // glint like catching thread. All hard steps, no gradients. A colour that
 // covers most of the canvas (the cloth / background) stays still.
-const TWINKLE_BEATS = 12;   // swap beats per loop (one every half second)
-const TWINKLE_GLINT = 30;   // a triangle glints once every 30 frames (2s)
+const TWINKLE_BEATS = 24;   // swap beats per loop (four a second)
+const TWINKLE_GLINT = 15;   // each shape glints once a second, at its own moment
 function _hash(n) { n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); return ((n ^ (n >>> 16)) >>> 0) / 4294967296; }
 function _prepareTwinkle() {
   const tris = MOTION.tris, at = new Map(tris.map(p => [`${p.c},${p.r},${p.tri}`, p]));
@@ -6849,14 +6858,18 @@ function _prepareTwinkle() {
       shapeOf.set(q, shapes.length); members.push(q); stack.push(q);
     }
     const diag = members.reduce((a, m) => a + m.diag, 0) / members.length;
-    const b0 = (layerRank.get(lay(p)) * 3 + Math.floor(diag * 6)) % TWINKLE_BEATS;
-    shapes.push(new Set([b0, (b0 + TWINKLE_BEATS / 2) % TWINKLE_BEATS]));
+    const b0 = (layerRank.get(lay(p)) * 3 + Math.floor(diag * 6)) % 6;
+    const glint = Math.floor(_hash(p.c * 7919 + p.r * 104729 + shapes.length) * TWINKLE_GLINT);
+    // swaps four times a loop; glints (a quick lighter flash of the whole shape) in between
+    shapes.push({ beats: new Set([0, 6, 12, 18].map(o => (b0 + o) % TWINKLE_BEATS)), glint });
   }
   for (const p of tris) {
-    p.glint = -1; // no single-triangle flicker
-    if (p.color === bg) { p.beats = null; continue; }
-    p.beats = shapes[shapeOf.get(p)];
+    if (p.color === bg) { p.beats = null; p.glint = -1; continue; }
+    const sh = shapes[shapeOf.get(p)];
+    p.beats = sh.beats;
+    p.glint = sh.glint; // whole shapes twinkle together, never single triangles
     p.swap = partner.get(p.color);
+    p.shine = _mixHex(p.color, '#FFFFFF', 0.55);
   }
 }
 
@@ -6902,7 +6915,9 @@ function _drawCloth(g, k) {
   g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(_clothLayer(k), 0, 0); g.restore();
 }
 
+const STITCH_MOVES = 6; // how far stitches travel per loop, in whole zigs/dashes (keeps it seamless)
 function drawMotionFrame(g, k, style, t) {
+  const phase = (t * STITCH_MOVES) % 1;
   const W = S.cols * CELL, H = S.rows * CELL;
   g.setTransform(k, 0, 0, k, 0, 0);
   g.globalAlpha = 1;
@@ -6930,7 +6945,7 @@ function drawMotionFrame(g, k, style, t) {
     MOTION.flat.lines.forEach((l, i) => {      // each line sews itself point by point within its beat
       const f = Math.min(1, at - MOTION.lineSteps[i]);
       if (f <= 0) return;
-      drawLine({ ...l, points: l.points.slice(0, Math.floor(f * (l.points.length - 1)) + 1) }, g);
+      drawLine({ ...l, phase, points: l.points.slice(0, Math.floor(f * (l.points.length - 1)) + 1) }, g);
     });
     MOTION.flat.texts.forEach((tx, i) => {     // text fades in within its beat
       const f = Math.min(1, at - MOTION.textSteps[i]);
@@ -6952,7 +6967,7 @@ function drawMotionFrame(g, k, style, t) {
 
   if (overlayAlpha > 0) {
     g.globalAlpha = overlayAlpha;
-    if (!linesDrawn) for (const l of MOTION.flat.lines) drawLine(l, g);
+    if (!linesDrawn) for (const l of MOTION.flat.lines) drawLine({ ...l, phase }, g);
     for (const tx of MOTION.flat.texts) drawTextObj(tx, g);
     g.globalAlpha = 1;
   }
