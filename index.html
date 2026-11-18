@@ -754,10 +754,9 @@
     #motion-modal .finish-box { width: min(1040px, 96vw); }
     .finish-cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; min-height: 0; overflow-y: auto; }
     .finish-right { display: flex; flex-direction: column; gap: 12px; padding: 4px 20px 20px 4px; }
-    .finish-right #motion-gif-btn { width: 100%; }
     .finish-logo-row {
-      display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 12px 0 14px; border-radius: 12px; cursor: pointer;
-      background: #0a0a0a; color: var(--accent); font-size: 13px;
+      display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; cursor: pointer;
+      background: none; color: var(--accent); font-size: 13px;
     }
     .finish-logo-row .finish-row-name { flex: 1; }
     .finish-logo-row .pk-switch { width: 46px; height: 28px; border-radius: 14px; }
@@ -779,13 +778,11 @@
     body.light .pk-switch span { background: #D4A827 !important; }
     body.light .pk-switch.on span { background: #E91E8C !important; }
     /* Export window in light mode: light surfaces, ink text */
-    body.light .finish-logo-row, body.light .motion-style, body.light .motion-stage { background: #F2F2F2 !important; }
+    body.light .motion-style, body.light .motion-stage { background: #F2F2F2 !important; }
     body.light .finish-logo-row, body.light .motion-style-name { color: #1C1C1A !important; }
     body.light .motion-style.on, body.light .motion-style:hover { background: #D5FEAF !important; }
     body.light .finish-chip { background: #F2F2F2; color: #1C1C1A; }
     body.light .finish-chip:hover { background: #D5FEAF; color: #1C1C1A; }
-    body.light #motion-gif-btn { background: #D5FEAF !important; color: #1C1C1A !important; }
-    body.light #motion-gif-btn:hover { background: #C3F28F !important; }
     /* wallpaper rows: a still PNG or a moving GIF */
     .finish-wp { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; font-size: 12px; color: var(--accent); }
     .finish-wp.off { opacity: 0.35; pointer-events: none; }
@@ -1795,7 +1792,6 @@
     </div>
     <div class="finish-right">
       <div class="finish-exports" id="finish-menu"></div>
-      <button class="btn-pri" id="motion-gif-btn" onclick="downloadMotionGif()">Download GIF</button>
     </div>
     </div>
   </div>
@@ -3825,7 +3821,13 @@ function buildFinishMenu() {
       <button type="button" role="switch" class="pk-switch${MOTION.logo ? ' on' : ''}" aria-checked="${MOTION.logo}" onclick="setExportLogo(!MOTION.logo)"><span></span></button>
     </label>
     <div class="saved-menu-head">Digital</div>
-    <div class="finish-list">${wp}</div>
+    <div class="finish-list">
+      <div class="finish-wp">
+        <span class="finish-row-name">GIF</span><span class="finish-row-dims">${_gifDims().join(' × ')}</span>
+        <button type="button" class="finish-chip" id="motion-gif-btn" onclick="downloadMotionGif()" title="Animated GIF, in the style picked on the left">GIF ${DL}</button>
+      </div>
+      ${wp}
+    </div>
     <div class="saved-menu-head finish-print-head">Print${sizeId ? ' · ' + sizeId.toUpperCase() : ''}</div>
     <div class="finish-list">
       ${row('Print PDF', 'full colour', 'id="pdf-download-btn" onclick="downloadPrintPDF()"', !!sizeId)}
@@ -3836,6 +3838,11 @@ function buildFinishMenu() {
       ${drop('layer', 'By layer', plateLayers.length, 'riso-layer-download-btn', 'downloadRisoPack(true)', layerList)}
     </div>
     ${sizeId ? '' : '<span class="saved-note">Switch to an A5 / A4 / A3 canvas for print and riso files.</span>'}`;
+}
+// The plain animated GIF's size: the canvas, longest side capped at MOTION_GIF_MAX.
+function _gifDims() {
+  const W = S.cols * CELL, H = S.rows * CELL, k = Math.min(1, MOTION_GIF_MAX / Math.max(W, H));
+  return [Math.round(W * k), Math.round(H * k)];
 }
 const _finishDropOpen = {}; // which riso drop-downs are open, kept across rebuilds
 function _finishOpen() { return document.getElementById('motion-modal').classList.contains('on'); }
