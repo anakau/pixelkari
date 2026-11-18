@@ -831,8 +831,6 @@
     .motion-style-name { font-size: 12px; color: #ddd; }
     .motion-style.on .motion-style-name { color: var(--accent); }
     .motion-style-desc { font-size: 9px; color: var(--muted); line-height: 1.4; }
-    #motion-gif-btn { width: auto; padding-left: 18px; padding-right: 18px; }
-    #motion-gif-btn:disabled { opacity: 0.7; cursor: default; }
     .finish-close:hover { color: var(--accent); background: rgba(255,255,255,0.06); }
     .disabled { opacity: 0.4; pointer-events: none; }
     .btn-pri {
@@ -3850,10 +3848,10 @@ function buildFinishMenu() {
     </div>
     ${sizeId ? '' : '<span class="saved-note">Switch to an A5 / A4 / A3 canvas for print and riso files.</span>'}`;
 }
-// The plain animated GIF's size: the canvas, longest side capped at MOTION_GIF_MAX.
-function _gifDims() {
-  const W = S.cols * CELL, H = S.rows * CELL, k = Math.min(1, MOTION_GIF_MAX / Math.max(W, H));
-  return [Math.round(W * k), Math.round(H * k)];
+// The plain animated GIF is square.
+function _gifDims() { // square: the canvas's longest side, capped at MOTION_GIF_MAX
+  const W = S.cols * CELL, H = S.rows * CELL, side = Math.round(Math.max(W, H) * Math.min(1, MOTION_GIF_MAX / Math.max(W, H)));
+  return [side, side];
 }
 const _finishDropOpen = {}; // which riso drop-downs are open, kept across rebuilds
 function _finishOpen() { return document.getElementById('motion-modal').classList.contains('on'); }
@@ -7031,7 +7029,10 @@ async function downloadMotionGif(presetId) {
     const rotate = !!presetId && !!WALLPAPER_PRESETS[presetId].autoRotate && W > H;
     const k = presetId ? Math.min(WALLPAPER_PRESETS[presetId].scale, MOTION_WP_GIF_MAX / Math.max(W, H)) : Math.min(1, MOTION_GIF_MAX / Math.max(W, H));
     const fw = Math.round(W * k), fh = Math.round(H * k);           // the frame as drawn
-    const w = rotate ? fh : fw, h = rotate ? fw : fh;                  // the GIF itself
+    // the GIF itself: wallpapers keep their shape; the plain GIF is square,
+    // the artwork centred on its own cloth colour
+    const square = !presetId;
+    const w = square ? Math.max(fw, fh) : rotate ? fh : fw, h = square ? w : rotate ? fw : fh;
     const fc = document.createElement('canvas'); fc.width = fw; fc.height = fh;
     const fg = fc.getContext('2d');
     const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
@@ -7040,6 +7041,7 @@ async function downloadMotionGif(presetId) {
       drawMotionTimed(fg, k, style, i / st.fps);
       g.setTransform(1, 0, 0, 1, 0, 0);
       if (rotate) { g.translate(w / 2, h / 2); g.rotate(Math.PI / 2); g.drawImage(fc, -fw / 2, -fh / 2); g.setTransform(1, 0, 0, 1, 0, 0); }
+      else if (square) { g.fillStyle = S.base; g.fillRect(0, 0, w, h); g.drawImage(fc, Math.round((w - fw) / 2), Math.round((h - fh) / 2)); }
       else g.drawImage(fc, 0, 0);
       return g.getImageData(0, 0, w, h).data;
     };
