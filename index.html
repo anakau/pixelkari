@@ -700,7 +700,10 @@
       position: relative; height: 0; padding-bottom: 100%; border-radius: 12px; overflow: hidden; cursor: pointer;
       background: #141414;
     }
-    .gallery-tile canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .gallery-tile canvas { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 0.2s; }
+    .gallery-tile .gallery-fit { inset: 14px 14px 86px; width: calc(100% - 28px); height: calc(100% - 100px); object-fit: contain; opacity: 0; }
+    .gallery-tile:hover .gallery-cover, .gallery-tile:focus-within .gallery-cover { opacity: 0; }
+    .gallery-tile:hover .gallery-fit, .gallery-tile:focus-within .gallery-fit { opacity: 1; }
     .gallery-info {
       position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: stretch; gap: 2px;
       padding: 12px 14px 14px; background: rgba(0,0,0,0.85); opacity: 0; transform: translateY(6px);
@@ -6320,6 +6323,9 @@ function buildProjectLibraryGrid() {
     tile.className = 'gallery-tile';
     tile.title = `Open "${project.name}"`;
     const tc = _drawProjectThumb(project, px, null, true); // cropped to fill the square
+    tc.className = 'gallery-cover';
+    const fit = _drawProjectThumb(project, px, null, false); // on hover: the whole piece at its real proportions
+    fit.className = 'gallery-fit';
     const info = document.createElement('div');
     info.className = 'gallery-info';
     const name = document.createElement('input');
@@ -6339,7 +6345,7 @@ function buildProjectLibraryGrid() {
     del.className = 'gallery-del'; del.textContent = '×'; del.setAttribute('aria-label', `Delete "${project.name}"`);
     del.addEventListener('click', e => { e.stopPropagation(); if (!confirm(`Delete "${project.name}"?`)) return; deleteProject(idx); buildProjectLibraryGrid(); });
     tile.addEventListener('click', () => { loadProject(idx); closeProjectLibrary(); });
-    tile.append(tc, info, del);
+    tile.append(tc, fit, info, del);
     el.appendChild(tile);
   });
 }
