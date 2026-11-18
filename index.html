@@ -3691,6 +3691,7 @@ function toggleFinishMenu(e) {
   const split = document.getElementById('finish-split');
   if (split.classList.contains('open')) { closeFinishMenu(); return; }
   closeSavedMenu();
+  toggleLayersPanel(false); // Finish drops down where the panel sits
   buildFinishMenu();
   split.classList.add('open');
   document.getElementById('finish-btn').setAttribute('aria-expanded', 'true');
