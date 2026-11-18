@@ -418,6 +418,9 @@
     .export-btn.save-btn { background: rgba(255,255,255,0.08); color: var(--text); gap: 6px; }
     .export-btn.save-btn:hover { background: rgba(255,255,255,0.14); color: var(--accent); }
     .save-main { border-radius: 8px 0 0 8px; }
+    /* Save and Gallery are two separate buttons, not one split button */
+    #save-split { gap: var(--btn-gap, 6px); }
+    #save-split .save-main, #save-split .gallery-btn { border-radius: 8px !important; }
     .export-btn.save-caret { border-radius: 0 8px 8px 0; padding: 0 9px; }
     .save-split.open .save-caret { background: rgba(255,255,255,0.14); color: var(--accent); }
     .saved-menu {
@@ -6534,13 +6537,13 @@ function toggleSavedMenu(e) {
   if (split.classList.contains('open')) { closeSavedMenu(); return; }
   buildProjectPal();
   split.classList.add('open');
-  split.querySelector('.save-caret').setAttribute('aria-expanded', 'true');
+  split.querySelector('.save-caret')?.setAttribute('aria-expanded', 'true');
 }
 function closeSavedMenu() {
   const split = document.getElementById('save-split');
   if (!split) return;
   split.classList.remove('open');
-  split.querySelector('.save-caret').setAttribute('aria-expanded', 'false');
+  split.querySelector('.save-caret')?.setAttribute('aria-expanded', 'false');
 }
 document.addEventListener('pointerdown', e => {
   const split = document.getElementById('save-split');
