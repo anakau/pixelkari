@@ -1284,7 +1284,6 @@
     .layers-tab:hover, #layers-panel.open .layers-tab { color: var(--pink); }
     body.light .layers-tab { background: var(--panel); color: #1C1C1A; box-shadow: 4px -3px 10px rgba(0,0,0,0.08); }
     body.light .layers-tab:hover, body.light #layers-panel.open .layers-tab { color: #1C1C1A; background: #D5FEAF; }
-    .layers-head { display: flex; align-items: center; justify-content: space-between; }
     .layers-close { /* the ✕ style, used by the mascot panel */
       background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px;
       width: 22px; height: 22px; border-radius: 8px; font-family: var(--font-body);
@@ -1562,9 +1561,6 @@
   <!-- LAYERS PANEL (docked at the right, open by default) -->
   <div id="layers-panel" role="dialog" aria-label="Layers">
     <button type="button" class="layers-tab" onclick="toggleLayersPanel()" aria-label="Show or hide layers">Layers</button>
-    <div class="layers-head">
-      <span class="saved-menu-head">Layers</span>
-    </div>
     <div class="layers-list" id="layers-list"></div>
     <div class="layers-actions">
       <button class="layers-act" onclick="addLayer()">+ Layer</button>
