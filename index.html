@@ -898,6 +898,9 @@
     /* opening art: Anahat's piece across the top, its triangles trickling down the page */
     #story-art { position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none; display: block; }
     #story-box #story-body { position: relative; z-index: 1; }
+    /* the About text is centred */
+    #story-box .s-hero-inner, #story-box .s-section, #story-box .s-cta { text-align: center; }
+    #story-box .s-lead { margin-left: auto; margin-right: auto; }
 
     /* ════ PHONE (body.phone, ≤600px wide at load) ════
        An edit screen like the iPhone Photos editor: logo + ☰ on top, the
@@ -4485,7 +4488,8 @@ async function _loadStoryArt() {
 function _layoutStoryArt() {
   const box = document.getElementById('story-box'), cv = document.getElementById('story-art');
   const W = box.clientWidth, s = W / 708, artH = 504 * s;          // the whole piece, full width
-  const h = Math.round(artH + Math.min(1400, W * 1.2));              // plus room for the trickle
+  const trickleTo = artH + Math.min(1400, W * 1.2);                // how far bits fall
+  let h = Math.round(trickleTo);
   const dpr = window.devicePixelRatio || 1;
   cv.width = Math.round(W * dpr); cv.height = Math.round(h * dpr);
   cv.style.width = W + 'px'; cv.style.height = h + 'px';
@@ -4498,6 +4502,9 @@ function _layoutStoryArt() {
   let seed = 7;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   hero.style.paddingBottom = '';
+  h = Math.max(h, document.getElementById('story-body').scrollHeight + 40); // sprinkles run the full story
+  cv.width = Math.round(W * dpr); cv.height = Math.round(h * dpr);
+  cv.style.height = h + 'px'; STORY_ART.h = h;
   if (wide) {
     // the story itself starts below the artwork; only the opening lines sit on it
     const heroBottom = hero.offsetTop + hero.offsetHeight;
@@ -4521,6 +4528,23 @@ function _layoutStoryArt() {
     hole.closePath();
     STORY_ART.hole = hole;
   }
+  // sprinkles: small patches lifted from the piece, scattered all over the
+  // story below the art. Ones behind the text column are smaller and softer
+  // so the words stay easy to read; out in the margins they're full strength.
+  STORY_ART.sprinkles = [];
+  const colL = Math.max(0, (W - 780) / 2 + 20), colR = W - colL;
+  {
+    const T = STORY_ART.tris, gap = wide ? 72 : 70;
+    for (let y = artH + 90; y < h - 60; y += gap * (0.6 + rnd() * 0.8)) {
+      const c = T[Math.floor(rnd() * T.length)], rad = 10 + rnd() * 24;  // a patch around one triangle
+      const patch = T.filter(q => Math.hypot(q.cx - c.cx, q.cy - c.cy) < rad);
+      if (patch.length < 3) continue;
+      const x = 12 + rnd() * (W - 24);
+      const overText = x > colL && x < colR;
+      const sc = s * (overText ? 0.45 + rnd() * 0.35 : 0.6 + rnd() * 0.6) * (wide ? 1 : 0.8);
+      STORY_ART.sprinkles.push({ patch, c, x, y, sc, a: overText ? 0.6 : 1, ph: rnd() * 6.3, rot: (rnd() - 0.5) * 0.8 });
+    }
+  }
   const g = cv.getContext('2d');
   STORY_ART.parts = [];
   for (const t of STORY_ART.tris) {
@@ -4530,7 +4554,7 @@ function _layoutStoryArt() {
     // elsewhere the piece stays whole, its lower edge loosening more often
     const drift = inHole ? rnd() < 0.18 : rnd() < (y > artH * 0.8 ? 0.22 : 0.06);
     if (inHole && !drift) continue;
-    STORY_ART.parts.push({ t, drift, fall: 160 + rnd() * (h - y - 60), dur: 7 + rnd() * 9, off: rnd(), sway: (rnd() - 0.5) * 36, spin: (rnd() - 0.5) * 2.4, home: !inHole });
+    STORY_ART.parts.push({ t, drift, fall: 160 + rnd() * Math.max(80, trickleTo - y - 60), dur: 7 + rnd() * 9, off: rnd(), sway: (rnd() - 0.5) * 36, spin: (rnd() - 0.5) * 2.4, home: !inHole });
   }
 }
 function _drawStoryArt(now) {
@@ -4567,6 +4591,19 @@ function _drawStoryArt(now) {
     g.stroke();
   }
   g.restore();
+  for (const sp of STORY_ART.sprinkles || []) {      // bobbing gently in place
+    g.save();
+    g.globalAlpha = sp.a;
+    g.translate(sp.x, sp.y + Math.sin(secs * 0.8 + sp.ph) * 5);
+    g.rotate(sp.rot + Math.sin(secs * 0.5 + sp.ph) * 0.05);
+    g.scale(sp.sc, sp.sc);
+    for (const q of sp.patch) {
+      g.fillStyle = q.color; g.beginPath();
+      g.moveTo(q.v[0] - sp.c.cx, q.v[1] - sp.c.cy); g.lineTo(q.v[2] - sp.c.cx, q.v[3] - sp.c.cy); g.lineTo(q.v[4] - sp.c.cx, q.v[5] - sp.c.cy);
+      g.closePath(); g.fill();
+    }
+    g.restore();
+  }
   for (const p of STORY_ART.parts) {
     const t = p.t;
     let dx = 0, dy = 0, a = 1, rot = 0;
