@@ -3839,6 +3839,10 @@ function buildFinishMenu() {
         <button type="button" class="finish-chip" id="motion-gif-btn" onclick="downloadMotionGif()" title="Animated GIF, in the style picked on the left">GIF ${DL}</button>
       </div>
       ${wp}
+      <div class="finish-wp">
+        <span class="finish-row-name">SVG</span><span class="finish-row-dims">vector · one file</span>
+        <button type="button" class="finish-chip" onclick="downloadSVG()" title="The whole design as one vector file">SVG ${DL}</button>
+      </div>
     </div>
     <div class="saved-menu-head finish-print-head">Print${sizeId ? ' · ' + sizeId.toUpperCase() : ''}</div>
     <div class="finish-list">
@@ -3893,6 +3897,69 @@ function _buildWallpaperCanvas(presetId) {
   if (MOTION.logo) drawLogoWatermark(ec, exp.width, exp.height);
 
   return exp;
+}
+
+// The design as one flat vector file (not split into layers): the cloth,
+// every triangle (one merged path per colour, so no hairline seams), the
+// stitches (zigzags and dashes kept), text as real text, and the
+// watermark when it's on.
+function downloadSVG() {
+  if (isCanvasEmpty()) { showHint('Paint something before exporting an SVG'); return; }
+  const F = flatDesign();
+  const W = S.cols * CELL, H = S.rows * CELL;
+  const n = v => +v.toFixed(2);
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const out = [`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`,
+               `<rect width="${W}" height="${H}" fill="${S.base}"/>`];
+  // triangles, grouped by colour into one path each
+  const byColor = new Map();
+  for (const [k, color] of Object.entries(F.cells)) {
+    const [c, r, tri] = k.split(','), x = +c * CELL, y = +r * CELL, m = CELL / 2;
+    const pts = tri === 't' ? [[x, y], [x + CELL, y]] : tri === 'r' ? [[x + CELL, y], [x + CELL, y + CELL]]
+              : tri === 'b' ? [[x + CELL, y + CELL], [x, y + CELL]] : [[x, y + CELL], [x, y]];
+    const d = `M${n(pts[0][0])} ${n(pts[0][1])}L${n(pts[1][0])} ${n(pts[1][1])}L${n(x + m)} ${n(y + m)}Z`;
+    if (!byColor.has(color)) byColor.set(color, []);
+    byColor.get(color).push(d);
+  }
+  for (const [color, ds] of byColor) out.push(`<path fill="${color}" d="${ds.join('')}"/>`);
+  // stitches: the same path the canvas draws, recorded as SVG path data
+  for (const l of F.lines) {
+    if (!l.points || l.points.length < 2) continue;
+    let d = '';
+    const rec = { beginPath() { d = ''; }, moveTo(x, y) { d += `M${n(x)} ${n(y)}`; }, lineTo(x, y) { d += `L${n(x)} ${n(y)}`; } };
+    traceStitch(rec, l, CELL, 0, 0, 0, 0);
+    const w = lineWidthOf(l), dash = l.dashed ? ` stroke-dasharray="${stitchDashPattern(w).map(n).join(' ')}"` : '';
+    out.push(`<path d="${d}" fill="none" stroke="${l.color}" stroke-width="${n(w)}" stroke-linecap="round" stroke-linejoin="round"${dash}/>`);
+  }
+  // text
+  for (const t of F.texts) {
+    if (t.logo || !t.text) continue;
+    const step = _textLineStep(t);
+    t.text.split('\n').forEach((line, i) => out.push(
+      `<text x="${n(t.col * CELL)}" y="${n((t.row + t.size + i * step) * CELL)}" fill="${t.color}" style="font: ${esc(_textFont(t, CELL))}; white-space: pre">${esc(line)}</text>`));
+  }
+  if (MOTION.logo) { // the watermark, drawn as on the other exports
+    const em = Math.min(W * 0.5 / 4.6, H * 0.3) / 3.5;
+    const L = _logoLayout({ logo: true, size: em }, 1);
+    const x0 = (W - L.w) / 2, y0 = (H - L.h) / 2, base = y0 + L.em * LOGO_PAD_Y + L.asc;
+    out.push(`<rect x="${n(x0)}" y="${n(y0)}" width="${n(L.w)}" height="${n(L.h)}" fill="#000"/>`);
+    let x = x0 + L.em * LOGO_PAD_X;
+    for (const gl of L.glyphs) {
+      if (gl.ch === 'x') {
+        const sz = L.em * 0.5, lf = x + (gl.w - sz) / 2, top = base - sz, mid = base - sz / 2;
+        out.push(`<path fill="${LOGO_X_FILL}" d="M${n(lf)} ${n(top)}H${n(lf + sz)}L${n(lf + sz / 2)} ${n(mid)}ZM${n(lf)} ${n(base)}H${n(lf + sz)}L${n(lf + sz / 2)} ${n(mid)}Z"/>`);
+      } else out.push(`<text x="${n(x)}" y="${n(base)}" fill="${gl.color}" style="font: ${esc(_logoFont(L.em))}">${gl.ch}</text>`);
+      x += gl.w + L.track;
+    }
+  }
+  out.push('</svg>');
+  const blob = new Blob([out.join('\n')], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.download = 'pixelkari.svg';
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  sfxSuccess();
 }
 
 function downloadWallpaper(presetId) {
