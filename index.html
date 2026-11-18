@@ -737,6 +737,12 @@
       transition: color 0.12s, background 0.12s;
     }
     .motion-body { display: flex; flex-direction: column; gap: 14px; padding: 4px 20px 20px; overflow-y: auto; }
+    /* Finish window: the animation on the left, every other download on the right */
+    #motion-modal .finish-box { width: min(1040px, 96vw); }
+    .finish-cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; min-height: 0; overflow-y: auto; }
+    .finish-exports { padding: 4px 20px 20px 4px; display: flex; flex-direction: column; gap: 8px; }
+    .finish-exports .finish-print-head { margin-top: 8px; }
+    @media (max-width: 820px) { .finish-cols { grid-template-columns: 1fr; } .finish-exports { padding: 0 20px 20px; } }
     .motion-stage {
       display: flex; align-items: center; justify-content: center;
       background: #0a0a0a; border-radius: 16px; padding: 16px; min-height: 200px;
@@ -1514,10 +1520,9 @@
           </div>
         </div>
       </div>
-      <!-- Finish: a dropdown of downloads (wallpapers, print files) -->
+      <!-- Finish: opens the Finish window (animation + every download) -->
       <div class="save-split finish-split" id="finish-split">
-        <button class="export-btn" id="finish-btn" onclick="toggleFinishMenu(event)" style="line-height:1;" aria-haspopup="true" aria-expanded="false">Finish ✦</button>
-        <div class="saved-menu finish-menu" id="finish-menu" role="menu"></div>
+        <button class="export-btn" id="finish-btn" onclick="openMotionModal()" style="line-height:1;" aria-haspopup="dialog">Finish ✦</button>
       </div>
     </div>
   </div>
@@ -1683,10 +1688,12 @@
 <div class="overlay" id="motion-modal">
   <div class="finish-box">
     <div class="finish-head">
-      <span class="finish-head-title">GIF</span>
+      <span class="finish-head-title">Finish</span>
       <button class="finish-close" onclick="closeMotionModal()">✕</button>
     </div>
+    <div class="finish-cols">
     <div class="motion-body">
+      <div class="saved-menu-head">Animated GIF</div>
       <div class="motion-stage"><canvas id="motion-canvas"></canvas></div>
       <div class="motion-styles">
         <button type="button" class="motion-style" data-style="timelapse" onclick="setMotionStyle('timelapse')"><span class="motion-style-name">Timelapse</span><span class="motion-style-desc">Replays your piece in the order you made it</span></button>
@@ -1703,6 +1710,8 @@
         <span class="motion-meta" id="motion-meta"></span>
         <button class="btn-pri" id="motion-gif-btn" onclick="downloadMotionGif()">Download GIF</button>
       </div>
+    </div>
+    <div class="finish-exports" id="finish-menu"></div>
     </div>
   </div>
 </div>
@@ -3698,13 +3707,11 @@ function buildFinishMenu() {
        <span class="finish-row-name">${label}</span><span class="finish-row-dims">${dims}</span><span class="finish-row-dl">↓</span>
      </button>`;
   const wp = [['phone', 'Phone wallpaper'], ['desktop', 'Desktop wallpaper'], ['instagram', 'Instagram']]
-    .map(([id, label]) => row(label, _wallpaperDims(id).join(' × '), `onclick="closeFinishMenu(); downloadWallpaper('${id}')"`, all || id === active))
+    .map(([id, label]) => row(label, _wallpaperDims(id).join(' × '), `onclick="downloadWallpaper('${id}')"`, all || id === active))
     .join('');
   menu.innerHTML = `
     <div class="saved-menu-head">Digital</div>
-    <div class="finish-list">${wp}
-      ${row('Animated GIF', 'timelapse · colour dance', 'onclick="closeFinishMenu(); openMotionModal()"', !isCanvasEmpty())}
-    </div>
+    <div class="finish-list">${wp}</div>
     <div class="saved-menu-head finish-print-head">Print${sizeId ? ' · ' + sizeId.toUpperCase() : ''}</div>
     <div class="finish-list">
       ${row('Print PDF', 'full colour', 'id="pdf-download-btn" onclick="downloadPrintPDF()"', !!sizeId)}
@@ -3717,26 +3724,7 @@ function buildFinishMenu() {
       <span class="finish-row-name">Instagram</span><span class="finish-row-dims">@pixelkari.art</span><span class="finish-row-dl">↗</span>
     </a>`;
 }
-function toggleFinishMenu(e) {
-  if (e) e.stopPropagation();
-  const split = document.getElementById('finish-split');
-  if (split.classList.contains('open')) { closeFinishMenu(); return; }
-  closeSavedMenu();
-  toggleLayersPanel(false); // Finish drops down where the panel sits
-  buildFinishMenu();
-  split.classList.add('open');
-  document.getElementById('finish-btn').setAttribute('aria-expanded', 'true');
-}
-function closeFinishMenu() {
-  const split = document.getElementById('finish-split');
-  if (!split) return;
-  split.classList.remove('open');
-  document.getElementById('finish-btn').setAttribute('aria-expanded', 'false');
-}
-document.addEventListener('pointerdown', e => {
-  const split = document.getElementById('finish-split');
-  if (split && split.classList.contains('open') && !split.contains(e.target)) closeFinishMenu();
-}, true);
+function _finishOpen() { return document.getElementById('motion-modal').classList.contains('on'); }
 
 // Final export pixel size for presetId, always exactly proportional to the
 // current canvas (no padding/letterboxing, no forced device aspect ratio)
@@ -3929,7 +3917,7 @@ async function downloadRisoPack(byLayer = false) {
     btn.disabled = false;
     btn.textContent = label;
     // a Finish row's label was flattened to text while generating — rebuild it
-    if (document.getElementById('finish-split').classList.contains('open')) buildFinishMenu();
+    if (_finishOpen()) buildFinishMenu();
   }
 }
 
@@ -3958,7 +3946,7 @@ async function downloadPrintPDF() {
     btn.disabled = false;
     btn.textContent = label;
     // a Finish row's label was flattened to text while generating — rebuild it
-    if (document.getElementById('finish-split').classList.contains('open')) buildFinishMenu();
+    if (_finishOpen()) buildFinishMenu();
   }
 }
 let _storyTrail = [];
@@ -4057,7 +4045,6 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('story-page').classList.contains('on')) { closeStoryPage(); return; }
     if (document.getElementById('capture-preview-modal').classList.contains('on')) { cancelCapture(); return; }
     if (document.getElementById('motion-modal').classList.contains('on')) { closeMotionModal(); return; }
-    if (document.getElementById('finish-split').classList.contains('open')) { closeFinishMenu(); return; }
     if (document.getElementById('motif-library-modal').classList.contains('on')) { closeMotifLibrary(); return; }
     if (S.capturingMotif) { stopCaptureMode(); return; }
     if (S.selectedText !== null) { deselectText(); return; }
@@ -6288,8 +6275,7 @@ function drawLogoObj(t, g, scale, ox, oy) {
   const L = _logoLayout(t, scale, g);
   const x0 = ox + t.col * scale, y0 = oy + t.row * scale;
   g.save();
-  g.fillStyle = t.mono ? '#000' : LOGO_BOX;
-  g.fillRect(x0, y0, L.w, L.h);
+  if (!t.noBox) { g.fillStyle = t.mono ? '#000' : LOGO_BOX; g.fillRect(x0, y0, L.w, L.h); }
   g.font = _logoFont(L.em);
   g.textBaseline = 'alphabetic';
   let x = x0 + L.em * LOGO_PAD_X;
@@ -6591,11 +6577,11 @@ function drawMotionTimed(g, k, style, T) {
   const W = S.cols * CELL, H = S.rows * CELL;
   g.setTransform(k, 0, 0, k, 0, 0);
   g.globalAlpha = f;
-  g.fillStyle = LOGO_BOX; g.fillRect(-2, -2, W + 4, H + 4); // past the edges so no cloth peeks through
+  g.fillStyle = '#000'; g.fillRect(-2, -2, W + 4, H + 4); // past the edges so no cloth peeks through
   const size = Math.max(2, Math.min(S.cols * 0.5 / 4.6, S.rows * 0.3));
   const logo = { logo: true, size, col: 0, row: 0 };
   const L = _logoLayout(logo, CELL, g);
-  drawLogoObj({ ...logo, col: (W - L.w) / 2 / CELL, row: (H - L.h) / 2 / CELL }, g, CELL, 0, 0);
+  drawLogoObj({ ...logo, noBox: true, col: (W - L.w) / 2 / CELL, row: (H - L.h) / 2 / CELL }, g, CELL, 0, 0);
   g.globalAlpha = 1;
 }
 function setMotionEndLogo(on) {
@@ -6850,7 +6836,10 @@ function setMotionStyle(style) {
 }
 
 function openMotionModal() {
-  if (isCanvasEmpty()) { showHint('Paint something first, then set it in motion'); return; }
+  if (isCanvasEmpty()) { showHint('Paint something first, then finish it'); return; }
+  closeSavedMenu();
+  toggleLayersPanel(false);
+  buildFinishMenu();
   _prepareMotion();
   document.getElementById('motion-modal').classList.add('on');
   const cv = document.getElementById('motion-canvas');
@@ -6917,7 +6906,7 @@ async function downloadMotionGif() {
     btn.disabled = false;
     btn.textContent = label;
     // a Finish row's label was flattened to text while generating — rebuild it
-    if (document.getElementById('finish-split').classList.contains('open')) buildFinishMenu();
+    if (_finishOpen()) buildFinishMenu();
   }
 }
 
