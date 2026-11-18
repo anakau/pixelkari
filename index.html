@@ -1046,15 +1046,15 @@
     #story-box .s-collage-inner { max-width: none; padding-bottom: 28px; }
     #story-box .sc-1 img { height: 340px; }
     #story-box .sc-pair { height: 220px; }
-    #story-box .s-section .s-collage-credits, #story-box .s-section .s-sources, #story-box .s-photo-credit { font-size: 9px; line-height: 1.6; }
+    #story-box .s-section .s-collage-credits, #story-box .s-section .s-sources, #story-box .s-photo-credit { font-size: 12px; line-height: 1.6; }
     #story-box .s-collage-credits { margin-top: 10px; }
     #story-box .s-hero { padding-top: 56px; padding-bottom: 48px; }
     #story-box .s-h1 { font-size: clamp(30px, 3.6vw, 42px); margin-bottom: 20px; }
     #story-box .s-lead { font-size: 22px; line-height: 1.4; font-weight: 400; } /* the h2 size */
-    #story-box .s-section p { font-size: 13px; line-height: 1.7; font-weight: 400; }
+    #story-box .s-section p { font-size: 17px; line-height: 1.65; font-weight: 400; } /* story text: comfortable reading size */
     #story-box .s-section h2 { font-size: 22px; }
     #story-box .s-cta h2 { font-size: 26px; }
-    #story-box .s-section .s-dedication p { font-size: 13px; }
+    #story-box .s-section .s-dedication p { font-size: 17px; }
     #story-box .s-cta { padding: 100px 40px 120px; }
     @media (max-width: 900px) {
       #story-page { padding: 0; }
@@ -4456,7 +4456,23 @@ async function _loadStoryArt() {
           tris.push({ color: fill, v, cx: (v[0] + v[2] + v[4]) / 3, cy: (v[1] + v[3] + v[5]) / 3 });
         }
       } else if (p.getAttribute('stroke')) {
-        STORY_ART.stitches.push({ path: new Path2D(d), color: p.getAttribute('stroke'), w: +p.getAttribute('stroke-width') || 2.4 });
+        const st = { path: new Path2D(d), color: p.getAttribute('stroke'), w: +p.getAttribute('stroke-width') || 2.4 };
+        // A zigzag stitch's points swing to either side of its line: the
+        // midpoints between them trace that line, so the wave can be redrawn
+        // sliding along it (a train, not a wiggle). Straight stitches stay put.
+        const n = (d.match(/-?[\d.]+/g) || []).map(Number), pts = [];
+        for (let i = 0; i + 1 < n.length; i += 2) pts.push([n[i], n[i + 1]]);
+        if (pts.length > 12) {
+          const mids = pts.slice(1).map((q, i) => [(q[0] + pts[i][0]) / 2, (q[1] + pts[i][1]) / 2]);
+          const sm = mids.map((m, i) => { const a = mids[Math.max(0, i - 1)], c = mids[Math.min(mids.length - 1, i + 1)];
+            return [(a[0] + m[0] * 2 + c[0]) / 4, (a[1] + m[1] * 2 + c[1]) / 4]; });
+          const len = arr => arr.slice(1).reduce((t, q, i) => t + Math.hypot(q[0] - arr[i][0], q[1] - arr[i][1]), 0);
+          if (len(pts) > len(sm) * 1.4) {
+            const dev = pts.slice(1, -1).map((q, i) => Math.hypot(q[0] - sm[i][0], q[1] - sm[i][1])).sort((a, b) => a - b);
+            st.center = sm; st.amp = Math.min(6, dev[dev.length >> 1] || 4);
+          }
+        }
+        STORY_ART.stitches.push(st);
       }
     });
     STORY_ART.tris = tris;
@@ -4465,23 +4481,53 @@ async function _loadStoryArt() {
 }
 function _layoutStoryArt() {
   const box = document.getElementById('story-box'), cv = document.getElementById('story-art');
-  const W = box.clientWidth, s = W / 708, artH = 504 * s;
-  const band = Math.min(artH, Math.max(220, Math.round(W * 0.34))); // the dense opening strip
-  const h = Math.round(band + Math.min(1400, W * 1.4));              // how far the trickle reaches
+  const W = box.clientWidth, s = W / 708, artH = 504 * s;          // the whole piece, full width
+  const h = Math.round(artH + Math.min(1400, W * 1.2));              // plus room for the trickle
   const dpr = window.devicePixelRatio || 1;
   cv.width = Math.round(W * dpr); cv.height = Math.round(h * dpr);
   cv.style.width = W + 'px'; cv.style.height = h + 'px';
-  Object.assign(STORY_ART, { W, s, band, h, dpr });
-  document.querySelector('#story-box .s-hero').style.paddingTop = (band + 36) + 'px';
-  // who drifts: everything below the band (thinning with depth), and 1 in 9 from the band
+  Object.assign(STORY_ART, { W, s, band: artH, h, dpr, hole: null });
+  // Wide screens: the opening text sits over the art, in a hole that clears
+  // away organically around it. Phones: the text starts below the art.
+  const wide = W >= 700;
+  const hero = document.querySelector('#story-box .s-hero');
+  hero.style.paddingTop = (wide ? Math.round(artH * 0.3) : Math.round(artH + 28)) + 'px';
   let seed = 7;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  hero.style.paddingBottom = '';
+  if (wide) {
+    // the story itself starts below the artwork; only the opening lines sit on it
+    const heroBottom = hero.offsetTop + hero.offsetHeight;
+    if (heroBottom < artH + 40) hero.style.paddingBottom = (parseFloat(getComputedStyle(hero).paddingBottom) + artH + 40 - heroBottom) + 'px';
+    const br = box.getBoundingClientRect(), inner = hero.querySelector('.s-hero-inner');
+    const kids = [...inner.children].filter(k => k.offsetParent).map(k => k.getBoundingClientRect());
+    const r = { x0: Math.min(...kids.map(k => k.left)) - br.left, y0: Math.min(...kids.map(k => k.top)) - br.top + box.scrollTop,
+                x1: Math.max(...kids.map(k => k.right)) - br.left, y1: Math.max(...kids.map(k => k.bottom)) - br.top + box.scrollTop };
+    // walk round the text block, pushing the edge out by a smooth, uneven amount
+    const ph = [rnd() * 6.3, rnd() * 6.3, rnd() * 6.3];
+    const bump = t => 34 + 16 * Math.sin(t * 3 + ph[0]) + 11 * Math.sin(t * 7 + ph[1]) + 6 * Math.sin(t * 13 + ph[2]);
+    const cx = (r.x0 + r.x1) / 2, cy = (r.y0 + r.y1) / 2, hw = (r.x1 - r.x0) / 2, hh = (r.y1 - r.y0) / 2;
+    const hole = new Path2D();
+    for (let i = 0; i <= 160; i++) {
+      const t = i / 160 * Math.PI * 2, c = Math.cos(t), sn = Math.sin(t);
+      const k = 1 / Math.max(Math.abs(c) / hw, Math.abs(sn) / hh);    // ray to the text block's edge
+      const rr = k + bump(t);
+      const x = cx + c * rr, y = cy + sn * rr;
+      i ? hole.lineTo(x, y) : hole.moveTo(x, y);
+    }
+    hole.closePath();
+    STORY_ART.hole = hole;
+  }
+  const g = cv.getContext('2d');
   STORY_ART.parts = [];
   for (const t of STORY_ART.tris) {
-    const hy = t.cy * s, below = hy - band;
-    const drift = below > 0 ? rnd() < Math.exp(-below / (band * 0.6)) : rnd() < 0.07;
-    if (below > 0 && !drift) continue; // thinned away
-    STORY_ART.parts.push({ t, drift, fall: 160 + rnd() * (h - hy - 60), dur: 7 + rnd() * 9, off: rnd(), sway: (rnd() - 0.5) * 36, spin: (rnd() - 0.5) * 2.4 });
+    const x = t.cx * s, y = t.cy * s;
+    const inHole = STORY_ART.hole && g.isPointInPath(STORY_ART.hole, x, y);
+    // behind the text: most bits are gone, a few are caught falling away;
+    // elsewhere the piece stays whole, its lower edge loosening more often
+    const drift = inHole ? rnd() < 0.18 : rnd() < (y > artH * 0.8 ? 0.22 : 0.06);
+    if (inHole && !drift) continue;
+    STORY_ART.parts.push({ t, drift, fall: 160 + rnd() * (h - y - 60), dur: 7 + rnd() * 9, off: rnd(), sway: (rnd() - 0.5) * 36, spin: (rnd() - 0.5) * 2.4, home: !inHole });
   }
 }
 function _drawStoryArt(now) {
@@ -4490,9 +4536,33 @@ function _drawStoryArt(now) {
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.clearRect(0, 0, W, h);
   // stitches, held in the band
-  g.save(); g.beginPath(); g.rect(0, 0, W, band); g.clip();
+  g.save();
+  const clip = new Path2D(); clip.rect(0, 0, W, band);
+  if (STORY_ART.hole) clip.addPath(STORY_ART.hole);
+  g.clip(clip, 'evenodd'); // the stitches, minus the cleared space behind the text
   g.scale(s, s); g.lineCap = 'round'; g.lineJoin = 'round';
-  for (const st of STORY_ART.stitches) { g.strokeStyle = st.color; g.lineWidth = st.w; g.stroke(st.path); }
+  const phase = (secs * 0.7) % 1; // how far the zigs have travelled along their lines
+  for (const st of STORY_ART.stitches) {
+    g.strokeStyle = st.color; g.lineWidth = st.w;
+    if (!st.center) { g.stroke(st.path); continue; }
+    // triangle wave, one up-and-down per 12 units (a grid cell), sliding forward
+    const P = st.center, period = 12, amp = st.amp;
+    const wave = u => { const f = ((u / period - phase + 0.25) % 1 + 1) % 1; return 1 - 4 * Math.abs(f - 0.5); };
+    g.beginPath();
+    let u0 = 0;
+    for (let i = 1; i < P.length; i++) {
+      const [ax, ay] = P[i - 1], [bx, by] = P[i], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy);
+      if (!L) continue;
+      const nx = -dy / L, ny = dx / L, steps = Math.max(1, Math.ceil(L / 3));
+      for (let k = (i === 1 ? 0 : 1); k <= steps; k++) {
+        const t = k / steps, o = amp * wave(u0 + t * L);
+        const x = ax + dx * t + nx * o, y = ay + dy * t + ny * o;
+        if (i === 1 && k === 0) g.moveTo(x, y); else g.lineTo(x, y);
+      }
+      u0 += L;
+    }
+    g.stroke();
+  }
   g.restore();
   for (const p of STORY_ART.parts) {
     const t = p.t;
@@ -4505,6 +4575,7 @@ function _drawStoryArt(now) {
       dx = Math.sin(fallU * Math.PI * 2) * p.sway * fallU;
       rot = p.spin * ease;
       a = (u < 0.06 ? u / 0.06 : 1 - Math.pow(fallU, 1.3)) * 0.85; // fades in at home, out as it falls
+      if (!p.home) a *= Math.min(1, fallU * 4); // cleared bits appear only as they fall away
     }
     const cx = t.cx * s + dx, cy = t.cy * s + dy;
     g.save();
