@@ -1640,10 +1640,11 @@
     #story-box .snav-cta:hover, #story-box .story-close:hover { background: var(--pink-deep); color: var(--pink); }
     #story-box img { border-radius: 6px; }
     #story-box .sc-1, #story-box .sc-pair figure, #story-box .s-photo-expandable { position: relative; border-radius: 6px; overflow: hidden; }
-    #story-box .sc-1 img, #story-box .sc-pair img, #story-box .s-photo-expandable img { filter: grayscale(0.55) brightness(0.85); transition: filter 0.35s ease; }
+    /* photos show in full colour (no tint, no hover reveal) */
+    #story-box .sc-1 img, #story-box .sc-pair img, #story-box .s-photo-expandable img { filter: none; }
     #story-box .sc-1::after, #story-box .sc-pair figure::after, #story-box .s-photo-expandable::after {
       content: ''; position: absolute; inset: 0; pointer-events: none;
-      background: #3a3012; mix-blend-mode: color; opacity: 0.85; transition: opacity 0.35s ease;
+      background: #3a3012; mix-blend-mode: color; opacity: 0; display: none;
     }
     #story-box .sc-1:hover img, #story-box .sc-pair figure:hover img, #story-box .s-photo-expandable:hover img { filter: none; }
     #story-box .sc-1:hover::after, #story-box .sc-pair figure:hover::after, #story-box .s-photo-expandable:hover::after { opacity: 0; }
