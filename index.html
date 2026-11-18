@@ -828,6 +828,15 @@
       align-items: center; justify-content: center; padding: 16px;
     }
     #story-page.on { display: flex; }
+    #story-logo { position: fixed; z-index: 2; cursor: pointer; line-height: 1; }
+    @media (max-width: 900px) { #story-logo { display: none; } }
+    /* motifs 6 + 7 repeat down the left margin, scrolling with the story */
+    #story-page #story-box {
+      background-image: var(--margin-art, none); background-repeat: repeat-y; background-attachment: local;
+      background-size: 64px auto; background-position: calc((100% - 780px) / 4 - 32px) 120px;
+    }
+    body.light #story-box { background-image: var(--margin-art, none) !important; background-repeat: repeat-y !important; background-attachment: local !important; background-size: 64px auto !important; background-position: calc((100% - 780px) / 4 - 32px) 120px !important; }
+    @media (max-width: 1000px) { #story-page #story-box, body.light #story-box { background-image: none !important; } }
     #story-box {
       position: relative; width: 100%; max-width: 1120px; height: min(78vh, 760px); /* wider than tall, centred */
       background: #0d0d0d; border-radius: 8px; overflow-y: auto; overflow-x: hidden;
@@ -1396,7 +1405,7 @@
     /* ── Intro pop-up colour scheme ── the app's resting-button look: yellow
        on dull dark yellow, turning pink on hover like every control. Photos
        sit tinted in the background tone and come into colour on hover. */
-    #story-box { background: #120F07; } /* near-black, just warmed toward yellow */
+    #story-box { background-color: #120F07; } /* near-black, just warmed toward yellow (the margin motifs ride on top) */
     #story-box, #story-box * { color: var(--accent); }
     /* …except the wordmark, which keeps its own colours here too */
     #story-box .logo-title { color: #E91E8C; }
@@ -1811,11 +1820,10 @@
 
 <!-- STORY PAGE -->
 <div id="story-page" onclick="if (event.target === this) closeStoryPage()">
+ <div id="story-logo" onclick="closeStoryPage()" title="Back to the tool"><div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span>k<span class="logo-a">a</span>r<span class="logo-i">i</span></div></div>
  <div id="story-box" role="dialog" aria-modal="true" aria-label="About Pixelkari">
   <div id="story-header">
-    <div style="cursor:pointer;" onclick="closeStoryPage()">
-      <div class="logo-title" aria-label="Pixelkari">p<span class="logo-i">i</span><svg class="logo-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0 10 0 5 5Z M0 10 10 10 5 5Z"/></svg><span class="logo-e">e</span><span class="logo-l">l</span>k<span class="logo-a">a</span>r<span class="logo-i">i</span></div>
-    </div>
+    <div></div>
     <div class="story-head-actions">
       <button class="story-close" onclick="closeStoryPage()" aria-label="Close">✕</button>
     </div>
@@ -4023,8 +4031,33 @@ let _storyTrailRaf = null;
 let _storyMoveHandler = null;
 let _storyResizeHandler = null;
 
+// The site logo stays put and at full strength while the pop-up is open:
+// a copy sits over the backdrop exactly where the top bar's logo is.
+function _placeStoryLogo() {
+  const r = document.querySelector('#bar-logo .logo-title').getBoundingClientRect();
+  const el = document.getElementById('story-logo');
+  el.style.left = r.left + 'px'; el.style.top = r.top + 'px';
+}
+// Phulkari motifs 6 and 7 (Patta and Motif 7) as a pattern down the left margin
+let _storyMarginArt = null;
+function _paintStoryMargin() {
+  const box = document.getElementById('story-box');
+  if (!_storyMarginArt) {
+    const ms = [MOTIFS[5], MOTIFS[6]].filter(Boolean);
+    if (!ms.length) return;
+    const T = 96, gap = 40;
+    const c = document.createElement('canvas');
+    c.width = T; c.height = ms.length * (T + gap);
+    const g = c.getContext('2d');
+    ms.forEach((m, i) => g.drawImage(_drawMotifThumb(m, T, null), 0, i * (T + gap)));
+    _storyMarginArt = c.toDataURL();
+  }
+  box.style.setProperty('--margin-art', `url(${_storyMarginArt})`);
+}
 function showStoryPage() {
+  _paintStoryMargin();
   document.getElementById('story-page').classList.add('on');
+  _placeStoryLogo();
   document.body.classList.add('story-open');
   document.getElementById('story-box').scrollTop = 0;
   _initStoryTrail();
