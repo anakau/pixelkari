@@ -296,6 +296,19 @@
       transition: background 0.12s, color 0.12s;
     }
     .cp-dash-btn:hover { background: rgba(255,255,255,0.16); }
+    .cp-stitch-kinds { display: flex; gap: 4px; }
+    .cp-kind-btn {
+      flex: 1; height: 34px; display: flex; align-items: center; justify-content: center; padding: 0;
+      background: var(--accent-deep); border: none; border-radius: 8px; color: var(--accent); cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+    body.light .cp-kind-btn { background: #fff; color: #1C1C1A; }
+    .cp-kind-btn:hover { background: var(--pink-deep); color: var(--pink); }
+    .cp-kind-btn.on { background: var(--pink-deep); color: var(--pink); }
+    body.light .cp-kind-btn.on { background: #D5FEAF; color: #1C1C1A; }
+    .cp-colour-label { margin-top: 4px; }
+    .cp-print-row { display: flex; gap: 4px; }
+    .cp-print-row .cp-dash-btn { flex: 1; font-size: 11px; padding: 7px 8px; }
     .cp-dash-btn.on { background: var(--accent); color: #111; }
     .cp-value-readout { color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cp-section-label {
@@ -4076,21 +4089,19 @@ function setBrushSize(delta) { selectBrushSize(S.brushSize + delta); }
 // commitStitchPath, which reads S.stitchDashed at the moment a line is
 // pushed. Existing lines carry their own `dashed` flag so they aren't
 // affected retroactively, same as how stitch colour already works.
-// Straight or zigzag — like dashed, only affects lines drawn from now on.
-function setStitchZigzag(on) {
-  S.stitchZigzag = on;
+// Straight, dashed or zigzag — only affects lines drawn from now on.
+function stitchKind() { return S.stitchZigzag ? 'zigzag' : S.stitchDashed ? 'dashed' : 'straight'; }
+function syncStitchKind() {
+  document.querySelectorAll('.cp-kind-btn').forEach(b => b.classList.toggle('on', b.dataset.kind === stitchKind()));
+}
+function setStitchKind(k) {
+  S.stitchZigzag = k === 'zigzag';
+  S.stitchDashed = k === 'dashed';
   clearBrushShadow();
-  document.querySelectorAll('.cp-dash-btn[data-zigzag]').forEach(b => {
-    b.classList.toggle('on', (b.dataset.zigzag === '1') === on);
-  });
-  showHint(on ? 'Stitch: zigzag' : 'Stitch: straight');
+  syncStitchKind();
+  showHint(`Stitch: ${k}`);
 }
-function setStitchDashed(dashed) {
-  S.stitchDashed = dashed;
-  document.querySelectorAll('.cp-dash-btn[data-dashed]').forEach(b => {
-    b.classList.toggle('on', (b.dataset.dashed === '1') === dashed);
-  });
-}
+function setStitchDashed(dashed) { setStitchKind(dashed ? 'dashed' : 'straight'); }
 document.addEventListener('keyup', e => {
   if (e.key === ' ') {
     S.spaceDown = false;
@@ -4397,7 +4408,7 @@ function initCustomColorPicker() {
     eyedropBtn.type = 'button';
     eyedropBtn.className = 'cp-eyedrop-btn';
     eyedropBtn.innerHTML = `<svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 2.5l4 4-3 3-4-4z"/><path d="M11.6 5.4L3 14v3h3l8.6-8.6"/></svg><span>Pick from screen</span>`;
-    left.appendChild(eyedropBtn);
+    // appended under the "Select colour" label, below the tool's own options
   }
 
 
@@ -4413,31 +4424,27 @@ function initCustomColorPicker() {
   `;
   left.appendChild(modeRow);
 
-  // Stitch kind: a straight line or a zigzag running stitch — Stitch-only.
-  const styleRow = document.createElement('div');
-  styleRow.className = 'cp-value-row cp-style-row';
-  styleRow.style.display = 'none';
-  styleRow.innerHTML = `
-    <span class="cp-value-lbl" style="width:auto;">Stitch</span>
-    <div style="display:flex;gap:4px;margin-left:auto;">
-      <button type="button" class="cp-dash-btn${S.stitchZigzag ? '' : ' on'}" data-zigzag="0" onclick="setStitchZigzag(false)">Straight</button>
-      <button type="button" class="cp-dash-btn${S.stitchZigzag ? ' on' : ''}" data-zigzag="1" onclick="setStitchZigzag(true)">Zigzag</button>
-    </div>
-  `;
-  left.appendChild(styleRow);
-
-  // Line style is Stitch-only — mirrors modeRow's per-target show/hide.
+  // Stitch kind as three picture buttons: straight, dashed, zigzag — Stitch-only.
+  const STITCH_KIND_ICONS = {
+    straight: '<path d="M3 12 H33"/>',
+    dashed:   '<path d="M3 12 H33" stroke-dasharray="5 4"/>',
+    zigzag:   '<path d="M3 12 L6 7 L10 17 L14 7 L18 17 L22 7 L26 17 L30 7 L33 12"/>',
+  };
   const dashRow = document.createElement('div');
-  dashRow.className = 'cp-value-row cp-dash-row';
+  dashRow.className = 'cp-stitch-kinds';
   dashRow.style.display = 'none';
-  dashRow.innerHTML = `
-    <span class="cp-value-lbl" style="width:auto;">Line</span>
-    <div style="display:flex;gap:4px;margin-left:auto;">
-      <button type="button" class="cp-dash-btn${S.stitchDashed ? '' : ' on'}" data-dashed="0" onclick="setStitchDashed(false)">Solid</button>
-      <button type="button" class="cp-dash-btn${S.stitchDashed ? ' on' : ''}" data-dashed="1" onclick="setStitchDashed(true)">Dashed</button>
-    </div>
-  `;
+  dashRow.innerHTML = Object.entries(STITCH_KIND_ICONS).map(([k, path]) =>
+    `<button type="button" class="cp-kind-btn" data-kind="${k}" onclick="setStitchKind('${k}')" title="${k[0].toUpperCase() + k.slice(1)} stitch" aria-label="${k} stitch">
+       <svg viewBox="0 0 36 24" width="36" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>
+     </button>`).join('');
   left.appendChild(dashRow);
+
+  // Everything below is the colour itself
+  const colourLabel = document.createElement('div');
+  colourLabel.className = 'cp-section-label cp-colour-label';
+  colourLabel.textContent = 'Select colour';
+  left.appendChild(colourLabel);
+  if (eyedropBtn) left.appendChild(eyedropBtn);
 
   const values = document.createElement('div');
   values.className = 'cp-values';
@@ -4485,10 +4492,9 @@ function initCustomColorPicker() {
   // Paper only: how many of the riso inks the design uses, with the colour
   // being picked shown as a dashed dot when it would add a new one.
   const printRow = document.createElement('div');
-  printRow.className = 'cp-value-row';
-  printRow.innerHTML = `<span class="cp-value-lbl" style="width:auto;">Print</span>
-    <div style="display:flex;gap:4px;margin-left:auto;">${[['cmyk', 'CMYK'], ['riso', 'Riso']].map(([m, l]) =>
-      `<button type="button" class="cp-dash-btn" data-print="${m}" onclick="setPrintMode('${m}')">${l}</button>`).join('')}</div>`;
+  printRow.className = 'cp-print-row';
+  printRow.innerHTML = [['cmyk', 'Print'], ['riso', 'Riso']].map(([m, l]) =>
+    `<button type="button" class="cp-dash-btn" data-print="${m}" onclick="setPrintMode('${m}')">${l}</button>`).join('');
   left.appendChild(printRow);
   const inkLimitRow = document.createElement('div');
   inkLimitRow.className = 'cp-value-row';
@@ -4818,7 +4824,8 @@ function initCustomColorPicker() {
     window._cpTarget = cpTarget;
     modeRow.style.display = target === 'weave' ? 'flex' : 'none';
     dashRow.style.display = target === 'stitch' ? 'flex' : 'none';
-    styleRow.style.display = target === 'stitch' ? 'flex' : 'none';
+    syncStitchKind();
+    title.textContent = { weave: 'Weave', stitch: 'Stitch', cloth: 'Cloth' }[target] || 'Colour';
     if (target === 'cloth') setBilloMessage('cloth'); // weave/stitch already set theirs via setTool()
     renderSwatchSection(cpTarget);
     const hex = currentHexFor(cpTarget);
